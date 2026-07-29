@@ -18,7 +18,7 @@
         </div>
         <div class="header-actions">
           <button id="syncButton" class="round-button" aria-label="刷新">↻</button>
-          <button id="authButton" class="avatar-button" aria-label="设置访问令牌">钥</button>
+          <button id="authButton" class="avatar-button" aria-label="家庭账户">家</button>
         </div>
       </header>
 
@@ -152,15 +152,16 @@
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
         <span class="micro-label">安全访问</span>
-        <h3>连接家庭空调</h3>
-        <p>输入服务器 API Token，仅在当前浏览器会话中保存。</p>
-        <input id="tokenInput" type="password" autocomplete="off" placeholder="API Token" required>
-        <button class="primary-button" type="submit">安全连接</button>
+        <h3>登录清风家庭</h3>
+        <p>输入一次家庭访问密码，此设备将安全保持登录 30 天。</p>
+        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="家庭访问密码" required>
+        <button class="primary-button" type="submit">登录</button>
+        <button class="secondary-button" type="button" id="logoutButton" hidden>退出此设备</button>
         <p class="error-text" id="authError"></p>
       </form>
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=6" defer></script>
+    <script src="/static/h5.js?v=7" defer></script>
   </body>
 </html>

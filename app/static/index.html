@@ -27,7 +27,7 @@
             <i></i><span>正在连接</span>
           </span>
           <button class="icon-button" id="refreshButton" aria-label="刷新设备">↻</button>
-          <button class="profile-button" id="tokenButton" aria-label="设置访问令牌">钥</button>
+          <button class="profile-button" id="authButton" aria-label="家庭账户">家</button>
         </div>
       </header>
 
@@ -94,23 +94,23 @@
       </footer>
     </main>
 
-    <dialog id="tokenDialog">
-      <form method="dialog" id="tokenForm">
-        <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
-        <p class="eyebrow">SECURE ACCESS</p>
-        <h3>连接家庭空调</h3>
-        <p>请输入服务器生成的 API Token。它仅保存在当前浏览器会话中；所有调节会立即生效。</p>
-        <label for="tokenInput">API Token</label>
-        <input id="tokenInput" type="password" autocomplete="off" placeholder="粘贴 64 位 Token" required>
+    <dialog id="authDialog">
+      <form id="authForm">
+        <button class="dialog-close" type="button" id="closeAuthDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">FAMILY ACCESS</p>
+        <h3>登录清风家庭</h3>
+        <p>输入一次家庭访问密码，此设备将安全保持登录 30 天，不再需要填写 API Token。</p>
+        <label for="passwordInput">家庭访问密码</label>
+        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="家庭访问密码" required>
         <div class="dialog-actions">
-          <button class="secondary" value="cancel">取消</button>
-          <button class="primary" value="default" id="saveToken">连接</button>
+          <button class="secondary" type="button" id="logoutButton" hidden>退出此设备</button>
+          <button class="primary" type="submit">登录</button>
         </div>
-        <p class="dialog-error" id="dialogError"></p>
+        <p class="dialog-error" id="authError"></p>
       </form>
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=5" defer></script>
+    <script src="/static/app.js?v=7" defer></script>
   </body>
 </html>

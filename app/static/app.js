@@ -1,5 +1,6 @@
 const state = {
-  token: sessionStorage.getItem("greeApiToken") || "",
+  authenticated: false,
+  legacyToken: sessionStorage.getItem("greeApiToken") || "",
   devices: [],
   schedules: [],
   drafts: new Map(),
@@ -8,9 +9,10 @@ const state = {
 
 const grid = document.querySelector("#deviceGrid");
 const connection = document.querySelector("#connection");
-const dialog = document.querySelector("#tokenDialog");
-const tokenInput = document.querySelector("#tokenInput");
-const dialogError = document.querySelector("#dialogError");
+const authDialog = document.querySelector("#authDialog");
+const passwordInput = document.querySelector("#passwordInput");
+const authError = document.querySelector("#authError");
+const logoutButton = document.querySelector("#logoutButton");
 const toast = document.querySelector("#toast");
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
@@ -43,17 +45,32 @@ const horizontalLabels = {
 };
 
 function headers(json = false) {
-  const value = { Authorization: `Bearer ${state.token}` };
+  const value = {};
   if (json) value["Content-Type"] = "application/json";
   return value;
 }
 
+function updateAuthControls() {
+  logoutButton.hidden = !state.authenticated;
+}
+
+function openAuthDialog() {
+  passwordInput.value = "";
+  authError.textContent = "";
+  updateAuthControls();
+  if (!authDialog.open) authDialog.showModal();
+}
+
 async function api(path, options = {}) {
-  const response = await fetch(path, options);
+  const response = await fetch(path, { credentials: "same-origin", ...options });
   if (response.status === 401) {
-    setConnection("需要认证", "error");
-    dialog.showModal();
-    throw new Error("访问令牌无效");
+    const body = await response.json().catch(() => ({}));
+    state.authenticated = false;
+    setConnection("需要登录", "error");
+    openAuthDialog();
+    const error = new Error(body.detail || "请先登录清风家庭");
+    error.isAuthError = true;
+    throw error;
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -77,17 +94,14 @@ function makeDraft(device) {
 }
 
 async function loadAll(refresh = true) {
-  if (!state.token) {
-    dialog.showModal();
-    renderEmpty("请先连接", "点击右上角钥匙图标，输入服务器 API Token。");
-    return;
-  }
   setConnection("正在同步", "");
   try {
     const [devices, schedules] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
     ]);
+    state.authenticated = true;
+    updateAuthControls();
     state.devices = devices;
     state.schedules = schedules;
     devices.forEach((device) => {
@@ -98,7 +112,9 @@ async function loadAll(refresh = true) {
     document.querySelector("#lastUpdated").textContent =
       `更新于 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
   } catch (error) {
-    if (error.message !== "访问令牌无效") {
+    if (error.isAuthError) {
+      renderEmpty("请先登录", "输入一次家庭访问密码，此设备将保持登录 30 天。");
+    } else {
       setConnection("连接失败", "error");
       showToast(error.message);
     }
@@ -325,23 +341,54 @@ async function deleteSchedule(id) {
 }
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));
-document.querySelector("#tokenButton").addEventListener("click", () => {
-  tokenInput.value = state.token;
-  dialogError.textContent = "";
-  dialog.showModal();
-});
-document.querySelector("#tokenForm").addEventListener("submit", async (event) => {
+document.querySelector("#authButton").addEventListener("click", openAuthDialog);
+document.querySelector("#closeAuthDialog").addEventListener("click", () => authDialog.close());
+document.querySelector("#authForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  state.token = tokenInput.value.trim();
+  const password = passwordInput.value;
   try {
-    await api("/api/devices?refresh=false", { headers: headers() });
-    sessionStorage.setItem("greeApiToken", state.token);
-    dialog.close();
+    await api("/api/auth/login", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({ password }),
+    });
+    state.authenticated = true;
+    sessionStorage.removeItem("greeApiToken");
+    state.legacyToken = "";
+    authDialog.close();
     await loadAll(true);
   } catch (error) {
-    dialogError.textContent = error.message;
+    authError.textContent = error.message;
   }
 });
+logoutButton.addEventListener("click", async () => {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } finally {
+    state.authenticated = false;
+    sessionStorage.removeItem("greeApiToken");
+    location.reload();
+  }
+});
+
+async function bootstrap() {
+  if (state.legacyToken) {
+    const legacyToken = state.legacyToken;
+    state.legacyToken = "";
+    sessionStorage.removeItem("greeApiToken");
+    try {
+      await api("/api/auth/login", {
+        method: "POST",
+        headers: headers(true),
+        body: JSON.stringify({ password: legacyToken }),
+      });
+      state.authenticated = true;
+    } catch {
+      state.authenticated = false;
+    }
+  }
+  await loadAll(true);
+}
 
 function showToast(message) {
   toast.textContent = message;
@@ -357,7 +404,7 @@ function setMinimumScheduleTime() {
 }
 
 setMinimumScheduleTime();
-loadAll(true);
+bootstrap();
 setInterval(() => {
-  if (state.token && !document.hidden) loadAll(true);
+  if (state.authenticated && !document.hidden) loadAll(true);
 }, 60_000);

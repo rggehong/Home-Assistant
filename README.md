@@ -8,8 +8,10 @@
 - 自动发现并绑定格力空调
 - 查询开关、模式、温度、风速和扫风状态
 - 控制开关、模式、目标温度、风速、扫风、灯光、静音和强力模式
-- Bearer Token / `X-API-Token` 鉴权
+- Web/H5 家庭访问密码登录，使用安全 Cookie 保持登录 30 天
+- Bearer Token / `X-API-Token` 鉴权继续供自动化 API 调用
 - Swagger API 文档：`http://192.168.0.146:8765/docs`
+- Web 控制台：`https://home.gezhixin.cn:4430`
 
 ## 安装
 
@@ -22,6 +24,10 @@ cp config.example.env .env
 
 编辑 `.env`，设置随机 API Token。空调必须已通过格力+或对应厂商 App
 接入与服务器相同的 Wi-Fi 网络。
+
+建议同时设置 `GREE_WEB_PASSWORD` 作为网页端更易输入的家庭访问密码，并设置独立随机
+`GREE_SESSION_SECRET`。如果没有设置 `GREE_WEB_PASSWORD`，网页首次登录会兼容使用
+`GREE_API_TOKEN`，成功后由 HttpOnly Cookie 保持登录 30 天，浏览器不再保存 Token。
 
 ```bash
 sudo cp systemd/gree-ac-control.service /etc/systemd/system/
@@ -51,4 +57,3 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 - `horizontal_swing`: `default`、`full`、`left`、`left_center`、`center`、`right_center`、`right`
 
 首次联调建议只调用设备列表接口。确认状态读取正确后，再发送控制命令。
-

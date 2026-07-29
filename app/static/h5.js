@@ -1,5 +1,6 @@
 const model = {
-  token: sessionStorage.getItem("greeApiToken") || "",
+  authenticated: false,
+  legacyToken: sessionStorage.getItem("greeApiToken") || "",
   devices: [],
   schedules: [],
   selectedId: null,
@@ -10,6 +11,7 @@ const model = {
 const el = (selector) => document.querySelector(selector);
 const statusLine = el("#statusLine");
 const authDialog = el("#authDialog");
+const logoutButton = el("#logoutButton");
 const toast = el("#toast");
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -51,17 +53,32 @@ const horizontalLabels = {
 };
 
 function requestHeaders(json = false) {
-  const headers = { Authorization: `Bearer ${model.token}` };
+  const headers = {};
   if (json) headers["Content-Type"] = "application/json";
   return headers;
 }
 
+function updateAuthControls() {
+  logoutButton.hidden = !model.authenticated;
+}
+
+function openAuthDialog() {
+  el("#passwordInput").value = "";
+  el("#authError").textContent = "";
+  updateAuthControls();
+  if (!authDialog.open) authDialog.showModal();
+}
+
 async function api(path, options = {}) {
-  const response = await fetch(path, options);
+  const response = await fetch(path, { credentials: "same-origin", ...options });
   if (response.status === 401) {
-    setStatus("需要安全认证", "error");
-    authDialog.showModal();
-    throw new Error("API Token 无效");
+    const body = await response.json().catch(() => ({}));
+    model.authenticated = false;
+    setStatus("需要登录", "error");
+    openAuthDialog();
+    const error = new Error(body.detail || "请先登录清风家庭");
+    error.isAuthError = true;
+    throw error;
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -92,16 +109,14 @@ function ensureDraft(device) {
 }
 
 async function loadAll(refresh = true) {
-  if (!model.token) {
-    authDialog.showModal();
-    return;
-  }
   setStatus("正在同步空调状态", "");
   try {
     const [devices, schedules] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
       api("/api/schedules", { headers: requestHeaders() }),
     ]);
+    model.authenticated = true;
+    updateAuthControls();
     model.devices = devices;
     model.schedules = schedules;
     devices.forEach(ensureDraft);
@@ -111,7 +126,7 @@ async function loadAll(refresh = true) {
     render();
     setStatus(`${devices.length} 台空调本地在线`, "online");
   } catch (error) {
-    if (error.message !== "API Token 无效") {
+    if (!error.isAuthError) {
       setStatus("连接失败", "error");
       showToast(error.message);
     }
@@ -486,24 +501,54 @@ async function removeSchedule(id) {
 }
 
 el("#syncButton").addEventListener("click", () => loadAll(true));
-el("#authButton").addEventListener("click", () => {
-  el("#tokenInput").value = model.token;
-  el("#authError").textContent = "";
-  authDialog.showModal();
-});
+el("#authButton").addEventListener("click", openAuthDialog);
 el("#closeDialog").addEventListener("click", () => authDialog.close());
 el("#authForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  model.token = el("#tokenInput").value.trim();
+  const password = el("#passwordInput").value;
   try {
-    await api("/api/devices?refresh=false", { headers: requestHeaders() });
-    sessionStorage.setItem("greeApiToken", model.token);
+    await api("/api/auth/login", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({ password }),
+    });
+    model.authenticated = true;
+    model.legacyToken = "";
+    sessionStorage.removeItem("greeApiToken");
     authDialog.close();
     await loadAll(true);
   } catch (error) {
     el("#authError").textContent = error.message;
   }
 });
+logoutButton.addEventListener("click", async () => {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } finally {
+    model.authenticated = false;
+    sessionStorage.removeItem("greeApiToken");
+    location.reload();
+  }
+});
+
+async function bootstrap() {
+  if (model.legacyToken) {
+    const legacyToken = model.legacyToken;
+    model.legacyToken = "";
+    sessionStorage.removeItem("greeApiToken");
+    try {
+      await api("/api/auth/login", {
+        method: "POST",
+        headers: requestHeaders(true),
+        body: JSON.stringify({ password: legacyToken }),
+      });
+      model.authenticated = true;
+    } catch {
+      model.authenticated = false;
+    }
+  }
+  await loadAll(true);
+}
 
 function showToast(message) {
   toast.textContent = message;
@@ -522,7 +567,7 @@ el("#today").textContent = new Date().toLocaleDateString("zh-CN", {
   month: "long", day: "numeric", weekday: "long",
 });
 setMinimumScheduleTime();
-loadAll(true);
+bootstrap();
 setInterval(() => {
-  if (model.token && !document.hidden) loadAll(true);
+  if (model.authenticated && !document.hidden) loadAll(true);
 }, 60_000);

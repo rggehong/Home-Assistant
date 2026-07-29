@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import json
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from enum import Enum, IntEnum
@@ -12,7 +15,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -117,6 +120,10 @@ class ScheduleCreate(BaseModel):
     action: Literal["on", "off"]
     run_at: datetime
     label: str | None = Field(default=None, max_length=60)
+
+
+class LoginRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=256)
 
 
 def _enum_name(enum_type: type[IntEnum], value: Any) -> str | None:
@@ -401,19 +408,85 @@ class ScheduleStore:
 
 schedules = ScheduleStore()
 
+SESSION_COOKIE = "gree_home_session"
+SESSION_MAX_AGE = 30 * 24 * 60 * 60
+LOGIN_WINDOW = 15 * 60
+LOGIN_MAX_FAILURES = 8
+login_failures: dict[str, list[float]] = {}
+
+
+def _api_token() -> str:
+    value = os.getenv("GREE_API_TOKEN")
+    if not value:
+        raise HTTPException(status_code=503, detail="GREE_API_TOKEN is not configured")
+    return value
+
+
+def _login_password() -> str:
+    return os.getenv("GREE_WEB_PASSWORD") or _api_token()
+
+
+def _session_secret() -> str:
+    return os.getenv("GREE_SESSION_SECRET") or _api_token()
+
+
+def _session_value(expires_at: int) -> str:
+    payload = f"v1:{expires_at}"
+    signature = hmac.new(
+        _session_secret().encode("utf-8"),
+        payload.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return f"{payload}:{signature}"
+
+
+def _valid_session(value: str | None) -> bool:
+    if not value:
+        return False
+    try:
+        version, expires_text, supplied_signature = value.split(":", 2)
+        expires_at = int(expires_text)
+    except (TypeError, ValueError):
+        return False
+    if version != "v1" or expires_at < int(time.time()):
+        return False
+    expected_signature = _session_value(expires_at).rsplit(":", 1)[1]
+    return hmac.compare_digest(supplied_signature, expected_signature)
+
+
+def _secure_cookie(request: Request) -> bool:
+    forwarded_proto = request.headers.get("x-forwarded-proto", "")
+    return request.url.scheme == "https" or forwarded_proto.lower() == "https"
+
+
+def _client_address(request: Request) -> str:
+    direct = request.client.host if request.client else "unknown"
+    if direct in {"127.0.0.1", "::1"}:
+        forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+        if forwarded:
+            return forwarded
+    return direct
+
+
+def _same_secret(left: str, right: str) -> bool:
+    return hmac.compare_digest(left.encode("utf-8"), right.encode("utf-8"))
+
 
 def require_token(
+    request: Request,
     authorization: str | None = Header(default=None),
     x_api_token: str | None = Header(default=None),
+    gree_home_session: str | None = Cookie(default=None),
 ) -> None:
-    expected = os.getenv("GREE_API_TOKEN")
-    if not expected:
-        raise HTTPException(status_code=503, detail="GREE_API_TOKEN is not configured")
+    expected = _api_token()
     supplied = x_api_token
     if authorization and authorization.lower().startswith("bearer "):
         supplied = authorization[7:]
-    if supplied != expected:
-        raise HTTPException(status_code=401, detail="invalid API token")
+    if supplied and _same_secret(supplied, expected):
+        return
+    if _valid_session(gree_home_session):
+        return
+    raise HTTPException(status_code=401, detail="authentication required")
 
 
 @asynccontextmanager
@@ -462,12 +535,75 @@ async def h5_dashboard() -> FileResponse:
 
 @app.get("/desktop", include_in_schema=False)
 async def desktop_dashboard() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(
+        STATIC_DIR / "index.html",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
 
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
     return {"ok": True, "device_count": len(registry.devices)}
+
+
+@app.post("/api/auth/login")
+async def login(payload: LoginRequest, request: Request, response: Response) -> dict[str, Any]:
+    address = _client_address(request)
+    now = time.monotonic()
+    attempts = [
+        attempted_at
+        for attempted_at in login_failures.get(address, [])
+        if now - attempted_at < LOGIN_WINDOW
+    ]
+    if len(attempts) >= LOGIN_MAX_FAILURES:
+        raise HTTPException(
+            status_code=429,
+            detail="尝试次数过多，请稍后再试",
+            headers={"Retry-After": str(LOGIN_WINDOW)},
+        )
+
+    if not _same_secret(payload.password, _login_password()):
+        attempts.append(now)
+        login_failures[address] = attempts
+        await asyncio.sleep(0.35)
+        raise HTTPException(status_code=401, detail="家庭访问密码错误")
+
+    login_failures.pop(address, None)
+    expires_at = int(time.time()) + SESSION_MAX_AGE
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=_session_value(expires_at),
+        max_age=SESSION_MAX_AGE,
+        path="/",
+        secure=_secure_cookie(request),
+        httponly=True,
+        samesite="strict",
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "authenticated": True,
+        "expires_at": datetime.fromtimestamp(expires_at, timezone.utc).isoformat(),
+    }
+
+
+@app.get("/api/auth/status")
+async def auth_status(
+    gree_home_session: str | None = Cookie(default=None),
+) -> dict[str, bool]:
+    return {"authenticated": _valid_session(gree_home_session)}
+
+
+@app.post("/api/auth/logout")
+async def logout(request: Request, response: Response) -> dict[str, bool]:
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        path="/",
+        secure=_secure_cookie(request),
+        httponly=True,
+        samesite="strict",
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {"authenticated": False}
 
 
 @app.get("/api/devices", dependencies=[Depends(require_token)])
