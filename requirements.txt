@@ -1,0 +1,4 @@
+fastapi==0.116.1
+greeclimate==3.2.0
+uvicorn[standard]==0.35.0
+

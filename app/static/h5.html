@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#eef3ec">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>清风 H5 · 家庭空调</title>
+    <link rel="stylesheet" href="/static/h5.css?v=6">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="mobile-header">
+        <div>
+          <p id="today">家庭气候</p>
+          <h1>清风</h1>
+        </div>
+        <div class="header-actions">
+          <button id="syncButton" class="round-button" aria-label="刷新">↻</button>
+          <button id="authButton" class="avatar-button" aria-label="设置访问令牌">钥</button>
+        </div>
+      </header>
+
+      <div class="status-line" id="statusLine"><i></i><span>正在连接本地空调</span></div>
+      <nav class="room-tabs" id="roomTabs" aria-label="选择房间"></nav>
+
+      <section id="controlView">
+        <article class="climate-card" id="climateCard">
+          <div class="card-topline">
+            <div>
+              <span class="micro-label">当前房间</span>
+              <h2 id="roomName">—</h2>
+            </div>
+            <button id="powerButton" class="power-button" aria-label="开关空调">◉</button>
+          </div>
+
+          <div class="thermostat">
+            <div
+              class="temperature-ring"
+              id="temperatureRing"
+              role="slider"
+              tabindex="0"
+              aria-label="设定温度，沿圆环拖动调整"
+              aria-valuemin="16"
+              aria-valuemax="30"
+              aria-valuestep="0.5"
+              aria-valuenow="26"
+            >
+              <div class="ring-inner">
+                <span class="micro-label">设定温度 · 拖动调节</span>
+                <div><strong id="targetTemperature">—</strong><sup>°C</sup></div>
+                <span class="room-temperature" id="roomTemperature">室温 —</span>
+              </div>
+              <span class="dial-handle" id="dialHandle" aria-hidden="true"></span>
+            </div>
+            <button id="tempDown" class="temp-button" aria-label="降低温度">−</button>
+            <button id="tempUp" class="temp-button" aria-label="升高温度">＋</button>
+          </div>
+
+          <div class="mode-strip" id="modeStrip">
+            <button data-mode="auto">自动</button>
+            <button data-mode="cool">制冷</button>
+            <button data-mode="dry">除湿</button>
+            <button data-mode="fan">送风</button>
+            <button data-mode="heat">制热</button>
+          </div>
+        </article>
+
+        <section class="control-panel">
+          <div class="section-title">
+            <div><span class="micro-label">精细调节</span><h3>风向与舒适模式</h3></div>
+            <span id="deviceIp">—</span>
+          </div>
+
+          <div class="select-grid">
+            <label>
+              <span>风速</span>
+              <select id="fanSelect">
+                <option value="auto">自动风</option>
+                <option value="low">低风</option>
+                <option value="medium_low">中低风</option>
+                <option value="medium">中风</option>
+                <option value="medium_high">中高风</option>
+                <option value="high">高风</option>
+              </select>
+            </label>
+            <label>
+              <span>上下风向</span>
+              <select id="verticalSelect"></select>
+            </label>
+            <label id="horizontalField">
+              <span>左右风向</span>
+              <select id="horizontalSelect"></select>
+            </label>
+          </div>
+
+          <div class="switch-grid">
+            <label class="switch-card">
+              <span><strong>睡眠模式</strong><small>夜间柔和运行</small></span>
+              <input type="checkbox" id="sleepSwitch"><i></i>
+            </label>
+            <label class="switch-card">
+              <span><strong>面板灯</strong><small>空调显示灯光</small></span>
+              <input type="checkbox" id="lightSwitch"><i></i>
+            </label>
+            <label class="switch-card">
+              <span><strong>静音</strong><small>降低运行噪声</small></span>
+              <input type="checkbox" id="quietSwitch"><i></i>
+            </label>
+            <label class="switch-card" id="lowerOutletCard" hidden>
+              <span><strong>下出风</strong><small>独立下部出风口</small></span>
+              <input type="checkbox" id="lowerOutletSwitch"><i></i>
+            </label>
+          </div>
+
+          <p class="instant-note"><i></i>所有调节都会立即生效</p>
+        </section>
+      </section>
+
+      <section class="schedule-panel" id="scheduleView">
+        <div class="section-title">
+          <div><span class="micro-label">自动执行</span><h3>定时开关机</h3></div>
+          <span>服务器执行</span>
+        </div>
+        <form id="scheduleForm">
+          <div class="schedule-fields">
+            <label>
+              <span>执行操作</span>
+              <select id="scheduleAction">
+                <option value="off">定时关机</option>
+                <option value="on">定时开机</option>
+              </select>
+            </label>
+            <label>
+              <span>执行时间</span>
+              <input id="scheduleTime" type="datetime-local" required>
+            </label>
+          </div>
+          <button class="secondary-button" type="submit">添加定时任务</button>
+        </form>
+        <div class="schedule-list" id="scheduleList"></div>
+      </section>
+
+      <nav class="view-nav" aria-label="页面功能">
+        <button class="active" data-view="control">空调控制</button>
+        <button data-view="schedule">定时任务</button>
+      </nav>
+    </main>
+
+    <dialog id="authDialog">
+      <form id="authForm">
+        <button type="button" class="dialog-close" id="closeDialog">×</button>
+        <span class="micro-label">安全访问</span>
+        <h3>连接家庭空调</h3>
+        <p>输入服务器 API Token，仅在当前浏览器会话中保存。</p>
+        <input id="tokenInput" type="password" autocomplete="off" placeholder="API Token" required>
+        <button class="primary-button" type="submit">安全连接</button>
+        <p class="error-text" id="authError"></p>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="/static/h5.js?v=6" defer></script>
+  </body>
+</html>

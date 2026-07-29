@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#18201c">
+    <title>清风 · 家庭空调</title>
+    <meta name="description" content="格力空调局域网控制台">
+    <link rel="stylesheet" href="/static/styles.css?v=5">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">风</span>
+          <div>
+            <p class="eyebrow">LOCAL HOME CLIMATE</p>
+            <h1>清风</h1>
+          </div>
+        </div>
+        <div class="top-actions">
+          <a class="profile-button mobile-link" href="/h5" aria-label="打开手机版">手</a>
+          <span class="connection" id="connection">
+            <i></i><span>正在连接</span>
+          </span>
+          <button class="icon-button" id="refreshButton" aria-label="刷新设备">↻</button>
+          <button class="profile-button" id="tokenButton" aria-label="设置访问令牌">钥</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">全屋舒适度</p>
+          <h2>让每个房间，<br><em>恰到好处。</em></h2>
+        </div>
+        <div class="summary">
+          <div><strong id="onlineCount">—</strong><span>在线设备</span></div>
+          <div><strong id="runningCount">—</strong><span>正在运行</span></div>
+          <div><strong id="averageTemp">—</strong><span>平均室温</span></div>
+        </div>
+      </section>
+
+      <section class="section-heading">
+        <div>
+          <p class="eyebrow">ROOMS</p>
+          <h3>房间空调</h3>
+        </div>
+        <p id="lastUpdated">等待首次同步</p>
+      </section>
+
+      <div class="workspace">
+        <section class="device-grid" id="deviceGrid" aria-live="polite">
+          <article class="skeleton-card"></article>
+          <article class="skeleton-card"></article>
+          <article class="skeleton-card"></article>
+        </section>
+
+        <section class="desktop-schedules">
+        <div class="section-heading schedule-heading">
+          <div>
+            <p class="eyebrow">AUTOMATION</p>
+            <h3>定时开关机</h3>
+          </div>
+          <p>任务由 146 服务器持久化执行</p>
+        </div>
+        <form class="schedule-form" id="scheduleForm">
+          <label>
+            <span>房间</span>
+            <select id="scheduleRoom"></select>
+          </label>
+          <label>
+            <span>操作</span>
+            <select id="scheduleAction">
+              <option value="off">定时关机</option>
+              <option value="on">定时开机</option>
+            </select>
+          </label>
+          <label>
+            <span>执行时间</span>
+            <input id="scheduleTime" type="datetime-local" required>
+          </label>
+          <button class="schedule-submit" type="submit">添加任务</button>
+        </form>
+        <div class="desktop-schedule-list" id="scheduleList"></div>
+        </section>
+      </div>
+
+      <footer>
+        <span>本地连接 · 数据不经过云端</span>
+        <span>Gree LAN Bridge</span>
+      </footer>
+    </main>
+
+    <dialog id="tokenDialog">
+      <form method="dialog" id="tokenForm">
+        <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+        <p class="eyebrow">SECURE ACCESS</p>
+        <h3>连接家庭空调</h3>
+        <p>请输入服务器生成的 API Token。它仅保存在当前浏览器会话中；所有调节会立即生效。</p>
+        <label for="tokenInput">API Token</label>
+        <input id="tokenInput" type="password" autocomplete="off" placeholder="粘贴 64 位 Token" required>
+        <div class="dialog-actions">
+          <button class="secondary" value="cancel">取消</button>
+          <button class="primary" value="default" id="saveToken">连接</button>
+        </div>
+        <p class="dialog-error" id="dialogError"></p>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="/static/app.js?v=5" defer></script>
+  </body>
+</html>

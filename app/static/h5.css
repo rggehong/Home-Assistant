@@ -1,0 +1,492 @@
+:root {
+  color-scheme: light;
+  --page: #eef3ec;
+  --card: #fbfcf8;
+  --ink: #1d2821;
+  --muted: #7a877d;
+  --line: #dfe7df;
+  --green: #2f6d4b;
+  --green-soft: #d9eadc;
+  --lime: #bde3b7;
+  --shadow: 0 18px 50px rgba(38, 68, 48, .09);
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--page); }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 100% 0, rgba(184, 222, 178, .42), transparent 25rem),
+    var(--page);
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, select { font: inherit; }
+button { color: inherit; }
+
+.app-shell {
+  width: min(100%, 620px);
+  min-height: 100vh;
+  margin: auto;
+  padding: max(18px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+
+.mobile-header, .header-actions, .status-line, .room-tabs, .card-topline,
+.thermostat, .mode-strip, .section-title, .switch-card, .schedule-fields,
+.safe-footer {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-header { justify-content: space-between; padding: 4px 2px 14px; }
+.mobile-header p { margin: 0 0 3px; color: var(--muted); font-size: 11px; }
+.mobile-header h1 { margin: 0; font-family: "Songti SC", Georgia, serif; font-size: 30px; font-weight: 500; }
+.header-actions { gap: 9px; }
+.round-button, .avatar-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(54, 93, 66, .12);
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  box-shadow: 0 7px 20px rgba(44,70,52,.06);
+}
+.round-button { font-size: 22px; }
+.avatar-button { color: white; border: 0; background: var(--green); font-family: serif; }
+
+.status-line { gap: 7px; margin: 3px 3px 18px; color: var(--muted); font-size: 11px; }
+.status-line i { width: 7px; height: 7px; border-radius: 50%; background: #daa966; }
+.status-line.online i { background: #68b87d; box-shadow: 0 0 8px #68b87d; }
+.status-line.error i { background: #d96c5e; }
+
+.room-tabs {
+  gap: 9px;
+  overflow-x: auto;
+  padding: 0 1px 14px;
+  scrollbar-width: none;
+}
+.room-tabs::-webkit-scrollbar { display: none; }
+.room-tabs button {
+  flex: 0 0 auto;
+  padding: 10px 18px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.45);
+}
+.room-tabs button.active { color: white; border-color: var(--green); background: var(--green); }
+
+.climate-card {
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 30px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.85), rgba(244,249,242,.76));
+  box-shadow: var(--shadow);
+}
+.climate-card.is-off { filter: saturate(.7); }
+.climate-card.is-busy { opacity: .65; pointer-events: none; }
+.card-topline { justify-content: space-between; }
+.micro-label { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.card-topline h2 { margin: 4px 0 0; font-size: 22px; }
+.power-button {
+  width: 50px;
+  height: 50px;
+  border: 0;
+  border-radius: 50%;
+  color: #62806d;
+  background: var(--green-soft);
+  font-size: 21px;
+}
+.climate-card:not(.is-off) .power-button { color: white; background: var(--green); box-shadow: 0 8px 24px rgba(47,109,75,.24); }
+
+.thermostat { position: relative; justify-content: center; padding: 22px 0 18px; }
+.temperature-ring {
+  --dial-fill: 192deg;
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: 210px;
+  height: 210px;
+  padding: 11px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 225deg,
+    var(--green) 0deg var(--dial-fill),
+    #dfe8df var(--dial-fill) 270deg,
+    transparent 270deg 360deg
+  );
+  box-shadow: 0 14px 45px rgba(64, 101, 73, .13);
+  cursor: grab;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.temperature-ring:hover {
+  box-shadow: 0 16px 48px rgba(47, 109, 75, .18);
+}
+.temperature-ring:focus-visible {
+  box-shadow: 0 0 0 4px rgba(47, 109, 75, .18), 0 16px 48px rgba(47, 109, 75, .16);
+}
+.temperature-ring.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.018);
+}
+.ring-inner {
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border: 9px solid rgba(255,255,255,.76);
+  border-radius: 50%;
+  background: #f9fcf7;
+}
+.ring-inner div { display: flex; align-items: flex-start; margin: 4px 0; }
+.ring-inner strong { font-family: Georgia, serif; font-size: 72px; font-weight: 400; line-height: 1; letter-spacing: -.08em; }
+.ring-inner sup { margin: 8px 0 0 5px; color: var(--green); font-size: 14px; }
+.room-temperature { color: var(--muted); font-size: 11px; }
+.dial-handle {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 8%;
+  width: 20px;
+  height: 20px;
+  border: 4px solid white;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 3px 10px rgba(28, 71, 46, .3);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.temp-button {
+  position: absolute;
+  bottom: 28px;
+  width: 43px;
+  height: 43px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 7px 20px rgba(46, 75, 55, .1);
+  font-size: 22px;
+}
+#tempDown { left: 4px; }
+#tempUp { right: 4px; }
+
+.mode-strip {
+  gap: 6px;
+  padding: 5px;
+  border-radius: 16px;
+  background: #edf2eb;
+  overflow-x: auto;
+}
+.mode-strip button {
+  flex: 1 0 auto;
+  min-width: 54px;
+  padding: 9px 6px;
+  color: var(--muted);
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 11px;
+}
+.mode-strip button.active { color: var(--green); background: white; box-shadow: 0 4px 14px rgba(39, 76, 49, .08); font-weight: 700; }
+
+.control-panel, .schedule-panel {
+  margin-top: 14px;
+  padding: 21px;
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 25px;
+  background: rgba(251,252,248,.78);
+  box-shadow: 0 12px 40px rgba(45, 70, 51, .06);
+}
+.section-title { justify-content: space-between; margin-bottom: 17px; }
+.section-title h3 { margin: 4px 0 0; font-size: 18px; }
+.section-title > span { color: var(--muted); font-size: 10px; }
+
+.select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.select-grid label:first-child { grid-column: 1 / -1; }
+.select-grid label, .schedule-fields label { display: grid; gap: 6px; }
+.select-grid label > span, .schedule-fields label > span { color: var(--muted); font-size: 10px; }
+select, input[type="datetime-local"] {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #f6f9f4;
+  outline: none;
+}
+
+.switch-grid { display: grid; gap: 8px; margin-top: 14px; }
+.switch-card {
+  justify-content: space-between;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255,255,255,.58);
+}
+.switch-card span { display: grid; gap: 2px; }
+.switch-card strong { font-size: 13px; }
+.switch-card small { color: var(--muted); font-size: 9px; }
+.switch-card input { position: absolute; opacity: 0; pointer-events: none; }
+.switch-card i {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #d9dfda;
+  transition: .2s ease;
+}
+.switch-card i::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,.12);
+  transition: .2s ease;
+}
+.switch-card input:checked + i { background: var(--green); }
+.switch-card input:checked + i::after { transform: translateX(18px); }
+
+.primary-button, .secondary-button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 15px;
+  font-weight: 700;
+}
+.primary-button { margin-top: 16px; color: white; border: 0; background: var(--green); box-shadow: 0 10px 24px rgba(47,109,75,.18); }
+.secondary-button { margin-top: 13px; color: var(--green); border: 1px solid #bcd2c1; background: var(--green-soft); }
+.instant-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+.instant-note i { width: 6px; height: 6px; border-radius: 50%; background: #68b87d; }
+
+.schedule-fields { align-items: end; gap: 9px; }
+.schedule-fields label:first-child { flex: 0 0 37%; }
+.schedule-fields label:last-child { flex: 1; min-width: 0; }
+.schedule-list { display: grid; gap: 8px; margin-top: 15px; }
+.schedule-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+}
+.schedule-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--green-soft);
+  font-size: 12px;
+}
+.schedule-item strong { display: block; font-size: 12px; }
+.schedule-item small { color: var(--muted); font-size: 9px; }
+.schedule-item button { border: 0; background: transparent; color: #a77a70; font-size: 18px; }
+.schedule-empty { padding: 15px; color: var(--muted); text-align: center; font-size: 11px; }
+
+.safe-footer { justify-content: space-between; padding: 25px 4px 10px; color: var(--muted); font-size: 9px; }
+
+dialog {
+  width: min(420px, calc(100% - 30px));
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 30px 90px rgba(31,53,37,.32);
+}
+dialog::backdrop { background: rgba(24,38,28,.55); backdrop-filter: blur(5px); }
+dialog form { position: relative; padding: 28px 23px 23px; }
+dialog h3 { margin: 7px 0; font-size: 23px; }
+dialog p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+dialog input[type="password"] {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #f2f6f0;
+  outline: none;
+}
+.dialog-close { position: absolute; right: 16px; top: 12px; border: 0; background: transparent; color: var(--muted); font-size: 24px; }
+.error-text { min-height: 17px; color: #b95f52; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 20;
+  max-width: calc(100% - 32px);
+  padding: 11px 17px;
+  color: white;
+  border-radius: 12px;
+  background: #25342a;
+  box-shadow: 0 12px 35px rgba(0,0,0,.22);
+  opacity: 0;
+  transform: translate(-50%, 18px);
+  pointer-events: none;
+  transition: .2s ease;
+  font-size: 12px;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (min-width: 560px) {
+  .app-shell { padding-left: 26px; padding-right: 26px; }
+  .select-grid label:first-child { grid-column: auto; }
+  .select-grid { grid-template-columns: repeat(3, 1fr); }
+  .switch-grid { grid-template-columns: repeat(3, 1fr); }
+  .switch-card { display: grid; gap: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Single-screen app layout */
+html, body { height: 100%; overflow: hidden; }
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.mobile-header, .status-line, .room-tabs, .view-nav { flex: 0 0 auto; }
+#controlView {
+  display: grid;
+  grid-template-rows: minmax(0, 1.08fr) minmax(0, .92fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 10px;
+}
+.climate-card, .control-panel { min-height: 0; }
+.climate-card {
+  display: flex;
+  flex-direction: column;
+  padding: 15px 17px;
+  overflow: hidden;
+}
+.card-topline, .mode-strip { flex: 0 0 auto; }
+.thermostat {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 7px 0 5px;
+}
+.temperature-ring { width: 154px; height: 154px; }
+.ring-inner { border-width: 6px; }
+.ring-inner strong { font-size: 54px; }
+.ring-inner sup { margin-top: 5px; }
+.temp-button { width: 37px; height: 37px; bottom: 14px; }
+.mode-strip {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  transform: none;
+}
+.mode-strip button { padding: 7px 5px; }
+.control-panel {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+.control-panel .section-title { margin-bottom: 9px; }
+.control-panel .section-title h3 { font-size: 15px; }
+.select-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.select-grid label:first-child { grid-column: auto; }
+.select-grid select { padding: 8px 5px; font-size: 10px; }
+.switch-grid { grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 9px; }
+.switch-card { padding: 8px 10px; }
+.switch-card strong { font-size: 11px; }
+.switch-card small { display: none; }
+.instant-note { margin-top: 8px; }
+
+#scheduleView {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+}
+body[data-view="schedule"] #controlView { display: none; }
+body[data-view="schedule"] #scheduleView { display: block; }
+.schedule-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 5px;
+  scrollbar-width: none;
+}
+.schedule-list::-webkit-scrollbar { display: none; }
+.schedule-item { flex: 0 0 230px; }
+.schedule-empty { width: 100%; }
+.view-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding-top: 9px;
+}
+.view-nav button {
+  padding: 10px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255,255,255,.58);
+  font-size: 11px;
+}
+.view-nav button.active { color: white; border-color: var(--green); background: var(--green); }
+
+@media (max-height: 900px) {
+  .app-shell { padding-top: 10px; padding-bottom: 10px; }
+  .mobile-header { padding-bottom: 6px; }
+  .mobile-header h1 { font-size: 26px; }
+  .round-button, .avatar-button { width: 38px; height: 38px; }
+  .status-line { margin-bottom: 10px; }
+  .room-tabs { padding-bottom: 8px; }
+  .room-tabs button { padding: 8px 16px; }
+  .temperature-ring { width: 142px; height: 142px; }
+  .ring-inner strong { font-size: 49px; }
+  .card-topline h2 { font-size: 19px; }
+}
+
+@media (max-height: 720px) {
+  .app-shell { padding-top: 10px; padding-bottom: 10px; }
+  .mobile-header { padding-bottom: 5px; }
+  .mobile-header h1 { font-size: 24px; }
+  .round-button, .avatar-button { width: 35px; height: 35px; }
+  .status-line { margin-bottom: 8px; }
+  .room-tabs { padding-bottom: 7px; }
+  .room-tabs button { padding: 7px 14px; }
+  .temperature-ring { width: 124px; height: 124px; }
+  .ring-inner strong { font-size: 43px; }
+  .room-temperature { font-size: 9px; }
+  .mode-strip button { padding: 5px 3px; }
+  .card-topline h2 { font-size: 17px; }
+  .control-panel .section-title { display: none; }
+  .select-grid select { padding: 6px 4px; }
+  .switch-card { padding: 6px 8px; }
+  .instant-note { margin-top: 5px; }
+  .view-nav { padding-top: 5px; }
+  .view-nav button { padding: 7px; }
+}

@@ -1,0 +1,17 @@
+[Unit]
+Description=Gree air-conditioner LAN bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gree-ac-control
+EnvironmentFile=/opt/gree-ac-control/.env
+ExecStart=/opt/gree-ac-control/.venv/bin/python /opt/gree-ac-control/run.py
+Restart=on-failure
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+
