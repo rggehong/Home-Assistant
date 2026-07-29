@@ -93,6 +93,7 @@ ROOMS = {
         "lower_outlet": False,
     },
 }
+ROOM_ORDER = {"客厅": 0, "主卧": 1, "次卧": 2}
 
 
 class Command(BaseModel):
@@ -191,6 +192,16 @@ def _serialize(device: Device) -> dict[str, Any]:
     }
 
 
+def _sort_devices(devices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        devices,
+        key=lambda item: (
+            ROOM_ORDER.get(item.get("room", ""), len(ROOM_ORDER)),
+            item.get("ip", ""),
+        ),
+    )
+
+
 async def _update_device_state(device: Device) -> None:
     await device.update_state()
     if ROOMS.get(device.device_info.ip, {}).get("lower_outlet", False):
@@ -212,6 +223,10 @@ class Registry:
         self.discovery_seconds = int(os.getenv("GREE_DISCOVERY_SECONDS", "5"))
         self.devices: dict[str, Device] = {}
         self.lock = asyncio.Lock()
+
+    def missing_target_ips(self) -> set[str]:
+        discovered_ips = {device.device_info.ip for device in self.devices.values()}
+        return self.target_ips - discovered_ips
 
     async def discover(self) -> list[dict[str, Any]]:
         async with self.lock:
@@ -238,7 +253,9 @@ class Registry:
                     # a stored key or uses an unsupported cipher generation.
                     pass
                 self.devices[_device_id(device)] = device
-            return [_serialize(device) for device in self.devices.values()]
+            return _sort_devices(
+                [_serialize(device) for device in self.devices.values()]
+            )
 
     async def refresh(self, device_id: str | None = None) -> list[dict[str, Any]]:
         async with self.lock:
@@ -256,7 +273,7 @@ class Registry:
                     result.append({**_serialize(device), "error": str(exc)})
                 else:
                     result.append(_serialize(device))
-            return result
+            return _sort_devices(result)
 
     async def command(self, device_id: str, command: Command) -> dict[str, Any]:
         async with self.lock:
@@ -497,13 +514,24 @@ async def lifespan(_: FastAPI):
         # Service remains healthy so discovery can be retried explicitly.
         pass
     schedule_task = asyncio.create_task(schedules.run())
+    discovery_task = asyncio.create_task(maintain_discovery())
     try:
         yield
     finally:
         schedule_task.cancel()
+        discovery_task.cancel()
+        await asyncio.gather(schedule_task, discovery_task, return_exceptions=True)
+
+
+async def maintain_discovery() -> None:
+    while True:
+        await asyncio.sleep(max(30, registry.discovery_seconds * 6))
+        if not registry.missing_target_ips():
+            continue
         try:
-            await schedule_task
-        except asyncio.CancelledError:
+            await registry.discover()
+        except Exception:
+            # A later cycle or an authenticated page refresh will retry.
             pass
 
 
@@ -611,8 +639,16 @@ async def devices(refresh: bool = True) -> list[dict[str, Any]]:
     if not registry.devices:
         return await registry.discover()
     if refresh:
-        return await registry.refresh()
-    return [_serialize(device) for device in registry.devices.values()]
+        refreshed = await registry.refresh()
+        if registry.missing_target_ips():
+            try:
+                return await registry.discover()
+            except Exception:
+                return refreshed
+        return refreshed
+    return _sort_devices(
+        [_serialize(device) for device in registry.devices.values()]
+    )
 
 
 @app.post("/api/discover", dependencies=[Depends(require_token)])
