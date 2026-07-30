@@ -624,6 +624,49 @@ body[data-view="water-heater"] #waterHeaterView { display: grid; }
   background: #e9ddcf;
   opacity: 1;
 }
+.cloud-auth-dialog {
+  position: relative;
+  padding: 28px 23px 23px;
+}
+.cloud-auth-device {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 15px 0;
+}
+.cloud-auth-device span {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f4f7f2;
+}
+.cloud-auth-device small { color: var(--muted); font-size: 9px; }
+.cloud-auth-device strong { color: var(--green); font-size: 12px; }
+.cloud-auth-requirements {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid #e3d7c8;
+  border-radius: 15px;
+  background: #fbf6ef;
+  font-size: 11px;
+}
+.cloud-auth-requirements strong { color: #795436; }
+.cloud-auth-requirements span::before {
+  content: "✓";
+  margin-right: 7px;
+  color: var(--green);
+}
+.cloud-auth-link {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  text-decoration: none;
+}
+.cloud-auth-note { margin: 11px 0 0; text-align: center; font-size: 10px; }
 body[data-view="purifier"] #controlView { display: none; }
 body[data-view="purifier"] .room-tabs { display: none; }
 body[data-view="purifier"] .status-line { display: none; }

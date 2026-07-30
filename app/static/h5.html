@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=28">
+    <link rel="stylesheet" href="/static/h5.css?v=29">
   </head>
   <body>
     <main class="app-shell">
@@ -277,7 +277,7 @@
             <div><span>控制授权</span><strong id="waterHeaterCloudStatus">等待授权</strong></div>
           </div>
           <p class="water-heater-notice" id="waterHeaterNotice">正在识别设备的可用控制方式。</p>
-          <button class="aupu-setup-button water-heater-auth" type="button" disabled>等待华为云授权</button>
+          <button class="aupu-setup-button water-heater-auth" id="waterHeaterAuthButton" type="button">配置云授权</button>
         </article>
       </section>
 
@@ -472,6 +472,27 @@
       </form>
     </dialog>
 
+    <dialog id="waterHeaterAuthDialog">
+      <div class="cloud-auth-dialog">
+        <button type="button" class="dialog-close" id="closeWaterHeaterAuthDialog" aria-label="关闭">×</button>
+        <span class="micro-label">HUAWEI SMART SPACE</span>
+        <h3>配置热水器云授权</h3>
+        <p>设备已在局域网在线，但华为智慧生活不向普通家庭账号开放网页端设备令牌。请勿在这里输入华为账号密码。</p>
+        <div class="cloud-auth-device">
+          <span><small>设备</small><strong>JSQ31-VJSAi</strong></span>
+          <span><small>地址</small><strong>192.168.0.108</strong></span>
+        </div>
+        <div class="cloud-auth-requirements">
+          <strong>完成接入需要</strong>
+          <span>华为云云对接 AK / SK</span>
+          <span>项目 ID（project_id）</span>
+          <span>接口域名与服务器出口 IP 白名单</span>
+        </div>
+        <a class="primary-button cloud-auth-link" href="https://developer.huawei.com/consumer/cn/doc/development/SmartSpace-Guides/relevant-reference-0000001449432488" target="_blank" rel="noopener">打开华为授权申请说明</a>
+        <p class="cloud-auth-note">取得上述资料后，即可继续增加开关、温度、运行状态和定时控制。</p>
+      </div>
+    </dialog>
+
     <dialog id="authDialog">
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
@@ -486,6 +507,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=29" defer></script>
+    <script src="/static/h5.js?v=30" defer></script>
   </body>
 </html>

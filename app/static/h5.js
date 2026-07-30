@@ -24,6 +24,7 @@ const toast = el("#toast");
 const tvScreenDialog = el("#tvScreenDialog");
 const aupuSetupDialog = el("#aupuSetupDialog");
 const purifierSetupDialog = el("#purifierSetupDialog");
+const waterHeaterAuthDialog = el("#waterHeaterAuthDialog");
 let aupuQrPollTimer = null;
 let aupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
@@ -230,6 +231,8 @@ function renderWaterHeater() {
   el("#waterHeaterCloudStatus").textContent =
     device.control_ready ? "已授权" : "等待华为授权";
   el("#waterHeaterNotice").textContent = device.notice;
+  el("#waterHeaterAuthButton").textContent =
+    device.control_ready ? "查看云授权" : "配置云授权";
 }
 
 function renderPurifier() {
@@ -1013,6 +1016,13 @@ el("#purifierSetupButton").addEventListener("click", () => {
   el("#purifierSetupError").textContent = "";
   el("#purifierCaptcha").value = "";
   if (!purifierSetupDialog.open) purifierSetupDialog.showModal();
+});
+
+el("#waterHeaterAuthButton").addEventListener("click", () => {
+  if (!waterHeaterAuthDialog.open) waterHeaterAuthDialog.showModal();
+});
+el("#closeWaterHeaterAuthDialog").addEventListener("click", () => {
+  waterHeaterAuthDialog.close();
 });
 el("#closePurifierSetupDialog").addEventListener("click", () => {
   purifierSetupDialog.close();

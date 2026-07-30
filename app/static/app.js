@@ -25,6 +25,7 @@ const toast = document.querySelector("#toast");
 const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
 const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
 const purifierSetupDialog = document.querySelector("#desktopPurifierSetupDialog");
+const waterHeaterAuthDialog = document.querySelector("#desktopWaterHeaterAuthDialog");
 let desktopAupuQrPollTimer = null;
 let desktopAupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
@@ -229,7 +230,8 @@ function renderWaterHeater() {
   document.querySelector("#desktopWaterHeaterControl").textContent =
     device.control_ready ? "已可控制" : "等待云授权";
   const badge = document.querySelector("#desktopWaterHeaterBadge");
-  badge.textContent = device.reachable ? "局域网在线" : "当前离线";
+  badge.textContent = device.control_ready ? "查看云授权" : "配置云授权";
+  badge.title = device.reachable ? "设备局域网在线" : "设备当前离线";
   badge.classList.toggle("online", Boolean(device.reachable));
 }
 
@@ -881,6 +883,13 @@ document.querySelector("#desktopPurifierSetup").addEventListener("click", () => 
   document.querySelector("#desktopPurifierSetupError").textContent = "";
   document.querySelector("#desktopPurifierCaptcha").value = "";
   if (!purifierSetupDialog.open) purifierSetupDialog.showModal();
+});
+
+document.querySelector("#desktopWaterHeaterBadge").addEventListener("click", () => {
+  if (!waterHeaterAuthDialog.open) waterHeaterAuthDialog.showModal();
+});
+document.querySelector("#closeDesktopWaterHeaterAuthDialog").addEventListener("click", () => {
+  waterHeaterAuthDialog.close();
 });
 document.querySelector("#closeDesktopPurifierSetupDialog").addEventListener("click", () => {
   purifierSetupDialog.close();

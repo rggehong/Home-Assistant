@@ -358,8 +358,10 @@ button { color: inherit; }
   color: #efc38f;
   border: 1px solid rgba(239,195,143,.28);
   border-radius: 999px;
+  background: transparent;
   font-size: 9px;
   white-space: nowrap;
+  cursor: pointer;
 }
 .desktop-water-heater-badge.online {
   color: var(--green-bright);
@@ -912,6 +914,51 @@ dialog input {
 }
 dialog input:focus { border-color: var(--green); }
 #desktopPurifierSetupDialog input { margin: 0; }
+.cloud-auth-dialog {
+  position: relative;
+  padding: 32px;
+}
+.cloud-auth-device {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin: 17px 0;
+}
+.cloud-auth-device span {
+  display: grid;
+  gap: 4px;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0,0,0,.16);
+}
+.cloud-auth-device small { color: var(--muted); font-size: 9px; }
+.cloud-auth-device strong { color: var(--green-bright); font-size: 12px; }
+.cloud-auth-requirements {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 14px;
+  color: var(--muted);
+  border: 1px solid #4e4336;
+  border-radius: 13px;
+  background: rgba(98,66,36,.18);
+  font-size: 11px;
+}
+.cloud-auth-requirements strong { color: #efc38f; }
+.cloud-auth-requirements span::before {
+  content: "✓";
+  margin-right: 7px;
+  color: var(--green-bright);
+}
+.cloud-auth-link {
+  display: block;
+  padding: 12px 16px;
+  border-radius: 11px;
+  text-align: center;
+  text-decoration: none;
+}
+.cloud-auth-note { margin: 11px 0 0; text-align: center; font-size: 10px; }
 .dialog-close {
   position: absolute;
   right: 18px;

@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=26">
+    <link rel="stylesheet" href="/static/styles.css?v=27">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -142,7 +142,7 @@
           <span><small>连接方式</small><b>云端控制</b></span>
           <span><small>控制状态</small><b id="desktopWaterHeaterControl">等待授权</b></span>
         </div>
-        <span class="desktop-water-heater-badge" id="desktopWaterHeaterBadge">识别中</span>
+        <button class="desktop-water-heater-badge" id="desktopWaterHeaterBadge" type="button">配置云授权</button>
       </section>
       </div>
 
@@ -350,7 +350,28 @@
       </form>
     </dialog>
 
+    <dialog id="desktopWaterHeaterAuthDialog">
+      <div class="cloud-auth-dialog">
+        <button class="dialog-close" type="button" id="closeDesktopWaterHeaterAuthDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">HUAWEI SMART SPACE</p>
+        <h3>配置热水器云授权</h3>
+        <p>设备已在局域网在线，但华为智慧生活不向普通家庭账号开放网页端设备令牌。请勿在这里输入华为账号密码。</p>
+        <div class="cloud-auth-device">
+          <span><small>设备</small><strong>JSQ31-VJSAi</strong></span>
+          <span><small>地址</small><strong>192.168.0.108</strong></span>
+        </div>
+        <div class="cloud-auth-requirements">
+          <strong>完成接入需要</strong>
+          <span>华为云云对接 AK / SK</span>
+          <span>项目 ID（project_id）</span>
+          <span>接口域名与服务器出口 IP 白名单</span>
+        </div>
+        <a class="primary cloud-auth-link" href="https://developer.huawei.com/consumer/cn/doc/development/SmartSpace-Guides/relevant-reference-0000001449432488" target="_blank" rel="noopener">打开华为授权申请说明</a>
+        <p class="cloud-auth-note">取得上述资料后，即可继续增加开关、温度、运行状态和定时控制。</p>
+      </div>
+    </dialog>
+
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=29" defer></script>
+    <script src="/static/app.js?v=30" defer></script>
   </body>
 </html>
