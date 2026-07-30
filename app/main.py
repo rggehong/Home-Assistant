@@ -30,6 +30,7 @@ from greeclimate.device import (
     VerticalSwing,
 )
 from greeclimate.discovery import Discovery
+from app.sony import SonyError, TVCommand, sony_tv
 
 
 logging.getLogger("greeclimate").setLevel(logging.WARNING)
@@ -724,6 +725,19 @@ async def devices(refresh: bool = True) -> list[dict[str, Any]]:
     return _sort_devices(
         [_serialize(device) for device in registry.devices.values()]
     )
+
+
+@app.get("/api/tv", dependencies=[Depends(require_token)])
+async def tv_status() -> dict[str, Any]:
+    return await sony_tv.status()
+
+
+@app.post("/api/tv/command", dependencies=[Depends(require_token)])
+async def tv_command(payload: TVCommand) -> dict[str, Any]:
+    try:
+        return await sony_tv.command(payload)
+    except SonyError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post("/api/discover", dependencies=[Depends(require_token)])

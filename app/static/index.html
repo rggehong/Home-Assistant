@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#18201c">
     <title>清风 · 家庭空调</title>
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=7">
+    <link rel="stylesheet" href="/static/styles.css?v=9">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -58,6 +58,23 @@
           <article class="skeleton-card"></article>
         </section>
 
+        <aside class="side-stack">
+        <section class="desktop-tv">
+          <div class="section-heading schedule-heading">
+            <div><p class="eyebrow">LIVING ROOM</p><h3 id="desktopTvName">索尼电视</h3></div>
+            <button class="power-button" id="desktopTvPower" aria-label="开关电视">◉</button>
+          </div>
+          <p class="desktop-tv-status" id="desktopTvStatus">正在读取电视状态</p>
+          <label class="desktop-tv-input"><span>信号源</span><select id="desktopTvInput"></select></label>
+          <div class="desktop-tv-volume">
+            <button id="desktopTvDown">−</button>
+            <strong id="desktopTvVolume">—</strong>
+            <input id="desktopTvRange" type="range" min="0" max="100" step="1" aria-label="电视音量">
+            <button id="desktopTvUp">＋</button>
+          </div>
+          <button class="desktop-tv-mute" id="desktopTvMute">静音</button>
+        </section>
+
         <section class="desktop-schedules">
         <div class="section-heading schedule-heading">
           <div>
@@ -86,6 +103,7 @@
         </form>
         <div class="desktop-schedule-list" id="scheduleList"></div>
         </section>
+        </aside>
       </div>
 
       <footer>
@@ -111,6 +129,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=10" defer></script>
+    <script src="/static/app.js?v=12" defer></script>
   </body>
 </html>

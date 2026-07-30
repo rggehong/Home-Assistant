@@ -428,6 +428,44 @@ html, body { height: 100%; overflow: hidden; }
 }
 body[data-view="schedule"] #controlView { display: none; }
 body[data-view="schedule"] #scheduleView { display: block; }
+.tv-view {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+body[data-view="tv"] #controlView { display: none; }
+body[data-view="tv"] .room-tabs { visibility: hidden; }
+body[data-view="tv"] #tvView { display: block; }
+.tv-card {
+  height: 100%;
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 24px;
+  background: rgba(255,255,255,.72);
+  box-shadow: 0 14px 40px rgba(52,82,62,.08);
+}
+.tv-status { margin: 12px 0 22px; color: var(--muted); font-size: 11px; }
+.tv-input-field { display: grid; gap: 7px; }
+.tv-input-field span, .tv-volume span { color: var(--muted); font-size: 10px; }
+.tv-input-field select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: #f6f9f4; }
+.tv-volume { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; margin-top: 22px; }
+.tv-volume > button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 22px; }
+.tv-volume > div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.tv-volume strong { color: var(--green); font-size: 24px; }
+.tv-volume input { grid-column: 1 / -1; width: 100%; accent-color: var(--green); }
+.tv-mute-card {
+  width: 100%;
+  margin-top: 22px;
+  color: inherit;
+  font: inherit;
+}
+.tv-mute-card b {
+  padding: 6px 12px;
+  color: white;
+  border-radius: 999px;
+  background: var(--green);
+  font-size: 11px;
+}
 .schedule-list {
   display: flex;
   gap: 8px;
@@ -441,7 +479,7 @@ body[data-view="schedule"] #scheduleView { display: block; }
 .schedule-empty { width: 100%; }
 .view-nav {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding-top: 9px;
 }

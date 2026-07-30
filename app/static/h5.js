@@ -3,6 +3,7 @@ const model = {
   legacyToken: sessionStorage.getItem("greeApiToken") || "",
   devices: [],
   schedules: [],
+  tv: null,
   selectedId: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -115,14 +116,16 @@ function ensureDraft(device) {
 async function loadAll(refresh = true) {
   setStatus("正在同步空调状态", "");
   try {
-    const [devices, schedules] = await Promise.all([
+    const [devices, schedules, tv] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
       api("/api/schedules", { headers: requestHeaders() }),
+      api("/api/tv", { headers: requestHeaders() }),
     ]);
     model.authenticated = true;
     updateAuthControls();
     model.devices = devices;
     model.schedules = schedules;
+    model.tv = tv;
     devices.forEach(ensureDraft);
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
@@ -146,6 +149,47 @@ function render() {
   renderTabs();
   renderDevice();
   renderSchedules();
+  renderTV();
+}
+
+function renderTV() {
+  const tv = model.tv;
+  if (!tv) return;
+  el("#tvName").textContent = `${tv.brand} ${tv.model}`;
+  el("#tvStatus").textContent = tv.online
+    ? `${tv.ip} · ${tv.power ? "播放中" : "待机"}${tv.input_title ? ` · ${tv.input_title}` : ""}`
+    : `${tv.ip} · ${tv.error || "离线"}`;
+  el("#tvPowerButton").classList.toggle("is-on", Boolean(tv.power));
+  el("#tvPowerButton").disabled = !tv.configured;
+  const inputSelect = el("#tvInputSelect");
+  inputSelect.replaceChildren(...(tv.inputs || []).map((input) => {
+    const option = document.createElement("option");
+    option.value = input.uri;
+    option.textContent = `${input.title}${input.connected ? "" : "（未连接）"}`;
+    option.selected = input.uri === tv.input_uri;
+    return option;
+  }));
+  inputSelect.disabled = !tv.configured || !tv.online;
+  const volume = Number.isFinite(tv.volume) ? tv.volume : 0;
+  el("#tvVolumeValue").textContent = Number.isFinite(tv.volume) ? String(tv.volume) : "—";
+  el("#tvVolumeRange").value = String(volume);
+  el("#tvVolumeRange").disabled =
+    !tv.configured || !tv.online || !Number.isFinite(tv.volume);
+  el("#tvMuteSwitch").disabled = !tv.configured || !tv.online;
+}
+
+async function sendTVCommand(payload) {
+  try {
+    model.tv = await api("/api/tv/command", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify(payload),
+    });
+    renderTV();
+    showToast("电视设置已生效");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 function renderTabs() {
@@ -487,6 +531,25 @@ el("#auxiliaryHeatSwitch").addEventListener("change", (event) => {
   const device = selectedDevice();
   if (device) ensureDraft(device).auxiliaryHeat = event.target.checked;
   sendCommand({ auxiliary_heat: event.target.checked });
+});
+
+el("#tvPowerButton").addEventListener("click", () => {
+  if (model.tv) sendTVCommand({ power: !model.tv.power });
+});
+el("#tvInputSelect").addEventListener("change", (event) => {
+  sendTVCommand({ input_uri: event.target.value });
+});
+el("#tvVolumeDown").addEventListener("click", () => {
+  if (model.tv) sendTVCommand({ remote: "volume_down" });
+});
+el("#tvVolumeUp").addEventListener("click", () => {
+  if (model.tv) sendTVCommand({ remote: "volume_up" });
+});
+el("#tvVolumeRange").addEventListener("change", (event) => {
+  sendTVCommand({ volume: Number(event.target.value) });
+});
+el("#tvMuteSwitch").addEventListener("click", () => {
+  sendTVCommand({ remote: "mute" });
 });
 
 document.querySelectorAll(".view-nav button").forEach((button) => {

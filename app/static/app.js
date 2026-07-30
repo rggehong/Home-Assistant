@@ -3,6 +3,7 @@ const state = {
   legacyToken: sessionStorage.getItem("greeApiToken") || "",
   devices: [],
   schedules: [],
+  tv: null,
   drafts: new Map(),
   commandTimers: new Map(),
 };
@@ -100,14 +101,16 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules] = await Promise.all([
+    const [devices, schedules, tv] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
+      api("/api/tv", { headers: headers() }),
     ]);
     state.authenticated = true;
     updateAuthControls();
     state.devices = devices;
     state.schedules = schedules;
+    state.tv = tv;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
@@ -146,6 +149,49 @@ function render() {
   grid.replaceChildren(...state.devices.map(createCard));
   renderScheduleRoomOptions();
   renderSchedules();
+  renderTV();
+}
+
+function renderTV() {
+  const tv = state.tv;
+  if (!tv) return;
+  document.querySelector("#desktopTvName").textContent = `${tv.brand} ${tv.model}`;
+  document.querySelector("#desktopTvStatus").textContent = tv.online
+    ? `${tv.power ? "播放中" : "待机"}${tv.input_title ? ` · ${tv.input_title}` : ""}`
+    : (tv.error || "电视离线");
+  const power = document.querySelector("#desktopTvPower");
+  power.classList.toggle("is-on", Boolean(tv.power));
+  power.disabled = !tv.configured;
+  const input = document.querySelector("#desktopTvInput");
+  input.replaceChildren(...(tv.inputs || []).map((item) => {
+    const option = document.createElement("option");
+    option.value = item.uri;
+    option.textContent = `${item.title}${item.connected ? "" : "（未连接）"}`;
+    option.selected = item.uri === tv.input_uri;
+    return option;
+  }));
+  input.disabled = !tv.configured || !tv.online;
+  const volume = Number.isFinite(tv.volume) ? tv.volume : 0;
+  document.querySelector("#desktopTvVolume").textContent =
+    Number.isFinite(tv.volume) ? String(tv.volume) : "—";
+  document.querySelector("#desktopTvRange").value = String(volume);
+  document.querySelector("#desktopTvRange").disabled =
+    !tv.configured || !tv.online || !Number.isFinite(tv.volume);
+  document.querySelector("#desktopTvMute").disabled = !tv.configured || !tv.online;
+}
+
+async function sendTVCommand(payload) {
+  try {
+    state.tv = await api("/api/tv/command", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(payload),
+    });
+    renderTV();
+    showToast("电视设置已生效");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 function createCard(device) {
@@ -350,6 +396,25 @@ async function deleteSchedule(id) {
     showToast(error.message);
   }
 }
+
+document.querySelector("#desktopTvPower").addEventListener("click", () => {
+  if (state.tv) sendTVCommand({ power: !state.tv.power });
+});
+document.querySelector("#desktopTvInput").addEventListener("change", (event) => {
+  sendTVCommand({ input_uri: event.target.value });
+});
+document.querySelector("#desktopTvDown").addEventListener("click", () => {
+  if (state.tv) sendTVCommand({ remote: "volume_down" });
+});
+document.querySelector("#desktopTvUp").addEventListener("click", () => {
+  if (state.tv) sendTVCommand({ remote: "volume_up" });
+});
+document.querySelector("#desktopTvRange").addEventListener("change", (event) => {
+  sendTVCommand({ volume: Number(event.target.value) });
+});
+document.querySelector("#desktopTvMute").addEventListener("click", () => {
+  sendTVCommand({ remote: "mute" });
+});
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));
 document.querySelector("#authButton").addEventListener("click", openAuthDialog);

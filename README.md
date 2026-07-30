@@ -10,6 +10,7 @@
 - 控制开关、模式、0.5℃ 目标温度、风速、扫风、灯光、静音、睡眠和定时任务
 - KFR-35GW（型号 ID `10014`）：防直吹、强劲风、健康、辅热
 - KFR-72LW（型号 ID `110007e000019`）：强劲风、健康、独立下出风
+- 索尼 BRAVIA 电视：本地状态、开关机、音量、静音和 HDMI 输入切换
 - Web/H5 家庭访问密码登录，使用安全 Cookie 保持登录 30 天
 - Bearer Token / `X-API-Token` 鉴权继续供自动化 API 调用
 - Swagger API 文档：`http://192.168.0.146:8765/docs`
@@ -26,6 +27,9 @@ cp config.example.env .env
 
 编辑 `.env`，设置随机 API Token。空调必须已通过格力+或对应厂商 App
 接入与服务器相同的 Wi-Fi 网络。
+
+索尼电视通过局域网 REST API 接入。请在电视的 IP 控制设置中启用预共享密钥和
+简易 IP 控制，并仅在服务器 `.env` 中设置 `SONY_TV_PSK`。
 
 建议同时设置 `GREE_WEB_PASSWORD` 作为网页端更易输入的家庭访问密码，并设置独立随机
 `GREE_SESSION_SECRET`。如果没有设置 `GREE_WEB_PASSWORD`，网页首次登录会兼容使用

@@ -283,6 +283,38 @@ button { color: inherit; }
   border-radius: 26px;
   background: var(--panel);
 }
+.side-stack {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+.side-stack .desktop-schedules { margin-top: 0; }
+.desktop-tv {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+}
+.desktop-tv .schedule-heading { align-items: center; margin-bottom: 8px; }
+.desktop-tv .power-button { width: 42px; height: 42px; }
+.desktop-tv-status { margin: 0 0 14px; color: var(--muted); font-size: 10px; }
+.desktop-tv-input { display: grid; gap: 6px; }
+.desktop-tv-input span { color: var(--muted); font-size: 9px; }
+.desktop-tv-input select { width: 100%; padding: 9px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.04); }
+.desktop-tv-volume { display: grid; grid-template-columns: 30px auto 1fr 30px; align-items: center; gap: 7px; margin-top: 11px; }
+.desktop-tv-volume button { height: 30px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.04); }
+.desktop-tv-volume strong { min-width: 22px; color: var(--green-bright); text-align: center; }
+.desktop-tv-volume input { width: 100%; accent-color: var(--green); }
+.desktop-tv-mute {
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px;
+  color: var(--green-bright);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255,255,255,.025);
+}
 .schedule-heading { margin-bottom: 25px; }
 .schedule-form {
   display: grid;
