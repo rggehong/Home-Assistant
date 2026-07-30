@@ -312,6 +312,41 @@ button { color: inherit; }
   border-radius: 18px;
   background: linear-gradient(145deg, rgba(47,60,51,.94), rgba(27,36,30,.9));
 }
+.desktop-purifier {
+  display: grid;
+  grid-template-columns: auto minmax(250px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(39,61,50,.96), rgba(24,38,31,.92));
+}
+.purifier-mark { color: white; background: #367a59; }
+.purifier-summary { display: flex; align-items: stretch; gap: 7px; }
+.purifier-summary span {
+  display: grid;
+  gap: 2px;
+  min-width: 92px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+}
+.purifier-summary small { color: var(--muted); font-size: 7px; }
+.purifier-summary b { color: var(--green-bright); font-size: 9px; }
+.desktop-purifier-detail {
+  padding: 9px 12px;
+  color: var(--green-bright);
+  border: 1px solid rgba(168,213,162,.35);
+  border-radius: 10px;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.purifier-captcha-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.purifier-captcha-row button { white-space: nowrap; }
 .desktop-plug.is-busy { opacity: .6; pointer-events: none; }
 .plug-mark { color: white; background: #49775b; }
 .desktop-plug-metrics {
@@ -834,6 +869,7 @@ dialog input {
   outline: none;
 }
 dialog input:focus { border-color: var(--green); }
+#desktopPurifierSetupDialog input { margin: 0; }
 .dialog-close {
   position: absolute;
   right: 18px;
@@ -969,6 +1005,7 @@ dialog input:focus { border-color: var(--green); }
   }
   .desktop-aupu { flex: 0 0 auto; }
   .desktop-plug { flex: 0 0 auto; }
+  .desktop-purifier { flex: 0 0 auto; }
   .side-stack {
     align-self: stretch;
     min-height: 0;

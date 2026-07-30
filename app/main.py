@@ -32,6 +32,12 @@ from greeclimate.device import (
 from greeclimate.discovery import Discovery
 from app.aupu import AupuCommand, AupuError, AupuQrStartRequest, aupu
 from app.plug import PlugCommand, plug
+from app.purifier import (
+    PurifierError,
+    PurifierLoginRequest,
+    PurifierSmsRequest,
+    purifier,
+)
 from app.sony import SonyError, TVCommand, sony_tv
 
 
@@ -811,6 +817,27 @@ async def plug_command(payload: PlugCommand) -> dict[str, Any]:
     try:
         return await plug.command(payload)
     except AupuError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/purifier", dependencies=[Depends(require_token)])
+async def purifier_status() -> dict[str, Any]:
+    return await purifier.status()
+
+
+@app.post("/api/purifier/captcha", dependencies=[Depends(require_token)])
+async def purifier_captcha(payload: PurifierSmsRequest) -> dict[str, Any]:
+    try:
+        return await purifier.send_captcha(payload)
+    except PurifierError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/purifier/login", dependencies=[Depends(require_token)])
+async def purifier_login(payload: PurifierLoginRequest) -> dict[str, Any]:
+    try:
+        return await purifier.login(payload)
+    except PurifierError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 

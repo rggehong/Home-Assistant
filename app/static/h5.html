@@ -232,6 +232,30 @@
         </article>
       </section>
 
+      <section class="purifier-view" id="purifierView">
+        <article class="purifier-card">
+          <header class="purifier-header">
+            <div>
+              <span class="micro-label">A.O. SMITH AI‑LiNK</span>
+              <h2>史密斯净水机</h2>
+              <p id="purifierStatus">正在读取 192.168.0.138</p>
+            </div>
+            <span class="purifier-device-icon" aria-hidden="true">净</span>
+          </header>
+          <div class="purifier-model">
+            <span>设备型号</span>
+            <strong>DR1600HF2</strong>
+          </div>
+          <div class="purifier-info">
+            <div><span>连接方式</span><strong>AI‑LiNK 云端</strong></div>
+            <div id="purifierRoomField" hidden><span>所在房间</span><strong id="purifierRoom">—</strong></div>
+            <div id="purifierNameField" hidden><span>云端名称</span><strong id="purifierName">—</strong></div>
+          </div>
+          <a class="purifier-detail-button" id="purifierDetail" href="#" target="_blank" rel="noopener" hidden>打开设备详情</a>
+          <button class="aupu-setup-button" id="purifierSetupButton" type="button">连接 AI‑LiNK</button>
+        </article>
+      </section>
+
       <section class="tv-view" id="tvView">
         <article class="tv-card remote-stage">
           <div class="tv-remote">
@@ -362,6 +386,7 @@
         <button class="active" data-view="control">格力空调</button>
         <button data-view="aupu">奥普浴霸</button>
         <button data-view="plug">智能插座</button>
+        <button data-view="purifier">史密斯净水机</button>
         <button data-view="tv">索尼电视</button>
         <button data-view="schedule">定时任务</button>
       </nav>
@@ -405,6 +430,22 @@
       </form>
     </dialog>
 
+    <dialog id="purifierSetupDialog">
+      <form id="purifierSetupForm">
+        <button type="button" class="dialog-close" id="closePurifierSetupDialog" aria-label="关闭">×</button>
+        <span class="micro-label">A.O. SMITH AI‑LiNK</span>
+        <h3>连接 DR1600HF2 净水机</h3>
+        <p>输入 AI‑LiNK 智慧家绑定的手机号。验证码仅用于本次授权，不会保存。</p>
+        <input id="purifierMobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="11 位手机号码" required>
+        <div class="purifier-captcha-row">
+          <input id="purifierCaptcha" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="短信验证码" required>
+          <button class="secondary-button" id="purifierSendCaptcha" type="button">发送验证码</button>
+        </div>
+        <button class="primary-button" type="submit">完成连接</button>
+        <p class="error-text" id="purifierSetupError"></p>
+      </form>
+    </dialog>
+
     <dialog id="authDialog">
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
@@ -419,6 +460,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=27" defer></script>
+    <script src="/static/h5.js?v=29" defer></script>
   </body>
 </html>

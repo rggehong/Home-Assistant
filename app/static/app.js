@@ -6,6 +6,7 @@ const state = {
   tv: null,
   aupu: null,
   plug: null,
+  purifier: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -22,8 +23,10 @@ const logoutButton = document.querySelector("#logoutButton");
 const toast = document.querySelector("#toast");
 const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
 const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
+const purifierSetupDialog = document.querySelector("#desktopPurifierSetupDialog");
 let desktopAupuQrPollTimer = null;
 let desktopAupuQrGeneration = 0;
+let tencentCaptchaLoader = null;
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -106,6 +109,32 @@ async function apiBlob(path) {
   return response.blob();
 }
 
+function requestTencentCaptcha() {
+  if (!tencentCaptchaLoader) {
+    tencentCaptchaLoader = new Promise((resolve, reject) => {
+      if (window.TencentCaptcha) {
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://turing.captcha.qcloud.com/TCaptcha.js";
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("安全验证加载失败，请检查网络后重试"));
+      document.head.append(script);
+    });
+  }
+  return tencentCaptchaLoader.then(() => new Promise((resolve, reject) => {
+    const captcha = new window.TencentCaptcha("199886438", (result) => {
+      if (result?.ret === 0 && result.ticket && result.randstr) {
+        resolve({ ticket: result.ticket, randstr: result.randstr });
+      } else {
+        reject(new Error("已取消安全验证"));
+      }
+    }, { userLanguage: "zh-cn" });
+    captcha.show();
+  }));
+}
+
 function makeDraft(device) {
   return {
     temperature: device.target_temperature || 26,
@@ -127,12 +156,13 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules, tv, aupu, plug] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug, purifier] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
       api("/api/tv", { headers: headers() }),
       api("/api/aupu", { headers: headers() }),
       api("/api/plug", { headers: headers() }),
+      api("/api/purifier", { headers: headers() }),
     ]);
     state.authenticated = true;
     updateAuthControls();
@@ -141,6 +171,7 @@ async function loadAll(refresh = true) {
     state.tv = tv;
     state.aupu = aupu;
     state.plug = plug;
+    state.purifier = purifier;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
@@ -183,6 +214,32 @@ function render() {
   renderTV();
   renderAupu();
   renderPlug();
+  renderPurifier();
+}
+
+function renderPurifier() {
+  const device = state.purifier;
+  if (!device) return;
+  let status = `${device.ip} · 等待连接 AI‑LiNK`;
+  if (device.configured) {
+    status = device.error
+      ? `${device.ip} · ${device.error}`
+      : `${device.ip} · ${device.online === false ? "云端离线" : "云端已连接"}`;
+  }
+  document.querySelector("#desktopPurifierStatus").textContent = status;
+
+  const roomField = document.querySelector("#desktopPurifierRoomField");
+  roomField.hidden = !device.room;
+  document.querySelector("#desktopPurifierRoom").textContent = device.room || "—";
+  const nameField = document.querySelector("#desktopPurifierNameField");
+  nameField.hidden = !device.device_name;
+  document.querySelector("#desktopPurifierName").textContent = device.device_name || "—";
+
+  const detail = document.querySelector("#desktopPurifierDetail");
+  detail.hidden = !device.detail_url;
+  if (device.detail_url) detail.href = device.detail_url;
+  document.querySelector("#desktopPurifierSetup").textContent =
+    device.configured ? "重新连接" : "连接 AI‑LiNK";
 }
 
 function desktopPlugSupports(name) {
@@ -803,6 +860,71 @@ document.querySelector("#desktopPlugMaxPowerEnabled").addEventListener("change",
 });
 document.querySelector("#desktopPlugMaxPower").addEventListener("change", (event) => {
   sendPlugCommand({ max_power: Number(event.target.value) });
+});
+document.querySelector("#desktopPurifierSetup").addEventListener("click", () => {
+  document.querySelector("#desktopPurifierSetupError").textContent = "";
+  document.querySelector("#desktopPurifierCaptcha").value = "";
+  if (!purifierSetupDialog.open) purifierSetupDialog.showModal();
+});
+document.querySelector("#closeDesktopPurifierSetupDialog").addEventListener("click", () => {
+  purifierSetupDialog.close();
+});
+document.querySelector("#desktopPurifierSendCaptcha").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const mobile = document.querySelector("#desktopPurifierMobile").value.trim();
+  const error = document.querySelector("#desktopPurifierSetupError");
+  error.textContent = "";
+  if (!/^1\d{10}$/.test(mobile)) {
+    error.textContent = "请输入正确的 11 位手机号码";
+    return;
+  }
+  button.disabled = true;
+  try {
+    const verification = await requestTencentCaptcha();
+    const result = await api("/api/purifier/captcha", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({ mobile, ...verification }),
+    });
+    showToast(result.message || "验证码已发送");
+    let remaining = 60;
+    button.textContent = `${remaining} 秒`;
+    const timer = setInterval(() => {
+      remaining -= 1;
+      button.textContent = remaining > 0 ? `${remaining} 秒` : "发送验证码";
+      if (remaining <= 0) {
+        clearInterval(timer);
+        button.disabled = false;
+      }
+    }, 1000);
+  } catch (requestError) {
+    error.textContent = requestError.message;
+    button.disabled = false;
+  }
+});
+document.querySelector("#desktopPurifierSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  const error = document.querySelector("#desktopPurifierSetupError");
+  error.textContent = "";
+  submit.disabled = true;
+  try {
+    state.purifier = await api("/api/purifier/login", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({
+        mobile: document.querySelector("#desktopPurifierMobile").value.trim(),
+        captcha: document.querySelector("#desktopPurifierCaptcha").value.trim(),
+      }),
+    });
+    purifierSetupDialog.close();
+    renderPurifier();
+    showToast("史密斯净水机已连接");
+  } catch (requestError) {
+    error.textContent = requestError.message;
+  } finally {
+    submit.disabled = false;
+  }
 });
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));

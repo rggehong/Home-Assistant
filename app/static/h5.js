@@ -6,6 +6,7 @@ const model = {
   tv: null,
   aupu: null,
   plug: null,
+  purifier: null,
   tvForeground: null,
   selectedId: null,
   drafts: new Map(),
@@ -21,8 +22,10 @@ const logoutButton = el("#logoutButton");
 const toast = el("#toast");
 const tvScreenDialog = el("#tvScreenDialog");
 const aupuSetupDialog = el("#aupuSetupDialog");
+const purifierSetupDialog = el("#purifierSetupDialog");
 let aupuQrPollTimer = null;
 let aupuQrGeneration = 0;
+let tencentCaptchaLoader = null;
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
 const MIN_TEMPERATURE = 16;
@@ -114,6 +117,32 @@ async function apiBlob(path) {
   return response.blob();
 }
 
+function requestTencentCaptcha() {
+  if (!tencentCaptchaLoader) {
+    tencentCaptchaLoader = new Promise((resolve, reject) => {
+      if (window.TencentCaptcha) {
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://turing.captcha.qcloud.com/TCaptcha.js";
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("安全验证加载失败，请检查网络后重试"));
+      document.head.append(script);
+    });
+  }
+  return tencentCaptchaLoader.then(() => new Promise((resolve, reject) => {
+    const captcha = new window.TencentCaptcha("199886438", (result) => {
+      if (result?.ret === 0 && result.ticket && result.randstr) {
+        resolve({ ticket: result.ticket, randstr: result.randstr });
+      } else {
+        reject(new Error("已取消安全验证"));
+      }
+    }, { userLanguage: "zh-cn" });
+    captcha.show();
+  }));
+}
+
 function selectedDevice() {
   return model.devices.find((device) => device.id === model.selectedId);
 }
@@ -142,12 +171,13 @@ function ensureDraft(device) {
 async function loadAll(refresh = true) {
   setStatus("正在同步空调状态", "");
   try {
-    const [devices, schedules, tv, aupu, plug] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug, purifier] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
       api("/api/schedules", { headers: requestHeaders() }),
       api("/api/tv", { headers: requestHeaders() }),
       api("/api/aupu", { headers: requestHeaders() }),
       api("/api/plug", { headers: requestHeaders() }),
+      api("/api/purifier", { headers: requestHeaders() }),
     ]);
     model.authenticated = true;
     updateAuthControls();
@@ -156,6 +186,7 @@ async function loadAll(refresh = true) {
     model.tv = tv;
     model.aupu = aupu;
     model.plug = plug;
+    model.purifier = purifier;
     devices.forEach(ensureDraft);
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
@@ -183,6 +214,28 @@ function render() {
   renderTV();
   renderAupu();
   renderPlug();
+  renderPurifier();
+}
+
+function renderPurifier() {
+  const device = model.purifier;
+  if (!device) return;
+  let status = `${device.ip} · 等待连接 AI‑LiNK`;
+  if (device.configured) {
+    status = device.error
+      ? `${device.ip} · ${device.error}`
+      : `${device.ip} · ${device.online === false ? "云端离线" : "云端已连接"}`;
+  }
+  el("#purifierStatus").textContent = status;
+  el("#purifierRoomField").hidden = !device.room;
+  el("#purifierRoom").textContent = device.room || "—";
+  el("#purifierNameField").hidden = !device.device_name;
+  el("#purifierName").textContent = device.device_name || "—";
+  const detail = el("#purifierDetail");
+  detail.hidden = !device.detail_url;
+  if (device.detail_url) detail.href = device.detail_url;
+  el("#purifierSetupButton").textContent =
+    device.configured ? "重新连接 AI‑LiNK" : "连接 AI‑LiNK";
 }
 
 function plugSupports(name) {
@@ -940,6 +993,71 @@ el("#plugMaxPowerEnabled").addEventListener("change", (event) => {
 });
 el("#plugMaxPower").addEventListener("change", (event) => {
   sendPlugCommand({ max_power: Number(event.target.value) });
+});
+el("#purifierSetupButton").addEventListener("click", () => {
+  el("#purifierSetupError").textContent = "";
+  el("#purifierCaptcha").value = "";
+  if (!purifierSetupDialog.open) purifierSetupDialog.showModal();
+});
+el("#closePurifierSetupDialog").addEventListener("click", () => {
+  purifierSetupDialog.close();
+});
+el("#purifierSendCaptcha").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const error = el("#purifierSetupError");
+  error.textContent = "";
+  const mobile = el("#purifierMobile").value.trim();
+  if (!/^1\d{10}$/.test(mobile)) {
+    error.textContent = "请输入正确的 11 位手机号码";
+    return;
+  }
+  button.disabled = true;
+  try {
+    const verification = await requestTencentCaptcha();
+    const result = await api("/api/purifier/captcha", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({ mobile, ...verification }),
+    });
+    showToast(result.message || "验证码已发送");
+    let remaining = 60;
+    button.textContent = `${remaining} 秒`;
+    const timer = setInterval(() => {
+      remaining -= 1;
+      button.textContent = remaining > 0 ? `${remaining} 秒` : "发送验证码";
+      if (remaining <= 0) {
+        clearInterval(timer);
+        button.disabled = false;
+      }
+    }, 1000);
+  } catch (requestError) {
+    error.textContent = requestError.message;
+    button.disabled = false;
+  }
+});
+el("#purifierSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  const error = el("#purifierSetupError");
+  error.textContent = "";
+  submit.disabled = true;
+  try {
+    model.purifier = await api("/api/purifier/login", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({
+        mobile: el("#purifierMobile").value.trim(),
+        captcha: el("#purifierCaptcha").value.trim(),
+      }),
+    });
+    purifierSetupDialog.close();
+    renderPurifier();
+    showToast("史密斯净水机已连接");
+  } catch (requestError) {
+    error.textContent = requestError.message;
+  } finally {
+    submit.disabled = false;
+  }
 });
 
 document.querySelectorAll(".view-nav button").forEach((button) => {

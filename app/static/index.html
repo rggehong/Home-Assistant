@@ -111,6 +111,23 @@
         <button class="desktop-aupu-setup" id="desktopPlugSetup" data-xiaomi-setup type="button">扫码连接</button>
       </section>
 
+      <section class="desktop-purifier" id="desktopPurifier">
+        <div class="desktop-aupu-title">
+          <span class="aupu-mark purifier-mark">净</span>
+          <div>
+            <strong>A.O.史密斯净水机 · DR1600HF2</strong>
+            <small id="desktopPurifierStatus">正在读取 192.168.0.138</small>
+          </div>
+        </div>
+        <div class="purifier-summary">
+          <span><small>连接方式</small><b>AI‑LiNK 云端</b></span>
+          <span id="desktopPurifierRoomField" hidden><small>所在房间</small><b id="desktopPurifierRoom">—</b></span>
+          <span id="desktopPurifierNameField" hidden><small>云端名称</small><b id="desktopPurifierName">—</b></span>
+        </div>
+        <a class="desktop-purifier-detail" id="desktopPurifierDetail" href="#" target="_blank" rel="noopener" hidden>设备详情</a>
+        <button class="desktop-aupu-setup" id="desktopPurifierSetup" type="button">连接 AI‑LiNK</button>
+      </section>
+
       <div class="workspace">
         <section class="device-grid" id="deviceGrid" aria-live="polite">
           <article class="skeleton-card"></article>
@@ -295,7 +312,27 @@
       </form>
     </dialog>
 
+    <dialog id="desktopPurifierSetupDialog">
+      <form id="desktopPurifierSetupForm">
+        <button class="dialog-close" type="button" id="closeDesktopPurifierSetupDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">A.O. SMITH AI‑LiNK</p>
+        <h3>连接 DR1600HF2 净水机</h3>
+        <p>输入 AI‑LiNK 智慧家绑定的手机号。验证码仅用于本次授权，服务器不会保存验证码。</p>
+        <label for="desktopPurifierMobile">手机号码</label>
+        <div class="purifier-captcha-row">
+          <input id="desktopPurifierMobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="11 位手机号码" required>
+          <button class="secondary" id="desktopPurifierSendCaptcha" type="button">发送验证码</button>
+        </div>
+        <label for="desktopPurifierCaptcha">短信验证码</label>
+        <input id="desktopPurifierCaptcha" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="短信验证码" required>
+        <div class="dialog-actions">
+          <button class="primary" type="submit">完成连接</button>
+        </div>
+        <p class="dialog-error" id="desktopPurifierSetupError"></p>
+      </form>
+    </dialog>
+
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=28" defer></script>
+    <script src="/static/app.js?v=29" defer></script>
   </body>
 </html>
