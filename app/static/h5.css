@@ -268,7 +268,7 @@ select, input[type="datetime-local"] {
 
 .schedule-fields {
   display: grid;
-  grid-template-columns: .8fr 1.4fr;
+  grid-template-columns: 1fr;
   align-items: end;
   gap: 7px;
 }
@@ -434,6 +434,7 @@ html, body { height: 100%; overflow: hidden; }
   overflow: hidden;
 }
 body[data-view="schedule"] #controlView { display: none; }
+body[data-view="schedule"] .room-tabs { display: none; }
 body[data-view="schedule"] #scheduleView { display: block; }
 .tv-view {
   display: none;
@@ -524,27 +525,6 @@ body[data-view="tv"] #tvView { display: block; }
 }
 .remote-power.is-on { box-shadow: 0 0 18px rgba(93,211,148,.26), 0 3px 5px rgba(0,0,0,.48); }
 .remote-icon { font-size: 21px; }
-.remote-back { position: relative; }
-.remote-back::before {
-  content: "";
-  width: 14px;
-  height: 10px;
-  border: 2px solid currentColor;
-  border-left: 0;
-  border-radius: 0 8px 8px 0;
-  transform: translate(2px, 1px);
-}
-.remote-back::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 16px;
-  width: 7px;
-  height: 7px;
-  border-left: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg);
-}
 .remote-sensor {
   width: 35px;
   height: 35px;
@@ -591,11 +571,11 @@ body[data-view="tv"] #tvView { display: block; }
 .remote-volume-rocker {
   justify-self: center;
   display: grid;
-  grid-template-rows: 30px 13px 30px;
-  width: 48px;
+  grid-template-rows: 38px 14px 38px;
+  width: 50px;
   overflow: hidden;
   border: 1px solid #080909;
-  border-radius: 22px;
+  border-radius: 25px;
   background: #181b19;
   box-shadow: 0 4px 7px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.05);
 }
@@ -680,5 +660,5 @@ body[data-view="tv"] #tvView { display: block; }
   .remote-key { width: 34px; height: 34px; }
   .remote-key b { font-size: 8px; }
   .remote-dpad { width: min(112px, 21vh); }
-  .remote-volume-rocker { grid-template-rows: 23px 10px 23px; width: 42px; }
+  .remote-volume-rocker { grid-template-rows: 29px 10px 29px; width: 44px; }
 }
