@@ -103,6 +103,10 @@ function ensureDraft(device) {
       light: Boolean(device.light),
       quiet: Boolean(device.quiet),
       lowerOutlet: Boolean(device.lower_outlet),
+      antiDirect: Boolean(device.anti_direct),
+      turbo: Boolean(device.turbo),
+      health: Boolean(device.health),
+      auxiliaryHeat: Boolean(device.auxiliary_heat),
     });
   }
   return model.drafts.get(device.id);
@@ -189,6 +193,14 @@ function renderDevice() {
   el("#quietSwitch").checked = draft.quiet;
   el("#lowerOutletCard").hidden = !device.capabilities.lower_outlet;
   el("#lowerOutletSwitch").checked = draft.lowerOutlet;
+  el("#antiDirectCard").hidden = !device.capabilities.anti_direct;
+  el("#antiDirectSwitch").checked = draft.antiDirect;
+  el("#turboCard").hidden = !device.capabilities.turbo;
+  el("#turboSwitch").checked = draft.turbo;
+  el("#healthCard").hidden = !device.capabilities.health;
+  el("#healthSwitch").checked = draft.health;
+  el("#auxiliaryHeatCard").hidden = !device.capabilities.auxiliary_heat;
+  el("#auxiliaryHeatSwitch").checked = draft.auxiliaryHeat;
 }
 
 function fillSelect(select, values, label, selected) {
@@ -452,6 +464,26 @@ el("#lowerOutletSwitch").addEventListener("change", (event) => {
   const device = selectedDevice();
   if (device) ensureDraft(device).lowerOutlet = event.target.checked;
   sendCommand({ lower_outlet: event.target.checked });
+});
+el("#antiDirectSwitch").addEventListener("change", (event) => {
+  const device = selectedDevice();
+  if (device) ensureDraft(device).antiDirect = event.target.checked;
+  sendCommand({ anti_direct: event.target.checked });
+});
+el("#turboSwitch").addEventListener("change", (event) => {
+  const device = selectedDevice();
+  if (device) ensureDraft(device).turbo = event.target.checked;
+  sendCommand({ turbo: event.target.checked });
+});
+el("#healthSwitch").addEventListener("change", (event) => {
+  const device = selectedDevice();
+  if (device) ensureDraft(device).health = event.target.checked;
+  sendCommand({ health: event.target.checked });
+});
+el("#auxiliaryHeatSwitch").addEventListener("change", (event) => {
+  const device = selectedDevice();
+  if (device) ensureDraft(device).auxiliaryHeat = event.target.checked;
+  sendCommand({ auxiliary_heat: event.target.checked });
 });
 
 document.querySelectorAll(".view-nav button").forEach((button) => {

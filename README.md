@@ -7,7 +7,9 @@
 
 - 自动发现并绑定格力空调
 - 查询开关、模式、温度、风速和扫风状态
-- 控制开关、模式、目标温度、风速、扫风、灯光、静音和强力模式
+- 控制开关、模式、0.5℃ 目标温度、风速、扫风、灯光、静音、睡眠和定时任务
+- KFR-35GW（型号 ID `10014`）：防直吹、强劲风、健康、辅热
+- KFR-72LW（型号 ID `110007e000019`）：强劲风、健康、独立下出风
 - Web/H5 家庭访问密码登录，使用安全 Cookie 保持登录 30 天
 - Bearer Token / `X-API-Token` 鉴权继续供自动化 API 调用
 - Swagger API 文档：`http://192.168.0.146:8765/docs`
@@ -55,5 +57,10 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 - `fan_speed`: `auto`、`low`、`medium_low`、`medium`、`medium_high`、`high`
 - `vertical_swing`: `default`、`full`、`upper`、`upper_middle`、`middle`、`lower_middle`、`lower`
 - `horizontal_swing`: `default`、`full`、`left`、`left_center`、`center`、`right_center`、`right`
+- `anti_direct`：卧室机型的向上避人预设；开启时将上下导风板固定向上
+- `turbo`：强劲风
+- `health`：健康模式
+- `auxiliary_heat`：辅热（仅卧室机型）
+- `lower_outlet`：独立下出风（仅客厅机型，不影响上下扫风）
 
 首次联调建议只调用设备列表接口。确认状态读取正确后，再发送控制命令。

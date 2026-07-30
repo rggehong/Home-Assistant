@@ -415,10 +415,19 @@ html, body { height: 100%; overflow: hidden; }
 .select-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 .select-grid label:first-child { grid-column: auto; }
 .select-grid select { padding: 8px 5px; font-size: 10px; }
-.switch-grid { grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 9px; }
-.switch-card { padding: 8px 10px; }
+.switch-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
+.switch-card {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 7px 3px;
+  text-align: center;
+}
 .switch-card strong { font-size: 11px; }
 .switch-card small { display: none; }
+.switch-card i { width: 34px; height: 20px; }
+.switch-card i::after { width: 14px; height: 14px; }
+.switch-card input:checked + i::after { transform: translateX(14px); }
 .instant-note { margin-top: 8px; }
 
 #scheduleView {

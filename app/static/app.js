@@ -90,6 +90,10 @@ function makeDraft(device) {
     light: Boolean(device.light),
     quiet: Boolean(device.quiet),
     lowerOutlet: Boolean(device.lower_outlet),
+    antiDirect: Boolean(device.anti_direct),
+    turbo: Boolean(device.turbo),
+    health: Boolean(device.health),
+    auxiliaryHeat: Boolean(device.auxiliary_heat),
   };
 }
 
@@ -179,11 +183,15 @@ function createCard(device) {
       <div class="field"><label>上下风向</label><select data-field="vertical">${verticalOptions}</select></div>
       <div class="field" ${horizontal.length ? "" : "hidden"}><label>左右风向</label><select data-field="horizontal">${horizontalOptions}</select></div>
     </div>
-    <div class="comfort-toggles ${device.capabilities.lower_outlet ? "has-four" : ""}">
+    <div class="comfort-toggles">
       <label class="mini-toggle"><span>睡眠</span><input type="checkbox" data-field="sleep" ${draft.sleep ? "checked" : ""}><i></i></label>
       <label class="mini-toggle"><span>面板灯</span><input type="checkbox" data-field="light" ${draft.light ? "checked" : ""}><i></i></label>
       <label class="mini-toggle"><span>静音</span><input type="checkbox" data-field="quiet" ${draft.quiet ? "checked" : ""}><i></i></label>
       ${device.capabilities.lower_outlet ? `<label class="mini-toggle"><span>下出风</span><input type="checkbox" data-field="lowerOutlet" ${draft.lowerOutlet ? "checked" : ""}><i></i></label>` : ""}
+      ${device.capabilities.anti_direct ? `<label class="mini-toggle"><span>防直吹</span><input type="checkbox" data-field="antiDirect" ${draft.antiDirect ? "checked" : ""}><i></i></label>` : ""}
+      ${device.capabilities.turbo ? `<label class="mini-toggle"><span>强劲风</span><input type="checkbox" data-field="turbo" ${draft.turbo ? "checked" : ""}><i></i></label>` : ""}
+      ${device.capabilities.health ? `<label class="mini-toggle"><span>健康</span><input type="checkbox" data-field="health" ${draft.health ? "checked" : ""}><i></i></label>` : ""}
+      ${device.capabilities.auxiliary_heat ? `<label class="mini-toggle"><span>辅热</span><input type="checkbox" data-field="auxiliaryHeat" ${draft.auxiliaryHeat ? "checked" : ""}><i></i></label>` : ""}
     </div>
     <p class="instant-hint">所有调节都会立即生效</p>`;
   return card;
@@ -270,6 +278,10 @@ grid.addEventListener("change", (event) => {
     light: { light: value },
     quiet: { quiet: value },
     lowerOutlet: { lower_outlet: value },
+    antiDirect: { anti_direct: value },
+    turbo: { turbo: value },
+    health: { health: value },
+    auxiliaryHeat: { auxiliary_heat: value },
   };
   if (payloadMap[field]) sendCommand(card, payloadMap[field]);
 });

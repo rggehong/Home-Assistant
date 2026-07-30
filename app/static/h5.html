@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>清风 H5 · 家庭空调</title>
-    <link rel="stylesheet" href="/static/h5.css?v=6">
+    <link rel="stylesheet" href="/static/h5.css?v=7">
   </head>
   <body>
     <main class="app-shell">
@@ -112,6 +112,22 @@
               <span><strong>下出风</strong><small>独立下部出风口</small></span>
               <input type="checkbox" id="lowerOutletSwitch"><i></i>
             </label>
+            <label class="switch-card" id="antiDirectCard" hidden>
+              <span><strong>防直吹</strong><small>风口向上避人</small></span>
+              <input type="checkbox" id="antiDirectSwitch"><i></i>
+            </label>
+            <label class="switch-card" id="turboCard" hidden>
+              <span><strong>强劲风</strong><small>快速强力送风</small></span>
+              <input type="checkbox" id="turboSwitch"><i></i>
+            </label>
+            <label class="switch-card" id="healthCard" hidden>
+              <span><strong>健康</strong><small>开启健康净化</small></span>
+              <input type="checkbox" id="healthSwitch"><i></i>
+            </label>
+            <label class="switch-card" id="auxiliaryHeatCard" hidden>
+              <span><strong>辅热</strong><small>电辅热增强制热</small></span>
+              <input type="checkbox" id="auxiliaryHeatSwitch"><i></i>
+            </label>
           </div>
 
           <p class="instant-note"><i></i>所有调节都会立即生效</p>
@@ -162,6 +178,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=7" defer></script>
+    <script src="/static/h5.js?v=8" defer></script>
   </body>
 </html>

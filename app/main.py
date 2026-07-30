@@ -76,21 +76,39 @@ class ExtraProps(str, Enum):
 ROOMS = {
     "192.168.0.124": {
         "room": "客厅",
+        "model_name": "KFR-72LW",
+        "model_id": "110007e000019",
         "vertical_swing": ["full", "upper", "upper_middle", "middle", "lower_middle", "lower"],
         "horizontal_swing": [],
         "lower_outlet": True,
+        "anti_direct": False,
+        "turbo": True,
+        "health": True,
+        "auxiliary_heat": False,
     },
     "192.168.0.131": {
         "room": "主卧",
+        "model_name": "KFR-35GW",
+        "model_id": "10014",
         "vertical_swing": ["full", "upper", "upper_middle", "middle", "lower_middle", "lower"],
         "horizontal_swing": ["full", "left", "left_center", "center", "right_center", "right"],
         "lower_outlet": False,
+        "anti_direct": True,
+        "turbo": True,
+        "health": True,
+        "auxiliary_heat": True,
     },
     "192.168.0.134": {
         "room": "次卧",
+        "model_name": "KFR-35GW",
+        "model_id": "10014",
         "vertical_swing": ["full", "upper", "upper_middle", "middle", "lower_middle", "lower"],
         "horizontal_swing": ["full", "left", "left_center", "center", "right_center", "right"],
         "lower_outlet": False,
+        "anti_direct": True,
+        "turbo": True,
+        "health": True,
+        "auxiliary_heat": True,
     },
 }
 ROOM_ORDER = {"客厅": 0, "主卧": 1, "次卧": 2}
@@ -114,6 +132,9 @@ class Command(BaseModel):
     xfan: bool | None = None
     sleep: bool | None = None
     lower_outlet: bool | None = None
+    anti_direct: bool | None = None
+    health: bool | None = None
+    auxiliary_heat: bool | None = None
 
 
 class ScheduleCreate(BaseModel):
@@ -160,6 +181,8 @@ def _serialize(device: Device) -> dict[str, Any]:
         "name": getattr(info, "name", None),
         "brand": getattr(info, "brand", None),
         "model": getattr(info, "model", None),
+        "model_name": room.get("model_name"),
+        "model_id": room.get("model_id"),
         "firmware": getattr(device, "hid", None),
         "protocol_version": getattr(device, "version", None),
         "room": room.get("room", "格力空调"),
@@ -167,6 +190,10 @@ def _serialize(device: Device) -> dict[str, Any]:
             "vertical_swing": room.get("vertical_swing", list(VERTICAL_SWING_NAMES)),
             "horizontal_swing": room.get("horizontal_swing", list(HORIZONTAL_SWING_NAMES)),
             "lower_outlet": room.get("lower_outlet", False),
+            "anti_direct": room.get("anti_direct", False),
+            "turbo": room.get("turbo", False),
+            "health": room.get("health", False),
+            "auxiliary_heat": room.get("auxiliary_heat", False),
             "sleep": True,
             "schedules": True,
         },
@@ -181,6 +208,13 @@ def _serialize(device: Device) -> dict[str, Any]:
         "light": device.light,
         "quiet": bool(device.quiet) if device.quiet is not None else None,
         "turbo": device.turbo,
+        "health": device.anion,
+        "auxiliary_heat": device.steady_heat,
+        "anti_direct": (
+            device.vertical_swing == VerticalSwing.FixedUpper
+            if room.get("anti_direct", False)
+            else None
+        ),
         "xfan": device.xfan,
         "sleep": device.sleep,
         "lower_outlet": (
@@ -320,7 +354,40 @@ class Registry:
             for attr in ("light", "quiet", "turbo", "xfan", "sleep"):
                 value = getattr(command, attr)
                 if value is not None:
+                    if attr == "turbo" and not ROOMS.get(
+                        device.device_info.ip, {}
+                    ).get("turbo", False):
+                        raise HTTPException(
+                            status_code=422,
+                            detail="turbo is not supported by this room",
+                        )
                     setattr(device, attr, value)
+            room = ROOMS.get(device.device_info.ip, {})
+            if command.health is not None:
+                if not room.get("health", False):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="health is not supported by this room",
+                    )
+                device.anion = command.health
+            if command.auxiliary_heat is not None:
+                if not room.get("auxiliary_heat", False):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="auxiliary_heat is not supported by this room",
+                    )
+                device.steady_heat = command.auxiliary_heat
+            if command.anti_direct is not None:
+                if not room.get("anti_direct", False):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="anti_direct is not supported by this room",
+                    )
+                device.vertical_swing = (
+                    VerticalSwing.FixedUpper
+                    if command.anti_direct
+                    else VerticalSwing.FixedMiddle
+                )
             if command.lower_outlet is not None:
                 if not ROOMS.get(device.device_info.ip, {}).get("lower_outlet", False):
                     raise HTTPException(

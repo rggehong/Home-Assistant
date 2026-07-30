@@ -255,11 +255,10 @@ button { color: inherit; }
 .advanced-controls .field[hidden] { display: none; }
 .comfort-toggles {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 7px;
   margin-top: 11px;
 }
-.comfort-toggles.has-four { grid-template-columns: repeat(4, 1fr); }
 .mini-toggle {
   position: relative;
   display: grid;
