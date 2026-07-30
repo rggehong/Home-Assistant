@@ -379,7 +379,7 @@ document.querySelector("#scheduleForm").addEventListener("submit", async (event)
   const time = document.querySelector("#scheduleTime").value;
   if (!time) return;
   try {
-    await api("/api/schedules", {
+    const created = await api("/api/schedules", {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify({
@@ -388,10 +388,13 @@ document.querySelector("#scheduleForm").addEventListener("submit", async (event)
         run_at: new Date(time).toISOString(),
       }),
     });
-    event.target.reset();
+    state.schedules = [
+      created,
+      ...state.schedules.filter((item) => item.id !== created.id),
+    ];
     setScheduleTimeAfterMinutes(10);
+    renderSchedules();
     showToast("定时任务已添加");
-    await loadAll(false);
   } catch (error) {
     showToast(error.message);
   }
@@ -400,8 +403,9 @@ document.querySelector("#scheduleForm").addEventListener("submit", async (event)
 async function deleteSchedule(id) {
   try {
     await api(`/api/schedules/${id}`, { method: "DELETE", headers: headers() });
+    state.schedules = state.schedules.filter((item) => item.id !== id);
+    renderSchedules();
     showToast("定时任务已删除");
-    await loadAll(false);
   } catch (error) {
     showToast(error.message);
   }

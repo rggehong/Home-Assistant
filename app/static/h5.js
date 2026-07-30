@@ -585,7 +585,7 @@ el("#scheduleForm").addEventListener("submit", async (event) => {
   const targetId = el("#scheduleTarget").value;
   if (!targetId || !timeValue) return;
   try {
-    await api("/api/schedules", {
+    const created = await api("/api/schedules", {
       method: "POST",
       headers: requestHeaders(true),
       body: JSON.stringify({
@@ -595,10 +595,13 @@ el("#scheduleForm").addEventListener("submit", async (event) => {
         label: `${scheduleTargetName(targetId)}定时任务`,
       }),
     });
-    el("#scheduleForm").reset();
+    model.schedules = [
+      created,
+      ...model.schedules.filter((item) => item.id !== created.id),
+    ];
     setScheduleTimeAfterMinutes(10);
+    renderSchedules();
     showToast("定时任务已添加");
-    await loadAll(false);
   } catch (error) {
     showToast(error.message);
   }
@@ -611,8 +614,9 @@ async function removeSchedule(id) {
       method: "DELETE",
       headers: requestHeaders(),
     });
+    model.schedules = model.schedules.filter((item) => item.id !== id);
+    renderSchedules();
     showToast("定时任务已删除");
-    await loadAll(false);
   } catch (error) {
     showToast(error.message);
   }
