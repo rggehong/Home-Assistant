@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#18201c">
     <title>清风 · 家庭空调</title>
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=9">
+    <link rel="stylesheet" href="/static/styles.css?v=12">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -59,20 +59,47 @@
         </section>
 
         <aside class="side-stack">
-        <section class="desktop-tv">
-          <div class="section-heading schedule-heading">
-            <div><p class="eyebrow">LIVING ROOM</p><h3 id="desktopTvName">索尼电视</h3></div>
-            <button class="power-button" id="desktopTvPower" aria-label="开关电视">◉</button>
+        <section class="desktop-tv remote-stage">
+          <div class="tv-remote">
+            <header class="remote-header">
+              <div><span class="remote-brand">SONY</span><strong id="desktopTvName">索尼电视</strong></div>
+              <button class="remote-key remote-power" id="desktopTvPower" aria-label="开关电视">⏻</button>
+            </header>
+            <p class="desktop-tv-status" id="desktopTvStatus">正在读取电视状态</p>
+            <div class="remote-row remote-row-three">
+              <button class="remote-key" data-tv-remote="tv"><b>电视</b></button>
+              <span class="remote-sensor"></span>
+              <button class="remote-key remote-icon" data-tv-remote="settings" aria-label="电视设置">⚙</button>
+            </div>
+            <div class="remote-row remote-row-sides">
+              <button class="remote-key" data-tv-remote="input"><b>输入</b></button>
+              <i class="remote-led"></i>
+              <button class="remote-key" data-tv-remote="options"><b>选项</b></button>
+            </div>
+            <div class="remote-dpad" aria-label="电视方向控制">
+              <button class="remote-direction remote-up" data-tv-remote="up" aria-label="向上">▲</button>
+              <button class="remote-direction remote-left" data-tv-remote="left" aria-label="向左">◀</button>
+              <button class="remote-ok" data-tv-remote="confirm">OK</button>
+              <button class="remote-direction remote-right" data-tv-remote="right" aria-label="向右">▶</button>
+              <button class="remote-direction remote-down" data-tv-remote="down" aria-label="向下">▼</button>
+            </div>
+            <div class="remote-row remote-row-sides">
+              <button class="remote-key remote-icon" data-tv-remote="back" aria-label="返回">↩</button>
+              <span></span>
+              <button class="remote-key remote-icon" data-tv-remote="home" aria-label="主页">⌂</button>
+            </div>
+            <div class="remote-row remote-row-three">
+              <button class="remote-key" data-tv-remote="mute"><b>静音</b></button>
+              <button class="remote-key remote-voice" disabled title="网页遥控暂不支持语音输入"><b>话筒</b></button>
+              <button class="remote-key remote-icon" data-tv-remote="menu" aria-label="菜单">☰</button>
+            </div>
+            <div class="remote-volume-rocker">
+              <button data-tv-remote="volume_up" aria-label="提高电视音量">＋</button>
+              <span>VOL</span>
+              <button data-tv-remote="volume_down" aria-label="降低电视音量">−</button>
+            </div>
+            <label class="desktop-tv-input"><span>直接切换信号源</span><select id="desktopTvInput"></select></label>
           </div>
-          <p class="desktop-tv-status" id="desktopTvStatus">正在读取电视状态</p>
-          <label class="desktop-tv-input"><span>信号源</span><select id="desktopTvInput"></select></label>
-          <div class="desktop-tv-volume">
-            <button id="desktopTvDown">−</button>
-            <strong id="desktopTvVolume">—</strong>
-            <input id="desktopTvRange" type="range" min="0" max="100" step="1" aria-label="电视音量">
-            <button id="desktopTvUp">＋</button>
-          </div>
-          <button class="desktop-tv-mute" id="desktopTvMute">静音</button>
         </section>
 
         <section class="desktop-schedules">
@@ -129,6 +156,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=12" defer></script>
+    <script src="/static/app.js?v=13" defer></script>
   </body>
 </html>

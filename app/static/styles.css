@@ -291,29 +291,148 @@ button { color: inherit; }
 }
 .side-stack .desktop-schedules { margin-top: 0; }
 .desktop-tv {
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: var(--panel);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
-.desktop-tv .schedule-heading { align-items: center; margin-bottom: 8px; }
-.desktop-tv .power-button { width: 42px; height: 42px; }
-.desktop-tv-status { margin: 0 0 14px; color: var(--muted); font-size: 10px; }
-.desktop-tv-input { display: grid; gap: 6px; }
-.desktop-tv-input span { color: var(--muted); font-size: 9px; }
-.desktop-tv-input select { width: 100%; padding: 9px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.04); }
-.desktop-tv-volume { display: grid; grid-template-columns: 30px auto 1fr 30px; align-items: center; gap: 7px; margin-top: 11px; }
-.desktop-tv-volume button { height: 30px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.04); }
-.desktop-tv-volume strong { min-width: 22px; color: var(--green-bright); text-align: center; }
-.desktop-tv-volume input { width: 100%; accent-color: var(--green); }
-.desktop-tv-mute {
+.remote-stage { display: grid; place-items: center; min-height: 0; }
+.tv-remote {
+  display: grid;
+  grid-template-rows: repeat(9, auto);
+  align-content: space-between;
+  gap: 4px;
   width: 100%;
-  margin-top: 10px;
-  padding: 9px;
-  color: var(--green-bright);
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: rgba(255,255,255,.025);
+  height: 100%;
+  padding: 11px 16px 10px;
+  color: #f4f6f5;
+  border: 1px solid #080a09;
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), transparent 28%),
+    linear-gradient(180deg, #252826, #111312 72%, #090a0a);
+  box-shadow: 0 16px 28px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.07);
+}
+.remote-header, .remote-row { display: grid; align-items: center; }
+.remote-header { grid-template-columns: 1fr auto; }
+.remote-header > div { display: grid; gap: 1px; }
+.remote-brand { color: #64d196; font-size: 7px; font-weight: 800; letter-spacing: .18em; }
+.remote-header strong { font-size: 10px; font-weight: 650; }
+.desktop-tv-status {
+  overflow: hidden;
+  margin: 0;
+  color: #919995;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.remote-row-three, .remote-row-sides { grid-template-columns: repeat(3, 1fr); justify-items: center; }
+.remote-key {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #f5f6f5;
+  border: 1px solid #080909;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303431, #171a18);
+  box-shadow: 0 3px 5px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.06);
+  font-size: 15px;
+}
+.remote-key b { font-size: 8px; font-weight: 650; }
+.remote-key:active, .remote-direction:active, .remote-ok:active,
+.remote-volume-rocker button:active { transform: translateY(1px); filter: brightness(.82); }
+.remote-key:disabled, .remote-direction:disabled, .remote-ok:disabled,
+.remote-volume-rocker button:disabled { cursor: not-allowed; opacity: .3; }
+.remote-power { position: relative; color: #66d99d; font-size: 0; }
+.remote-power::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  transform: translateY(2px);
+}
+.remote-power::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  width: 2px;
+  height: 10px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.remote-power.is-on { box-shadow: 0 0 15px rgba(93,211,148,.25), 0 3px 5px rgba(0,0,0,.48); }
+.remote-icon { font-size: 17px; }
+.remote-sensor {
+  width: 27px;
+  height: 27px;
+  border: 1px solid #181a19;
+  border-radius: 50%;
+  background: #202321;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.35);
+}
+.remote-led { width: 13px; height: 4px; border-radius: 99px; background: #050606; }
+.remote-dpad {
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  width: min(104px, 14vh);
+  aspect-ratio: 1;
+  padding: 4px;
+  border: 1px solid #090a09;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 38%, #303431, #161917 70%);
+  box-shadow: 0 4px 7px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.07);
+}
+.remote-direction, .remote-ok {
+  color: #9fa5a1;
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+}
+.remote-up { grid-area: 1 / 2; }
+.remote-left { grid-area: 2 / 1; }
+.remote-right { grid-area: 2 / 3; }
+.remote-down { grid-area: 3 / 2; }
+.remote-ok {
+  grid-area: 2 / 2;
+  color: white;
+  border: 1px solid #0a0b0a;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303431, #151816);
+  box-shadow: 0 2px 5px rgba(0,0,0,.5);
+  font-size: 8px;
+  font-weight: 750;
+}
+.remote-voice { color: #7f8782; }
+.remote-volume-rocker {
+  justify-self: center;
+  display: grid;
+  grid-template-rows: 21px 8px 21px;
+  width: 38px;
+  overflow: hidden;
+  border: 1px solid #080909;
+  border-radius: 19px;
+  background: #181b19;
+  box-shadow: 0 3px 6px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.05);
+}
+.remote-volume-rocker button { color: white; border: 0; background: transparent; font-size: 15px; }
+.remote-volume-rocker span { color: #7d8580; text-align: center; font-size: 5px; letter-spacing: .12em; }
+.desktop-tv-input { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px; }
+.desktop-tv-input span { color: #858d88; font-size: 7px; white-space: nowrap; }
+.desktop-tv-input select {
+  min-width: 0;
+  width: 100%;
+  padding: 4px 6px;
+  color: #e9ecea;
+  border: 1px solid #343a36;
+  border-radius: 8px;
+  background: #191c1a;
+  font-size: 7px;
 }
 .schedule-heading { margin-bottom: 25px; }
 .schedule-form {
@@ -508,6 +627,11 @@ dialog input:focus { border-color: var(--green); }
     gap: 16px;
     align-items: stretch;
   }
+  .side-stack {
+    align-self: stretch;
+    min-height: 0;
+    grid-template-rows: minmax(0, 430px) minmax(0, 1fr);
+  }
   .device-grid { min-height: 0; }
   .device-card, .skeleton-card { height: 100%; min-height: 0; }
   .device-card { padding: 17px; overflow: hidden; }
@@ -521,7 +645,7 @@ dialog input:focus { border-color: var(--green); }
   .comfort-toggles { margin-top: 7px; }
   .mini-toggle { padding: 6px 3px; }
   .desktop-schedules {
-    height: 100%;
+    height: auto;
     min-height: 0;
     margin-top: 0;
     padding: 16px;

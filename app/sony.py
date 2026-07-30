@@ -10,9 +10,21 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 REMOTE_CODES = {
+    "tv": "AAAAAQAAAAEAAAAkAw==",
+    "input": "AAAAAQAAAAEAAAAlAw==",
+    "settings": "AAAAAgAAAMQAAABLAw==",
+    "options": "AAAAAgAAAJcAAAA2Aw==",
+    "up": "AAAAAQAAAAEAAAB0Aw==",
+    "down": "AAAAAQAAAAEAAAB1Aw==",
+    "left": "AAAAAQAAAAEAAAA0Aw==",
+    "right": "AAAAAQAAAAEAAAAzAw==",
+    "confirm": "AAAAAQAAAAEAAABlAw==",
+    "back": "AAAAAgAAAJcAAAAjAw==",
+    "home": "AAAAAQAAAAEAAABgAw==",
     "volume_up": "AAAAAQAAAAEAAAASAw==",
     "volume_down": "AAAAAQAAAAEAAAATAw==",
     "mute": "AAAAAQAAAAEAAAAUAw==",
+    "menu": "AAAAAgAAAMQAAABPAw==",
 }
 
 

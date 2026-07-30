@@ -434,37 +434,161 @@ body[data-view="schedule"] #scheduleView { display: block; }
   min-height: 0;
 }
 body[data-view="tv"] #controlView { display: none; }
-body[data-view="tv"] .room-tabs { visibility: hidden; }
+body[data-view="tv"] .room-tabs { display: none; }
 body[data-view="tv"] #tvView { display: block; }
 .tv-card {
   height: 100%;
-  padding: 22px;
-  border: 1px solid rgba(255,255,255,.8);
-  border-radius: 24px;
-  background: rgba(255,255,255,.72);
-  box-shadow: 0 14px 40px rgba(52,82,62,.08);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
-.tv-status { margin: 12px 0 22px; color: var(--muted); font-size: 11px; }
-.tv-input-field { display: grid; gap: 7px; }
-.tv-input-field span, .tv-volume span { color: var(--muted); font-size: 10px; }
-.tv-input-field select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: #f6f9f4; }
-.tv-volume { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; margin-top: 22px; }
-.tv-volume > button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 22px; }
-.tv-volume > div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
-.tv-volume strong { color: var(--green); font-size: 24px; }
-.tv-volume input { grid-column: 1 / -1; width: 100%; accent-color: var(--green); }
-.tv-mute-card {
-  width: 100%;
-  margin-top: 22px;
-  color: inherit;
-  font: inherit;
+.remote-stage { display: grid; place-items: center; min-height: 0; }
+.tv-remote {
+  display: grid;
+  grid-template-rows: repeat(9, auto);
+  align-content: space-between;
+  gap: 7px;
+  width: min(100%, 310px);
+  height: 100%;
+  max-height: 620px;
+  padding: 15px 19px 14px;
+  color: #f4f6f5;
+  border: 1px solid #080a09;
+  border-radius: 34px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), transparent 28%),
+    linear-gradient(180deg, #252826, #111312 72%, #090a0a);
+  box-shadow: 0 20px 38px rgba(12,18,14,.28), inset 0 1px rgba(255,255,255,.07);
 }
-.tv-mute-card b {
-  padding: 6px 12px;
+.remote-header, .remote-row { display: grid; align-items: center; }
+.remote-header { grid-template-columns: 1fr auto; }
+.remote-header > div { display: grid; gap: 1px; }
+.remote-brand { color: #64d196; font-size: 8px; font-weight: 800; letter-spacing: .18em; }
+.remote-header strong { font-size: 12px; font-weight: 650; }
+.tv-status, .desktop-tv-status {
+  overflow: hidden;
+  margin: 0;
+  color: #919995;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.remote-row-three { grid-template-columns: 1fr 1fr 1fr; justify-items: center; }
+.remote-row-sides { grid-template-columns: 1fr 1fr 1fr; justify-items: center; }
+.remote-key {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  color: #f5f6f5;
+  border: 1px solid #080909;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303431, #171a18);
+  box-shadow: 0 3px 5px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.06);
+  font-size: 18px;
+}
+.remote-key b { font-size: 10px; font-weight: 650; }
+.remote-key:active, .remote-direction:active, .remote-ok:active,
+.remote-volume-rocker button:active {
+  transform: translateY(1px);
+  filter: brightness(.82);
+}
+.remote-key:disabled, .remote-direction:disabled, .remote-ok:disabled,
+.remote-volume-rocker button:disabled { cursor: not-allowed; opacity: .3; }
+.remote-power { position: relative; color: #66d99d; font-size: 0; }
+.remote-power::before {
+  content: "";
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  transform: translateY(2px);
+}
+.remote-power::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  width: 2px;
+  height: 12px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.remote-power.is-on { box-shadow: 0 0 18px rgba(93,211,148,.26), 0 3px 5px rgba(0,0,0,.48); }
+.remote-icon { font-size: 21px; }
+.remote-sensor {
+  width: 35px;
+  height: 35px;
+  border: 1px solid #181a19;
+  border-radius: 50%;
+  background: #202321;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.35);
+}
+.remote-led { width: 16px; height: 5px; border-radius: 99px; background: #050606; }
+.remote-dpad {
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  width: min(148px, 24vh);
+  aspect-ratio: 1;
+  padding: 6px;
+  border: 1px solid #090a09;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 38%, #303431, #161917 70%);
+  box-shadow: 0 5px 8px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.07);
+}
+.remote-direction, .remote-ok {
+  color: #9fa5a1;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+}
+.remote-up { grid-area: 1 / 2; }
+.remote-left { grid-area: 2 / 1; }
+.remote-right { grid-area: 2 / 3; }
+.remote-down { grid-area: 3 / 2; }
+.remote-ok {
+  grid-area: 2 / 2;
   color: white;
-  border-radius: 999px;
-  background: var(--green);
+  border: 1px solid #0a0b0a;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303431, #151816);
+  box-shadow: 0 2px 5px rgba(0,0,0,.5);
   font-size: 11px;
+  font-weight: 750;
+}
+.remote-voice { color: #7f8782; }
+.remote-volume-rocker {
+  justify-self: center;
+  display: grid;
+  grid-template-rows: 30px 13px 30px;
+  width: 48px;
+  overflow: hidden;
+  border: 1px solid #080909;
+  border-radius: 22px;
+  background: #181b19;
+  box-shadow: 0 4px 7px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.05);
+}
+.remote-volume-rocker button {
+  color: white;
+  border: 0;
+  background: transparent;
+  font-size: 20px;
+}
+.remote-volume-rocker span { color: #7d8580; text-align: center; font-size: 7px; letter-spacing: .12em; }
+.tv-input-field { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+.tv-input-field span { color: #858d88; font-size: 8px; white-space: nowrap; }
+.tv-input-field select {
+  min-width: 0;
+  width: 100%;
+  padding: 6px 8px;
+  color: #e9ecea;
+  border: 1px solid #343a36;
+  border-radius: 9px;
+  background: #191c1a;
+  font-size: 9px;
 }
 .schedule-list {
   display: flex;
@@ -524,4 +648,9 @@ body[data-view="tv"] #tvView { display: block; }
   .switch-card { padding: 6px 8px; }
   .view-nav { padding-top: 5px; }
   .view-nav button { padding: 7px; }
+  .tv-remote { gap: 4px; padding: 10px 17px; border-radius: 26px; }
+  .remote-key { width: 34px; height: 34px; }
+  .remote-key b { font-size: 8px; }
+  .remote-dpad { width: min(112px, 21vh); }
+  .remote-volume-rocker { grid-template-rows: 23px 10px 23px; width: 42px; }
 }

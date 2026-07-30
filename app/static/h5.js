@@ -170,12 +170,9 @@ function renderTV() {
     return option;
   }));
   inputSelect.disabled = !tv.configured || !tv.online;
-  const volume = Number.isFinite(tv.volume) ? tv.volume : 0;
-  el("#tvVolumeValue").textContent = Number.isFinite(tv.volume) ? String(tv.volume) : "—";
-  el("#tvVolumeRange").value = String(volume);
-  el("#tvVolumeRange").disabled =
-    !tv.configured || !tv.online || !Number.isFinite(tv.volume);
-  el("#tvMuteSwitch").disabled = !tv.configured || !tv.online;
+  document.querySelectorAll("[data-tv-remote]").forEach((button) => {
+    button.disabled = !tv.configured || !tv.online;
+  });
 }
 
 async function sendTVCommand(payload) {
@@ -539,17 +536,10 @@ el("#tvPowerButton").addEventListener("click", () => {
 el("#tvInputSelect").addEventListener("change", (event) => {
   sendTVCommand({ input_uri: event.target.value });
 });
-el("#tvVolumeDown").addEventListener("click", () => {
-  if (model.tv) sendTVCommand({ remote: "volume_down" });
-});
-el("#tvVolumeUp").addEventListener("click", () => {
-  if (model.tv) sendTVCommand({ remote: "volume_up" });
-});
-el("#tvVolumeRange").addEventListener("change", (event) => {
-  sendTVCommand({ volume: Number(event.target.value) });
-});
-el("#tvMuteSwitch").addEventListener("click", () => {
-  sendTVCommand({ remote: "mute" });
+document.querySelectorAll("[data-tv-remote]").forEach((button) => {
+  button.addEventListener("click", () => {
+    sendTVCommand({ remote: button.dataset.tvRemote });
+  });
 });
 
 document.querySelectorAll(".view-nav button").forEach((button) => {
