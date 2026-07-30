@@ -525,6 +525,7 @@ function initializeScheduleTime() {
 document.querySelectorAll("[data-schedule-delay]").forEach((button) => {
   button.addEventListener("click", () => {
     setScheduleTimeAfterMinutes(Number(button.dataset.scheduleDelay));
+    document.querySelector("#scheduleForm").requestSubmit();
   });
 });
 ["#scheduleDay", "#scheduleHour", "#scheduleMinute"].forEach((selector) => {
