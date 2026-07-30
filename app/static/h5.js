@@ -5,6 +5,7 @@ const model = {
   schedules: [],
   tv: null,
   aupu: null,
+  plug: null,
   tvForeground: null,
   selectedId: null,
   drafts: new Map(),
@@ -13,6 +14,7 @@ const model = {
 
 const el = (selector) => document.querySelector(selector);
 const SONY_TV_DEVICE_ID = "sony-living-tv";
+const MIJIA_PLUG_DEVICE_ID = "mijia-plug-3";
 const statusLine = el("#statusLine");
 const authDialog = el("#authDialog");
 const logoutButton = el("#logoutButton");
@@ -20,6 +22,7 @@ const toast = el("#toast");
 const tvScreenDialog = el("#tvScreenDialog");
 const aupuSetupDialog = el("#aupuSetupDialog");
 let aupuQrPollTimer = null;
+let aupuQrGeneration = 0;
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
 const MIN_TEMPERATURE = 16;
@@ -139,11 +142,12 @@ function ensureDraft(device) {
 async function loadAll(refresh = true) {
   setStatus("正在同步空调状态", "");
   try {
-    const [devices, schedules, tv, aupu] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
       api("/api/schedules", { headers: requestHeaders() }),
       api("/api/tv", { headers: requestHeaders() }),
       api("/api/aupu", { headers: requestHeaders() }),
+      api("/api/plug", { headers: requestHeaders() }),
     ]);
     model.authenticated = true;
     updateAuthControls();
@@ -151,6 +155,7 @@ async function loadAll(refresh = true) {
     model.schedules = schedules;
     model.tv = tv;
     model.aupu = aupu;
+    model.plug = plug;
     devices.forEach(ensureDraft);
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
@@ -177,6 +182,66 @@ function render() {
   renderSchedules();
   renderTV();
   renderAupu();
+  renderPlug();
+}
+
+function plugSupports(name) {
+  return Boolean(model.plug?.capabilities?.includes(name));
+}
+
+function renderPlug() {
+  const device = model.plug;
+  if (!device) return;
+  el("#plugStatus").textContent = device.online
+    ? `${device.ip} · ${device.configured ? (device.on ? "已通电" : "已关闭") : "已发现，等待连接"}`
+    : `${device.ip} · ${device.error || "离线"}`;
+  el("#plugPowerButton").classList.toggle("is-on", Boolean(device.on));
+  el("#plugPowerButton").disabled = !device.configured || !device.online;
+  el("#plugElectricPower").textContent = device.electric_power ?? "—";
+  el("#plugEnergy").textContent = device.energy_kwh ?? "—";
+  el("#plugTemperature").textContent = device.temperature ?? "—";
+  el("#plugFault").textContent = device.fault_name || "—";
+  el("#plugFault").classList.toggle("has-fault", Boolean(device.fault));
+
+  const settings = [
+    ["plugDefaultStateField", "default_power_state"],
+    ["plugLockCard", "physical_lock"],
+    ["plugIndicatorCard", "indicator_light"],
+    ["plugChargingCard", "charging_protection"],
+    ["plugMaxPowerCard", "max_power_limit"],
+    ["plugMaxPowerField", "max_power"],
+  ];
+  settings.forEach(([id, capability]) => {
+    el(`#${id}`).hidden = device.configured && !plugSupports(capability);
+  });
+  el("#plugDefaultState").value = String(device.default_power_state ?? 0);
+  el("#plugLock").checked = Boolean(device.physical_lock);
+  el("#plugIndicator").checked = Boolean(device.indicator_light);
+  el("#plugCharging").checked = Boolean(device.charging_protection);
+  el("#plugMaxPowerEnabled").checked = Boolean(device.max_power_limit);
+  el("#plugMaxPower").value = String(device.max_power ?? 2500);
+  document.querySelectorAll("#plugView input, #plugView select").forEach((control) => {
+    control.disabled = !device.configured || !device.online;
+  });
+  el("#plugSetupButton").hidden = device.configured;
+}
+
+async function sendPlugCommand(payload) {
+  el("#plugView").classList.add("is-busy");
+  try {
+    model.plug = await api("/api/plug/command", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify(payload),
+    });
+    renderPlug();
+    showToast("智能插座设置已生效");
+  } catch (error) {
+    renderPlug();
+    showToast(error.message);
+  } finally {
+    el("#plugView").classList.remove("is-busy");
+  }
 }
 
 function renderAupu() {
@@ -488,6 +553,12 @@ function renderScheduleTargets() {
     option.textContent = "索尼电视";
     options.push(option);
   }
+  if (model.plug?.configured) {
+    const option = document.createElement("option");
+    option.value = MIJIA_PLUG_DEVICE_ID;
+    option.textContent = "米家智能插座 3";
+    options.push(option);
+  }
   select.replaceChildren(...options);
   const fallback = selectedDevice()?.id || SONY_TV_DEVICE_ID;
   select.value = options.some((option) => option.value === previous) ? previous : fallback;
@@ -495,6 +566,7 @@ function renderScheduleTargets() {
 
 function scheduleTargetName(deviceId) {
   if (deviceId === SONY_TV_DEVICE_ID) return "索尼电视";
+  if (deviceId === MIJIA_PLUG_DEVICE_ID) return "米家智能插座 3";
   const device = model.devices.find((item) => item.id === deviceId);
   return device ? `格力空调 · ${device.room}` : "格力空调";
 }
@@ -780,28 +852,33 @@ el("#aupuLight").addEventListener("change", (event) => {
 el("#aupuExternalLight").addEventListener("change", (event) => {
   sendAupuCommand({ external_light: event.target.checked });
 });
-el("#aupuSetupButton").addEventListener("click", () => {
+document.querySelectorAll("[data-xiaomi-setup]").forEach((button) => button.addEventListener("click", () => {
+  aupuQrGeneration += 1;
   el("#aupuSetupError").textContent = "";
   el("#aupuQrBox").hidden = true;
   el("#aupuQrStart").disabled = false;
   clearTimeout(aupuQrPollTimer);
   if (!aupuSetupDialog.open) aupuSetupDialog.showModal();
-});
+}));
 el("#closeAupuSetupDialog").addEventListener("click", () => {
+  aupuQrGeneration += 1;
   clearTimeout(aupuQrPollTimer);
   aupuSetupDialog.close();
 });
-async function pollAupuQr(sessionId) {
+async function pollAupuQr(sessionId, generation) {
   try {
     const result = await api(`/api/aupu/qr/${sessionId}`, {
       headers: requestHeaders(),
     });
+    if (generation !== aupuQrGeneration) return;
     if (result.status === "connected") {
       model.aupu = result.device;
+      model.plug = await api("/api/plug", { headers: requestHeaders() });
       clearTimeout(aupuQrPollTimer);
       aupuSetupDialog.close();
       renderAupu();
-      showToast("Q360A-Pro 已连接");
+      renderPlug();
+      showToast("米家设备已连接");
       return;
     }
     if (result.status === "error" || result.status === "expired") {
@@ -811,8 +888,9 @@ async function pollAupuQr(sessionId) {
       return;
     }
     el("#aupuQrStatus").textContent = "等待在米家 App 中确认…";
-    aupuQrPollTimer = setTimeout(() => pollAupuQr(sessionId), 1800);
+    aupuQrPollTimer = setTimeout(() => pollAupuQr(sessionId, generation), 1800);
   } catch (error) {
+    if (generation !== aupuQrGeneration) return;
     el("#aupuSetupError").textContent = error.message;
     el("#aupuQrStart").disabled = false;
   }
@@ -820,6 +898,8 @@ async function pollAupuQr(sessionId) {
 el("#aupuSetupForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const submit = event.submitter;
+  const generation = ++aupuQrGeneration;
+  clearTimeout(aupuQrPollTimer);
   submit.disabled = true;
   el("#aupuSetupError").textContent = "";
   try {
@@ -833,11 +913,33 @@ el("#aupuSetupForm").addEventListener("submit", async (event) => {
     el("#aupuQrImage").src = result.qr_image;
     el("#aupuQrBox").hidden = false;
     el("#aupuQrStatus").textContent = "请使用米家 App 扫码并确认";
-    pollAupuQr(result.session_id);
+    pollAupuQr(result.session_id, generation);
   } catch (error) {
+    if (generation !== aupuQrGeneration) return;
     el("#aupuSetupError").textContent = error.message;
     submit.disabled = false;
   }
+});
+el("#plugPowerButton").addEventListener("click", () => {
+  if (model.plug) sendPlugCommand({ on: !model.plug.on });
+});
+el("#plugDefaultState").addEventListener("change", (event) => {
+  sendPlugCommand({ default_power_state: Number(event.target.value) });
+});
+el("#plugLock").addEventListener("change", (event) => {
+  sendPlugCommand({ physical_lock: event.target.checked });
+});
+el("#plugIndicator").addEventListener("change", (event) => {
+  sendPlugCommand({ indicator_light: event.target.checked });
+});
+el("#plugCharging").addEventListener("change", (event) => {
+  sendPlugCommand({ charging_protection: event.target.checked });
+});
+el("#plugMaxPowerEnabled").addEventListener("change", (event) => {
+  sendPlugCommand({ max_power_limit: event.target.checked });
+});
+el("#plugMaxPower").addEventListener("change", (event) => {
+  sendPlugCommand({ max_power: Number(event.target.value) });
 });
 
 document.querySelectorAll(".view-nav button").forEach((button) => {

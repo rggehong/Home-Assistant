@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=27">
+    <link rel="stylesheet" href="/static/h5.css?v=28">
   </head>
   <body>
     <main class="app-shell">
@@ -162,7 +162,73 @@
             </label>
           </div>
 
-          <button class="aupu-setup-button" id="aupuSetupButton" type="button">连接米家</button>
+          <button class="aupu-setup-button" id="aupuSetupButton" data-xiaomi-setup type="button">连接米家</button>
+        </article>
+      </section>
+
+      <section class="plug-view" id="plugView">
+        <article class="plug-card">
+          <header class="plug-header">
+            <div>
+              <span class="micro-label">MIJIA SMART PLUG</span>
+              <h2>米家智能插座 3</h2>
+              <p id="plugStatus">正在读取 192.168.0.145</p>
+            </div>
+            <button class="plug-power-button" id="plugPowerButton" type="button" aria-label="开关智能插座">⏻</button>
+          </header>
+
+          <div class="plug-metrics">
+            <div><strong id="plugElectricPower">—</strong><span>当前功率 W</span></div>
+            <div><strong id="plugEnergy">—</strong><span>累计用电 kWh</span></div>
+            <div><strong id="plugTemperature">—</strong><span>设备温度 °C</span></div>
+          </div>
+
+          <div class="plug-health">
+            <span>设备状态</span>
+            <strong id="plugFault">等待连接</strong>
+          </div>
+
+          <div class="plug-settings">
+            <label id="plugDefaultStateField">
+              <span>断电恢复</span>
+              <select id="plugDefaultState">
+                <option value="0">恢复断电前状态</option>
+                <option value="1">上电自动打开</option>
+                <option value="2">上电保持关闭</option>
+              </select>
+            </label>
+            <label id="plugMaxPowerField">
+              <span>最大功率保护</span>
+              <select id="plugMaxPower">
+                <option value="1500">1500 W</option>
+                <option value="1800">1800 W</option>
+                <option value="2000">2000 W</option>
+                <option value="2200">2200 W</option>
+                <option value="2500">2500 W</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="plug-switches">
+            <label class="switch-card" id="plugLockCard">
+              <span><strong>物理按键锁</strong><small>防止误触按键</small></span>
+              <input type="checkbox" id="plugLock"><i></i>
+            </label>
+            <label class="switch-card" id="plugIndicatorCard">
+              <span><strong>指示灯</strong><small>插座状态灯</small></span>
+              <input type="checkbox" id="plugIndicator"><i></i>
+            </label>
+            <label class="switch-card" id="plugChargingCard">
+              <span><strong>充电保护</strong><small>低功率持续后断电</small></span>
+              <input type="checkbox" id="plugCharging"><i></i>
+            </label>
+            <label class="switch-card" id="plugMaxPowerCard">
+              <span><strong>功率保护</strong><small>超过阈值自动保护</small></span>
+              <input type="checkbox" id="plugMaxPowerEnabled"><i></i>
+            </label>
+          </div>
+
+          <button class="aupu-setup-button" id="plugSetupButton" data-xiaomi-setup type="button">扫码连接米家</button>
         </article>
       </section>
 
@@ -295,6 +361,7 @@
       <nav class="view-nav" aria-label="页面功能">
         <button class="active" data-view="control">格力空调</button>
         <button data-view="aupu">奥普浴霸</button>
+        <button data-view="plug">智能插座</button>
         <button data-view="tv">索尼电视</button>
         <button data-view="schedule">定时任务</button>
       </nav>
@@ -352,6 +419,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=25" defer></script>
+    <script src="/static/h5.js?v=27" defer></script>
   </body>
 </html>

@@ -5,11 +5,13 @@ const state = {
   schedules: [],
   tv: null,
   aupu: null,
+  plug: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
 };
 const SONY_TV_DEVICE_ID = "sony-living-tv";
+const MIJIA_PLUG_DEVICE_ID = "mijia-plug-3";
 
 const grid = document.querySelector("#deviceGrid");
 const connection = document.querySelector("#connection");
@@ -21,6 +23,7 @@ const toast = document.querySelector("#toast");
 const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
 const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
 let desktopAupuQrPollTimer = null;
+let desktopAupuQrGeneration = 0;
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -124,11 +127,12 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules, tv, aupu] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
       api("/api/tv", { headers: headers() }),
       api("/api/aupu", { headers: headers() }),
+      api("/api/plug", { headers: headers() }),
     ]);
     state.authenticated = true;
     updateAuthControls();
@@ -136,6 +140,7 @@ async function loadAll(refresh = true) {
     state.schedules = schedules;
     state.tv = tv;
     state.aupu = aupu;
+    state.plug = plug;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
@@ -177,6 +182,68 @@ function render() {
   renderSchedules();
   renderTV();
   renderAupu();
+  renderPlug();
+}
+
+function desktopPlugSupports(name) {
+  return Boolean(state.plug?.capabilities?.includes(name));
+}
+
+function renderPlug() {
+  const device = state.plug;
+  if (!device) return;
+  document.querySelector("#desktopPlugStatus").textContent = device.online
+    ? `${device.ip} · ${device.configured ? (device.on ? "已通电" : "已关闭") : "已发现，等待连接"}`
+    : `${device.ip} · ${device.error || "离线"}`;
+  document.querySelector("#desktopPlugPower").textContent = device.electric_power ?? "—";
+  document.querySelector("#desktopPlugEnergy").textContent = device.energy_kwh ?? "—";
+  document.querySelector("#desktopPlugTemperature").textContent = device.temperature ?? "—";
+  document.querySelector("#desktopPlugFault").textContent = device.fault_name || "—";
+  const power = document.querySelector("#desktopPlugPowerButton");
+  power.classList.toggle("is-on", Boolean(device.on));
+  power.disabled = !device.configured || !device.online;
+
+  const capabilityFields = [
+    ["desktopPlugDefaultField", "default_power_state"],
+    ["desktopPlugLockCard", "physical_lock"],
+    ["desktopPlugIndicatorCard", "indicator_light"],
+    ["desktopPlugChargingCard", "charging_protection"],
+    ["desktopPlugMaxPowerCard", "max_power_limit"],
+    ["desktopPlugMaxPowerField", "max_power"],
+  ];
+  capabilityFields.forEach(([id, capability]) => {
+    document.querySelector(`#${id}`).hidden =
+      device.configured && !desktopPlugSupports(capability);
+  });
+  document.querySelector("#desktopPlugDefault").value =
+    String(device.default_power_state ?? 0);
+  document.querySelector("#desktopPlugLock").checked = Boolean(device.physical_lock);
+  document.querySelector("#desktopPlugIndicator").checked = Boolean(device.indicator_light);
+  document.querySelector("#desktopPlugCharging").checked = Boolean(device.charging_protection);
+  document.querySelector("#desktopPlugMaxPowerEnabled").checked = Boolean(device.max_power_limit);
+  document.querySelector("#desktopPlugMaxPower").value = String(device.max_power ?? 2500);
+  document.querySelectorAll("#desktopPlug input, #desktopPlug select").forEach((control) => {
+    control.disabled = !device.configured || !device.online;
+  });
+  document.querySelector("#desktopPlugSetup").hidden = device.configured;
+}
+
+async function sendPlugCommand(payload) {
+  document.querySelector("#desktopPlug").classList.add("is-busy");
+  try {
+    state.plug = await api("/api/plug/command", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(payload),
+    });
+    renderPlug();
+    showToast("智能插座设置已生效");
+  } catch (error) {
+    renderPlug();
+    showToast(error.message);
+  } finally {
+    document.querySelector("#desktopPlug").classList.remove("is-busy");
+  }
 }
 
 function renderAupu() {
@@ -535,12 +602,19 @@ function renderScheduleRoomOptions() {
     option.textContent = "索尼电视";
     options.push(option);
   }
+  if (state.plug?.configured) {
+    const option = document.createElement("option");
+    option.value = MIJIA_PLUG_DEVICE_ID;
+    option.textContent = "米家智能插座 3";
+    options.push(option);
+  }
   select.replaceChildren(...options);
   if (options.some((option) => option.value === previous)) select.value = previous;
 }
 
 function scheduleTargetName(deviceId) {
   if (deviceId === SONY_TV_DEVICE_ID) return "索尼电视";
+  if (deviceId === MIJIA_PLUG_DEVICE_ID) return "米家智能插座 3";
   const device = state.devices.find((entry) => entry.id === deviceId);
   return device ? `格力空调 · ${device.room}` : "格力空调";
 }
@@ -638,26 +712,31 @@ document.querySelector("#desktopAupuLight").addEventListener("change", (event) =
 document.querySelector("#desktopAupuExternalLight").addEventListener("change", (event) => {
   sendAupuCommand({ external_light: event.target.checked });
 });
-document.querySelector("#desktopAupuSetup").addEventListener("click", () => {
+document.querySelectorAll("[data-xiaomi-setup]").forEach((button) => button.addEventListener("click", () => {
+  desktopAupuQrGeneration += 1;
   document.querySelector("#desktopAupuSetupError").textContent = "";
   document.querySelector("#desktopAupuQrBox").hidden = true;
   document.querySelector("#desktopAupuQrStart").disabled = false;
   clearTimeout(desktopAupuQrPollTimer);
   if (!aupuSetupDialog.open) aupuSetupDialog.showModal();
-});
+}));
 document.querySelector("#closeDesktopAupuSetupDialog").addEventListener("click", () => {
+  desktopAupuQrGeneration += 1;
   clearTimeout(desktopAupuQrPollTimer);
   aupuSetupDialog.close();
 });
-async function pollDesktopAupuQr(sessionId) {
+async function pollDesktopAupuQr(sessionId, generation) {
   try {
     const result = await api(`/api/aupu/qr/${sessionId}`, { headers: headers() });
+    if (generation !== desktopAupuQrGeneration) return;
     if (result.status === "connected") {
       state.aupu = result.device;
+      state.plug = await api("/api/plug", { headers: headers() });
       clearTimeout(desktopAupuQrPollTimer);
       aupuSetupDialog.close();
       renderAupu();
-      showToast("Q360A-Pro 已连接");
+      renderPlug();
+      showToast("米家设备已连接");
       return;
     }
     if (result.status === "error" || result.status === "expired") {
@@ -668,8 +747,12 @@ async function pollDesktopAupuQr(sessionId) {
       return;
     }
     document.querySelector("#desktopAupuQrStatus").textContent = "等待在米家 App 中确认…";
-    desktopAupuQrPollTimer = setTimeout(() => pollDesktopAupuQr(sessionId), 1800);
+    desktopAupuQrPollTimer = setTimeout(
+      () => pollDesktopAupuQr(sessionId, generation),
+      1800,
+    );
   } catch (error) {
+    if (generation !== desktopAupuQrGeneration) return;
     document.querySelector("#desktopAupuSetupError").textContent = error.message;
     document.querySelector("#desktopAupuQrStart").disabled = false;
   }
@@ -677,6 +760,8 @@ async function pollDesktopAupuQr(sessionId) {
 document.querySelector("#desktopAupuSetupForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const submit = event.submitter;
+  const generation = ++desktopAupuQrGeneration;
+  clearTimeout(desktopAupuQrPollTimer);
   submit.disabled = true;
   document.querySelector("#desktopAupuSetupError").textContent = "";
   try {
@@ -691,11 +776,33 @@ document.querySelector("#desktopAupuSetupForm").addEventListener("submit", async
     document.querySelector("#desktopAupuQrBox").hidden = false;
     document.querySelector("#desktopAupuQrStatus").textContent =
       "请使用米家 App 扫码并确认";
-    pollDesktopAupuQr(result.session_id);
+    pollDesktopAupuQr(result.session_id, generation);
   } catch (error) {
+    if (generation !== desktopAupuQrGeneration) return;
     document.querySelector("#desktopAupuSetupError").textContent = error.message;
     submit.disabled = false;
   }
+});
+document.querySelector("#desktopPlugPowerButton").addEventListener("click", () => {
+  if (state.plug) sendPlugCommand({ on: !state.plug.on });
+});
+document.querySelector("#desktopPlugDefault").addEventListener("change", (event) => {
+  sendPlugCommand({ default_power_state: Number(event.target.value) });
+});
+document.querySelector("#desktopPlugLock").addEventListener("change", (event) => {
+  sendPlugCommand({ physical_lock: event.target.checked });
+});
+document.querySelector("#desktopPlugIndicator").addEventListener("change", (event) => {
+  sendPlugCommand({ indicator_light: event.target.checked });
+});
+document.querySelector("#desktopPlugCharging").addEventListener("change", (event) => {
+  sendPlugCommand({ charging_protection: event.target.checked });
+});
+document.querySelector("#desktopPlugMaxPowerEnabled").addEventListener("change", (event) => {
+  sendPlugCommand({ max_power_limit: event.target.checked });
+});
+document.querySelector("#desktopPlugMaxPower").addEventListener("change", (event) => {
+  sendPlugCommand({ max_power: Number(event.target.value) });
 });
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));

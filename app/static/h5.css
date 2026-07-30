@@ -559,6 +559,83 @@ html, body { height: 100%; overflow: hidden; }
   flex: 1 1 auto;
   min-height: 0;
 }
+.plug-view {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+body[data-view="plug"] #controlView { display: none; }
+body[data-view="plug"] .room-tabs { display: none; }
+body[data-view="plug"] .status-line { display: none; }
+body[data-view="plug"] #plugView { display: grid; }
+.plug-view.is-busy { opacity: .65; pointer-events: none; }
+.plug-card {
+  display: grid;
+  align-content: space-between;
+  gap: 15px;
+  min-height: 0;
+  padding: 23px;
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 95% 4%, rgba(188,225,180,.65), transparent 190px),
+    linear-gradient(145deg, rgba(255,255,255,.9), rgba(242,248,240,.82));
+  box-shadow: var(--shadow);
+}
+.plug-header { display: flex; align-items: center; justify-content: space-between; }
+.plug-header h2 { margin: 5px 0 3px; font-size: 25px; }
+.plug-header p { margin: 0; color: var(--muted); font-size: 11px; }
+.plug-power-button {
+  width: 58px;
+  height: 58px;
+  color: #8a665f;
+  border: 1px solid #e0ceca;
+  border-radius: 19px;
+  background: #f8e9e6;
+  font-size: 24px;
+}
+.plug-power-button.is-on {
+  color: white;
+  border-color: var(--green);
+  background: var(--green);
+  box-shadow: 0 10px 28px rgba(47,109,75,.24);
+}
+.plug-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.plug-metrics div {
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  padding: 15px 5px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: rgba(255,255,255,.72);
+}
+.plug-metrics strong { color: var(--green); font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
+.plug-metrics span { color: var(--muted); font-size: 8px; }
+.plug-health {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #eaf4eb;
+  font-size: 11px;
+}
+.plug-health strong { color: var(--green); }
+.plug-health strong.has-fault { color: #b95f52; }
+.plug-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.plug-settings label { display: grid; gap: 6px; color: var(--muted); font-size: 9px; }
+.plug-settings select {
+  min-width: 0;
+  width: 100%;
+  padding: 10px 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.75);
+  font-size: 10px;
+}
+.plug-switches { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.plug-switches .switch-card { display: flex; }
 body[data-view="aupu"] #controlView { display: none; }
 body[data-view="aupu"] .room-tabs { display: none; }
 body[data-view="aupu"] .status-line { display: none; }
@@ -923,7 +1000,7 @@ body[data-view="tv"] #tvView { display: block; }
 .schedule-empty { width: 100%; }
 .view-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   margin-bottom: 7px;
   padding-top: 9px;
@@ -934,7 +1011,7 @@ body[data-view="tv"] #tvView { display: block; }
   border: 1px solid var(--line);
   border-radius: 13px;
   background: rgba(255,255,255,.58);
-  font-size: 10px;
+  font-size: 9px;
 }
 .view-nav button.active { color: white; border-color: var(--green); background: var(--green); }
 

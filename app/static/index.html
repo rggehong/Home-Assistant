@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=25">
+    <link rel="stylesheet" href="/static/styles.css?v=26">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -63,7 +63,52 @@
         <label class="mini-toggle desktop-aupu-toggle">
           <span>外接照明</span><input type="checkbox" id="desktopAupuExternalLight"><i></i>
         </label>
-        <button class="desktop-aupu-setup" id="desktopAupuSetup" type="button">连接米家</button>
+        <button class="desktop-aupu-setup" id="desktopAupuSetup" data-xiaomi-setup type="button">连接米家</button>
+      </section>
+
+      <section class="desktop-plug" id="desktopPlug">
+        <div class="desktop-aupu-title">
+          <span class="aupu-mark plug-mark">插</span>
+          <div><strong>米家智能插座 3</strong><small id="desktopPlugStatus">正在读取 192.168.0.145</small></div>
+        </div>
+        <div class="desktop-plug-metrics">
+          <span><b id="desktopPlugPower">—</b> W</span>
+          <span><b id="desktopPlugEnergy">—</b> kWh</span>
+          <span><b id="desktopPlugTemperature">—</b> °C</span>
+          <span id="desktopPlugFault">等待连接</span>
+        </div>
+        <label class="desktop-plug-select" id="desktopPlugDefaultField">
+          <span>断电恢复</span>
+          <select id="desktopPlugDefault">
+            <option value="0">恢复原状态</option>
+            <option value="1">上电打开</option>
+            <option value="2">上电关闭</option>
+          </select>
+        </label>
+        <label class="mini-toggle desktop-aupu-toggle" id="desktopPlugLockCard">
+          <span>按键锁</span><input type="checkbox" id="desktopPlugLock"><i></i>
+        </label>
+        <label class="mini-toggle desktop-aupu-toggle" id="desktopPlugIndicatorCard">
+          <span>指示灯</span><input type="checkbox" id="desktopPlugIndicator"><i></i>
+        </label>
+        <label class="mini-toggle desktop-aupu-toggle" id="desktopPlugChargingCard">
+          <span>充电保护</span><input type="checkbox" id="desktopPlugCharging"><i></i>
+        </label>
+        <label class="mini-toggle desktop-aupu-toggle" id="desktopPlugMaxPowerCard">
+          <span>功率保护</span><input type="checkbox" id="desktopPlugMaxPowerEnabled"><i></i>
+        </label>
+        <label class="desktop-plug-select" id="desktopPlugMaxPowerField">
+          <span>保护阈值</span>
+          <select id="desktopPlugMaxPower">
+            <option value="1500">1500 W</option>
+            <option value="1800">1800 W</option>
+            <option value="2000">2000 W</option>
+            <option value="2200">2200 W</option>
+            <option value="2500">2500 W</option>
+          </select>
+        </label>
+        <button class="desktop-plug-power" id="desktopPlugPowerButton" type="button" aria-label="开关智能插座">⏻</button>
+        <button class="desktop-aupu-setup" id="desktopPlugSetup" data-xiaomi-setup type="button">扫码连接</button>
       </section>
 
       <div class="workspace">
@@ -251,6 +296,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=26" defer></script>
+    <script src="/static/app.js?v=28" defer></script>
   </body>
 </html>

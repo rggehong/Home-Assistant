@@ -269,6 +269,11 @@ class AupuController:
             if not devices:
                 raise AupuError("米家账号中没有读取到设备，请检查所选地区")
             self._select_cloud_device(devices, state["locale"])
+            from app.plug import plug
+
+            if not plug.bind_from_cloud(devices, state["locale"]):
+                raise AupuError("米家账号中未找到智能插座 3，请确认设备地区")
+            state["bound_devices"] = ["aupu", "plug"]
             state["status"] = "connected"
         except requests.Timeout:
             state["status"] = "expired"
@@ -309,6 +314,8 @@ class AupuController:
         }
         if state.get("error"):
             result["error"] = state["error"]
+        if state.get("bound_devices"):
+            result["bound_devices"] = state["bound_devices"]
         if state["status"] == "connected":
             result["device"] = await self.status()
         return result
@@ -321,7 +328,13 @@ class AupuController:
         return cipher.encrypt(data) if encrypt else cipher.decrypt(data)
 
     @classmethod
-    def _miio_send(cls, token_hex: str, method: str, params: list[dict[str, Any]]) -> Any:
+    def _miio_send(
+        cls,
+        ip: str,
+        token_hex: str,
+        method: str,
+        params: list[dict[str, Any]],
+    ) -> Any:
         try:
             token = bytes.fromhex(token_hex)
         except ValueError as exc:
@@ -332,7 +345,7 @@ class AupuController:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.settimeout(3)
             try:
-                sock.sendto(MIIO_HELLO, (AUPU_IP, 54321))
+                sock.sendto(MIIO_HELLO, (ip, 54321))
                 hello, _ = sock.recvfrom(64)
                 if len(hello) < 32 or hello[:2] != b"\x21\x31":
                     raise AupuError("浴霸返回了无效的握手数据")
@@ -361,7 +374,7 @@ class AupuController:
                     + struct.pack(">I", stamp + 1)
                 )
                 checksum = hashlib.md5(header + token + encrypted).digest()
-                sock.sendto(header + checksum + encrypted, (AUPU_IP, 54321))
+                sock.sendto(header + checksum + encrypted, (ip, 54321))
                 response, _ = sock.recvfrom(8192)
             except socket.timeout as exc:
                 raise AupuError("浴霸暂时无法响应，请稍后重试") from exc
@@ -387,6 +400,7 @@ class AupuController:
         parameters = [dict(value) for value in PROPERTIES.values()]
         try:
             result = self._miio_send(
+                AUPU_IP,
                 str(config["token"]),
                 "get_properties",
                 parameters,
@@ -467,6 +481,7 @@ class AupuController:
             return
         try:
             result = self._miio_send(
+                AUPU_IP,
                 str(config["token"]),
                 "set_properties",
                 updates,

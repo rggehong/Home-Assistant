@@ -31,6 +31,7 @@ from greeclimate.device import (
 )
 from greeclimate.discovery import Discovery
 from app.aupu import AupuCommand, AupuError, AupuQrStartRequest, aupu
+from app.plug import PlugCommand, plug
 from app.sony import SonyError, TVCommand, sony_tv
 
 
@@ -117,6 +118,7 @@ ROOMS = {
 }
 ROOM_ORDER = {"客厅": 0, "主卧": 1, "次卧": 2}
 SONY_TV_DEVICE_ID = "sony-living-tv"
+MIJIA_PLUG_DEVICE_ID = "mijia-plug-3"
 
 
 class Command(BaseModel):
@@ -467,7 +469,13 @@ class ScheduleStore:
         item = {
             "id": uuid4().hex,
             "device_id": payload.device_id,
-            "device_type": "tv" if payload.device_id == SONY_TV_DEVICE_ID else "ac",
+            "device_type": (
+                "tv"
+                if payload.device_id == SONY_TV_DEVICE_ID
+                else "plug"
+                if payload.device_id == MIJIA_PLUG_DEVICE_ID
+                else "ac"
+            ),
             "action": payload.action,
             "run_at": run_at.isoformat(),
             "label": payload.label,
@@ -490,6 +498,8 @@ class ScheduleStore:
                 try:
                     if item["device_id"] == SONY_TV_DEVICE_ID:
                         await sony_tv.set_power_verified(item["action"] == "on")
+                    elif item["device_id"] == MIJIA_PLUG_DEVICE_ID:
+                        await plug.command(PlugCommand(on=item["action"] == "on"))
                     else:
                         await registry.command(
                             item["device_id"],
@@ -791,6 +801,19 @@ async def aupu_command(payload: AupuCommand) -> dict[str, Any]:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
+@app.get("/api/plug", dependencies=[Depends(require_token)])
+async def plug_status() -> dict[str, Any]:
+    return await plug.status()
+
+
+@app.post("/api/plug/command", dependencies=[Depends(require_token)])
+async def plug_command(payload: PlugCommand) -> dict[str, Any]:
+    try:
+        return await plug.command(payload)
+    except AupuError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @app.get("/api/tv/screenshot", dependencies=[Depends(require_token)])
 async def tv_screenshot() -> Response:
     try:
@@ -871,6 +894,9 @@ async def create_schedule(payload: ScheduleCreate) -> dict[str, Any]:
     if payload.device_id == SONY_TV_DEVICE_ID:
         if not sony_tv.configured:
             raise HTTPException(status_code=503, detail="Sony TV is not configured")
+    elif payload.device_id == MIJIA_PLUG_DEVICE_ID:
+        if not (await plug.status()).get("configured"):
+            raise HTTPException(status_code=503, detail="Mijia plug is not configured")
     elif payload.device_id not in registry.devices:
         raise HTTPException(status_code=404, detail="device not found")
     return schedules.add(payload)
