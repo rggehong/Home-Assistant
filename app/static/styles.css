@@ -319,6 +319,7 @@ button { color: inherit; }
 .remote-brand { color: #64d196; font-size: 7px; font-weight: 800; letter-spacing: .18em; }
 .remote-header strong { font-size: 10px; font-weight: 650; }
 .desktop-tv-status {
+  flex: 1;
   overflow: hidden;
   margin: 0;
   color: #919995;
@@ -326,6 +327,24 @@ button { color: inherit; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tv-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tv-screen-open {
+  flex: none;
+  padding: 3px 7px;
+  color: #69d39a;
+  border: 1px solid #34483b;
+  border-radius: 999px;
+  background: #172019;
+  font-size: 7px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tv-screen-open:disabled { cursor: not-allowed; opacity: .35; }
 .remote-row-three, .remote-row-sides { grid-template-columns: repeat(3, 1fr); justify-items: center; }
 .remote-key {
   display: grid;
@@ -605,6 +624,39 @@ dialog input:focus { border-color: var(--green); }
 .secondary { color: var(--muted); border: 1px solid var(--line); background: transparent; }
 .primary { color: #172019; border: 0; background: var(--green-bright); font-weight: 700; }
 .dialog-error { min-height: 18px; margin: 8px 0 0; color: var(--danger); }
+.tv-screen-content {
+  position: relative;
+  padding: 28px;
+}
+.tv-screen-dialog { width: min(760px, calc(100% - 32px)); }
+.tv-screen-dialog h3 { margin-right: 35px; }
+.tv-screen-dialog p { margin: 7px 0 14px; }
+.tv-screen-frame {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  color: #95a49a;
+  border: 1px solid #34483b;
+  border-radius: 16px;
+  background: #090c0a;
+  text-align: center;
+  font-size: 12px;
+}
+.tv-screen-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.tv-screen-frame div { max-width: 420px; padding: 24px; }
+.tv-screen-refresh {
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 11px;
+  cursor: pointer;
+}
+.tv-screen-note { margin-bottom: 0 !important; font-size: 10px !important; }
 
 .toast {
   position: fixed;

@@ -3,6 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
+import shutil
+import subprocess
 import urllib.error
 import urllib.request
 from typing import Any
@@ -127,6 +130,77 @@ class SonyTV:
 
     async def send_remote(self, command: str) -> None:
         await asyncio.to_thread(self._ircc_sync, command)
+
+    def _screenshot_sync(self) -> bytes:
+        adb = shutil.which("adb")
+        if not adb:
+            raise SonyError("服务器尚未安装 ADB，无法抓取电视画面")
+
+        def run(*args: str, timeout: float = 8) -> subprocess.CompletedProcess[bytes]:
+            try:
+                return subprocess.run(
+                    [adb, *args],
+                    check=False,
+                    capture_output=True,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise SonyError("电视截图请求超时") from exc
+
+        run("start-server", timeout=5)
+        devices = run("devices", "-l", timeout=5).stdout.decode(errors="replace")
+        endpoints = [
+            line.split()[0]
+            for line in devices.splitlines()[1:]
+            if line.strip() and "\tdevice" in line
+        ]
+
+        configured_endpoint = os.getenv("SONY_TV_ADB_ENDPOINT", "").strip()
+        candidates: list[str] = []
+        if configured_endpoint:
+            candidates.append(configured_endpoint)
+
+        mdns = run("mdns", "services", timeout=5)
+        mdns_text = mdns.stdout.decode(errors="replace")
+        discovered = [
+            match.group(0)
+            for match in re.finditer(rf"{re.escape(self.ip)}:\d{{2,5}}", mdns_text)
+        ]
+        candidates.extend(discovered)
+        candidates.append(f"{self.ip}:5555")
+
+        endpoint = next(
+            (item for item in endpoints if item == self.ip or item.startswith(f"{self.ip}:")),
+            None,
+        )
+        for candidate in dict.fromkeys(candidates):
+            if endpoint:
+                break
+            connected = run("connect", candidate, timeout=6)
+            message = (connected.stdout + connected.stderr).decode(errors="replace").lower()
+            if "connected to" in message or "already connected" in message:
+                endpoint = candidate
+
+        if not endpoint:
+            if discovered:
+                raise SonyError(
+                    "电视已开启无线调试，但 146 服务器尚未配对。请在电视中选择"
+                    "“使用配对码配对设备”完成首次配对"
+                )
+            raise SonyError(
+                "电视未开启无线调试。请在电视“开发者选项 → 无线调试”中开启后重试"
+            )
+
+        capture = run("-s", endpoint, "exec-out", "screencap", "-p", timeout=15)
+        if capture.returncode != 0 or not capture.stdout.startswith(b"\x89PNG\r\n\x1a\n"):
+            detail = capture.stderr.decode(errors="replace").strip()
+            raise SonyError(detail or "电视没有返回有效画面")
+        if len(capture.stdout) > 20 * 1024 * 1024:
+            raise SonyError("电视截图文件过大")
+        return capture.stdout
+
+    async def screenshot(self) -> bytes:
+        return await asyncio.to_thread(self._screenshot_sync)
 
     async def set_power_verified(
         self,

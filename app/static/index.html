@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#18201c">
     <title>清风 · 家庭空调</title>
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=18">
+    <link rel="stylesheet" href="/static/styles.css?v=19">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -65,7 +65,10 @@
               <div><span class="remote-brand">SONY</span><strong id="desktopTvName">索尼电视</strong></div>
               <button class="remote-key remote-power" id="desktopTvPower" aria-label="开关电视">⏻</button>
             </header>
-            <p class="desktop-tv-status" id="desktopTvStatus">正在读取电视状态</p>
+            <div class="tv-status-row">
+              <p class="desktop-tv-status" id="desktopTvStatus">正在读取电视状态</p>
+              <button class="tv-screen-open" id="desktopTvScreenButton" type="button">电视画面</button>
+            </div>
             <div class="remote-row remote-row-three">
               <button class="remote-key" data-tv-remote="tv"><b>电视</b></button>
               <span class="remote-sensor"></span>
@@ -152,6 +155,21 @@
       </footer>
     </main>
 
+    <dialog class="tv-screen-dialog" id="desktopTvScreenDialog">
+      <div class="tv-screen-content">
+        <button class="dialog-close" type="button" id="closeDesktopTvScreenDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">SONY SCREEN</p>
+        <h3>正在播放的电视画面</h3>
+        <p id="desktopTvScreenNowPlaying">读取当前播放状态</p>
+        <div class="tv-screen-frame">
+          <img id="desktopTvScreenImage" alt="索尼电视当前画面" hidden>
+          <div id="desktopTvScreenPlaceholder">点击“刷新画面”获取一张实时截图</div>
+        </div>
+        <button class="primary tv-screen-refresh" id="refreshDesktopTvScreen" type="button">刷新画面</button>
+        <p class="tv-screen-note">这是单帧截图；受 DRM 或 HDCP 保护的视频可能显示为黑屏。</p>
+      </div>
+    </dialog>
+
     <dialog id="authDialog">
       <form id="authForm">
         <button class="dialog-close" type="button" id="closeAuthDialog" aria-label="关闭">×</button>
@@ -169,6 +187,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=19" defer></script>
+    <script src="/static/app.js?v=21" defer></script>
   </body>
 </html>

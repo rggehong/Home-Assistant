@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>清风 H5 · 家庭空调</title>
-    <link rel="stylesheet" href="/static/h5.css?v=20">
+    <link rel="stylesheet" href="/static/h5.css?v=21">
   </head>
   <body>
     <main class="app-shell">
@@ -143,7 +143,10 @@
               </div>
               <button id="tvPowerButton" class="remote-key remote-power" aria-label="开关电视">⏻</button>
             </header>
-            <p class="tv-status" id="tvStatus">正在读取电视状态</p>
+            <div class="tv-status-row">
+              <p class="tv-status" id="tvStatus">正在读取电视状态</p>
+              <button class="tv-screen-open" id="tvScreenButton" type="button">电视画面</button>
+            </div>
 
             <div class="remote-row remote-row-three">
               <button class="remote-key" data-tv-remote="tv"><b>电视</b></button>
@@ -239,6 +242,21 @@
       </nav>
     </main>
 
+    <dialog class="tv-screen-dialog" id="tvScreenDialog">
+      <div class="tv-screen-content">
+        <button type="button" class="dialog-close" id="closeTvScreenDialog" aria-label="关闭">×</button>
+        <span class="micro-label">SONY SCREEN</span>
+        <h3>正在播放的电视画面</h3>
+        <p id="tvScreenNowPlaying">读取当前播放状态</p>
+        <div class="tv-screen-frame">
+          <img id="tvScreenImage" alt="索尼电视当前画面" hidden>
+          <div id="tvScreenPlaceholder">点击“刷新画面”获取一张实时截图</div>
+        </div>
+        <button class="primary-button tv-screen-refresh" id="refreshTvScreen" type="button">刷新画面</button>
+        <p class="tv-screen-note">这是单帧截图；受 DRM 或 HDCP 保护的视频可能显示为黑屏。</p>
+      </div>
+    </dialog>
+
     <dialog id="authDialog">
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
@@ -253,6 +271,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=18" defer></script>
+    <script src="/static/h5.js?v=20" defer></script>
   </body>
 </html>

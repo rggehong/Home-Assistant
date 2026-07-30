@@ -16,6 +16,7 @@ const passwordInput = document.querySelector("#passwordInput");
 const authError = document.querySelector("#authError");
 const logoutButton = document.querySelector("#logoutButton");
 const toast = document.querySelector("#toast");
+const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -79,6 +80,23 @@ async function api(path, options = {}) {
     throw new Error(body.detail || `请求失败 (${response.status})`);
   }
   return response.json();
+}
+
+async function apiBlob(path) {
+  const response = await fetch(path, {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (response.status === 401) {
+    state.authenticated = false;
+    openAuthDialog();
+    throw new Error("请先登录清风家庭");
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail || `请求失败 (${response.status})`);
+  }
+  return response.blob();
 }
 
 function makeDraft(device) {
@@ -163,6 +181,11 @@ function renderTV() {
   const power = document.querySelector("#desktopTvPower");
   power.classList.toggle("is-on", Boolean(tv.power));
   power.disabled = !tv.configured;
+  document.querySelector("#desktopTvScreenButton").disabled =
+    !tv.configured || !tv.online;
+  document.querySelector("#desktopTvScreenNowPlaying").textContent = tv.power
+    ? `正在播放：${tv.input_title || "当前电视内容"}`
+    : "电视当前处于待机状态";
   const input = document.querySelector("#desktopTvInput");
   input.replaceChildren(...(tv.inputs || []).map((item) => {
     const option = document.createElement("option");
@@ -188,6 +211,34 @@ async function sendTVCommand(payload) {
     showToast("电视设置已生效");
   } catch (error) {
     showToast(error.message);
+  }
+}
+
+async function captureTVScreen() {
+  const image = document.querySelector("#desktopTvScreenImage");
+  const placeholder = document.querySelector("#desktopTvScreenPlaceholder");
+  const button = document.querySelector("#refreshDesktopTvScreen");
+  button.disabled = true;
+  button.textContent = "正在获取画面…";
+  placeholder.hidden = false;
+  placeholder.textContent = "正在连接电视并抓取当前画面…";
+  image.hidden = true;
+  try {
+    const blob = await apiBlob(`/api/tv/screenshot?t=${Date.now()}`);
+    image.src = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(reader.result), { once: true });
+      reader.addEventListener("error", () => reject(new Error("无法读取电视截图")), { once: true });
+      reader.readAsDataURL(blob);
+    });
+    await image.decode();
+    image.hidden = false;
+    placeholder.hidden = true;
+  } catch (error) {
+    placeholder.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "刷新画面";
   }
 }
 
@@ -421,6 +472,14 @@ document.querySelectorAll("[data-tv-remote]").forEach((button) => {
   button.addEventListener("click", () => {
     sendTVCommand({ remote: button.dataset.tvRemote });
   });
+});
+document.querySelector("#desktopTvScreenButton").addEventListener("click", () => {
+  if (!tvScreenDialog.open) tvScreenDialog.showModal();
+  captureTVScreen();
+});
+document.querySelector("#refreshDesktopTvScreen").addEventListener("click", captureTVScreen);
+document.querySelector("#closeDesktopTvScreenDialog").addEventListener("click", () => {
+  tvScreenDialog.close();
 });
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));

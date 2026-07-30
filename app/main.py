@@ -751,6 +751,19 @@ async def tv_status() -> dict[str, Any]:
     return await sony_tv.status()
 
 
+@app.get("/api/tv/screenshot", dependencies=[Depends(require_token)])
+async def tv_screenshot() -> Response:
+    try:
+        image = await sony_tv.screenshot()
+    except SonyError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.post("/api/tv/command", dependencies=[Depends(require_token)])
 async def tv_command(payload: TVCommand) -> dict[str, Any]:
     try:
