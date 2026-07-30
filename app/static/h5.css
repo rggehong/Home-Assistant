@@ -534,6 +534,7 @@ html, body { height: 100%; overflow: hidden; }
 }
 body[data-view="schedule"] #controlView { display: none; }
 body[data-view="schedule"] .room-tabs { display: none; }
+body[data-view="schedule"] .status-line { display: none; }
 body[data-view="schedule"] #scheduleView { display: block; }
 .tv-view {
   display: none;
@@ -826,6 +827,7 @@ body[data-view="tv"] #tvView { display: block; }
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
+  margin-bottom: 7px;
   padding-top: 9px;
 }
 .view-nav button {
