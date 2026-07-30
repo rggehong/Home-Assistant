@@ -7,6 +7,7 @@ const state = {
   drafts: new Map(),
   commandTimers: new Map(),
 };
+const SONY_TV_DEVICE_ID = "sony-living-tv";
 
 const grid = document.querySelector("#deviceGrid");
 const connection = document.querySelector("#connection");
@@ -330,13 +331,26 @@ grid.addEventListener("change", (event) => {
 function renderScheduleRoomOptions() {
   const select = document.querySelector("#scheduleRoom");
   const previous = select.value;
-  select.replaceChildren(...state.devices.map((device) => {
+  const options = state.devices.map((device) => {
     const option = document.createElement("option");
     option.value = device.id;
-    option.textContent = device.room;
+    option.textContent = `格力空调 · ${device.room}`;
     return option;
-  }));
-  if (state.devices.some((device) => device.id === previous)) select.value = previous;
+  });
+  if (state.tv?.configured) {
+    const option = document.createElement("option");
+    option.value = SONY_TV_DEVICE_ID;
+    option.textContent = "索尼电视";
+    options.push(option);
+  }
+  select.replaceChildren(...options);
+  if (options.some((option) => option.value === previous)) select.value = previous;
+}
+
+function scheduleTargetName(deviceId) {
+  if (deviceId === SONY_TV_DEVICE_ID) return "索尼电视";
+  const device = state.devices.find((entry) => entry.id === deviceId);
+  return device ? `格力空调 · ${device.room}` : "格力空调";
 }
 
 function renderSchedules() {
@@ -347,13 +361,12 @@ function renderSchedules() {
     return;
   }
   list.replaceChildren(...pending.map((item) => {
-    const device = state.devices.find((entry) => entry.id === item.device_id);
     const row = document.createElement("div");
     row.className = "desktop-schedule-item";
     const when = new Date(item.run_at);
     row.innerHTML = `
       <span>${item.action === "on" ? "开" : "关"}</span>
-      <div><strong>${device?.room || "空调"} · ${item.action === "on" ? "定时开机" : "定时关机"}</strong>
+      <div><strong>${scheduleTargetName(item.device_id)} · ${item.action === "on" ? "定时开机" : "定时关机"}</strong>
       <small>${when.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</small></div>
       <button type="button" aria-label="删除任务">×</button>`;
     row.querySelector("button").addEventListener("click", () => deleteSchedule(item.id));

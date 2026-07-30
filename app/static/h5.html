@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>清风 H5 · 家庭空调</title>
-    <link rel="stylesheet" href="/static/h5.css?v=12">
+    <link rel="stylesheet" href="/static/h5.css?v=13">
   </head>
   <body>
     <main class="app-shell">
@@ -166,7 +166,7 @@
             </div>
 
             <div class="remote-row remote-row-sides">
-              <button class="remote-key remote-icon" data-tv-remote="back" aria-label="返回">↩</button>
+              <button class="remote-key remote-back" data-tv-remote="back" aria-label="返回"></button>
               <span></span>
               <button class="remote-key remote-icon" data-tv-remote="home" aria-label="主页">⌂</button>
             </div>
@@ -199,6 +199,10 @@
         <form id="scheduleForm">
           <div class="schedule-fields">
             <label>
+              <span>控制设备</span>
+              <select id="scheduleTarget"></select>
+            </label>
+            <label>
               <span>执行操作</span>
               <select id="scheduleAction">
                 <option value="off">定时关机</option>
@@ -216,8 +220,8 @@
       </section>
 
       <nav class="view-nav" aria-label="页面功能">
-        <button class="active" data-view="control">空调控制</button>
-        <button data-view="tv">客厅电视</button>
+        <button class="active" data-view="control">格力空调</button>
+        <button data-view="tv">索尼电视</button>
         <button data-view="schedule">定时任务</button>
       </nav>
     </main>
@@ -236,6 +240,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=12" defer></script>
+    <script src="/static/h5.js?v=13" defer></script>
   </body>
 </html>

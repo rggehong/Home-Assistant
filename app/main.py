@@ -113,6 +113,7 @@ ROOMS = {
     },
 }
 ROOM_ORDER = {"客厅": 0, "主卧": 1, "次卧": 2}
+SONY_TV_DEVICE_ID = "sony-living-tv"
 
 
 class Command(BaseModel):
@@ -463,6 +464,7 @@ class ScheduleStore:
         item = {
             "id": uuid4().hex,
             "device_id": payload.device_id,
+            "device_type": "tv" if payload.device_id == SONY_TV_DEVICE_ID else "ac",
             "action": payload.action,
             "run_at": run_at.isoformat(),
             "label": payload.label,
@@ -483,10 +485,15 @@ class ScheduleStore:
                 if datetime.fromisoformat(item["run_at"]) > now:
                     continue
                 try:
-                    await registry.command(
-                        item["device_id"],
-                        Command(power=item["action"] == "on"),
-                    )
+                    if item["device_id"] == SONY_TV_DEVICE_ID:
+                        await sony_tv.command(
+                            TVCommand(power=item["action"] == "on")
+                        )
+                    else:
+                        await registry.command(
+                            item["device_id"],
+                            Command(power=item["action"] == "on"),
+                        )
                 except Exception as exc:
                     item["status"] = "failed"
                     item["error"] = str(exc)
@@ -772,7 +779,10 @@ async def list_schedules() -> list[dict[str, Any]]:
 
 @app.post("/api/schedules", dependencies=[Depends(require_token)])
 async def create_schedule(payload: ScheduleCreate) -> dict[str, Any]:
-    if payload.device_id not in registry.devices:
+    if payload.device_id == SONY_TV_DEVICE_ID:
+        if not sony_tv.configured:
+            raise HTTPException(status_code=503, detail="Sony TV is not configured")
+    elif payload.device_id not in registry.devices:
         raise HTTPException(status_code=404, detail="device not found")
     return schedules.add(payload)
 

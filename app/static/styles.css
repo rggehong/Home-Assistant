@@ -366,6 +366,27 @@ button { color: inherit; }
 }
 .remote-power.is-on { box-shadow: 0 0 15px rgba(93,211,148,.25), 0 3px 5px rgba(0,0,0,.48); }
 .remote-icon { font-size: 17px; }
+.remote-back { position: relative; }
+.remote-back::before {
+  content: "";
+  width: 11px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-left: 0;
+  border-radius: 0 7px 7px 0;
+  transform: translate(2px, 1px);
+}
+.remote-back::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
 .remote-sensor {
   width: 27px;
   height: 27px;

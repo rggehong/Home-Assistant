@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#18201c">
     <title>清风 · 家庭空调</title>
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=12">
+    <link rel="stylesheet" href="/static/styles.css?v=13">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -84,7 +84,7 @@
               <button class="remote-direction remote-down" data-tv-remote="down" aria-label="向下">▼</button>
             </div>
             <div class="remote-row remote-row-sides">
-              <button class="remote-key remote-icon" data-tv-remote="back" aria-label="返回">↩</button>
+              <button class="remote-key remote-back" data-tv-remote="back" aria-label="返回"></button>
               <span></span>
               <button class="remote-key remote-icon" data-tv-remote="home" aria-label="主页">⌂</button>
             </div>
@@ -112,7 +112,7 @@
         </div>
         <form class="schedule-form" id="scheduleForm">
           <label>
-            <span>房间</span>
+            <span>控制设备</span>
             <select id="scheduleRoom"></select>
           </label>
           <label>
@@ -156,6 +156,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=13" defer></script>
+    <script src="/static/app.js?v=14" defer></script>
   </body>
 </html>

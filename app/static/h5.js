@@ -10,6 +10,7 @@ const model = {
 };
 
 const el = (selector) => document.querySelector(selector);
+const SONY_TV_DEVICE_ID = "sony-living-tv";
 const statusLine = el("#statusLine");
 const authDialog = el("#authDialog");
 const logoutButton = el("#logoutButton");
@@ -148,6 +149,7 @@ function setStatus(text, className) {
 function render() {
   renderTabs();
   renderDevice();
+  renderScheduleTargets();
   renderSchedules();
   renderTV();
 }
@@ -282,14 +284,40 @@ function updateTemperatureDisplay(value) {
   ring.setAttribute("aria-valuetext", `${formatTemperature(temperature)} 摄氏度`);
 }
 
+function renderScheduleTargets() {
+  const select = el("#scheduleTarget");
+  const previous = select.value;
+  const options = model.devices.map((device) => {
+    const option = document.createElement("option");
+    option.value = device.id;
+    option.textContent = `格力空调 · ${device.room}`;
+    return option;
+  });
+  if (model.tv?.configured) {
+    const option = document.createElement("option");
+    option.value = SONY_TV_DEVICE_ID;
+    option.textContent = "索尼电视";
+    options.push(option);
+  }
+  select.replaceChildren(...options);
+  const fallback = selectedDevice()?.id || SONY_TV_DEVICE_ID;
+  select.value = options.some((option) => option.value === previous) ? previous : fallback;
+}
+
+function scheduleTargetName(deviceId) {
+  if (deviceId === SONY_TV_DEVICE_ID) return "索尼电视";
+  const device = model.devices.find((item) => item.id === deviceId);
+  return device ? `格力空调 · ${device.room}` : "格力空调";
+}
+
 function renderSchedules() {
   const list = el("#scheduleList");
-  const device = selectedDevice();
+  const targetId = el("#scheduleTarget").value;
   const items = model.schedules.filter((item) =>
-    item.device_id === device?.id && item.status === "pending"
+    item.device_id === targetId && item.status === "pending"
   );
   if (!items.length) {
-    list.innerHTML = '<div class="schedule-empty">当前房间暂无待执行任务</div>';
+    list.innerHTML = `<div class="schedule-empty">${scheduleTargetName(targetId)}暂无待执行任务</div>`;
     return;
   }
   list.replaceChildren(...items.map((item) => {
@@ -298,7 +326,7 @@ function renderSchedules() {
     const when = new Date(item.run_at);
     row.innerHTML = `
       <span class="schedule-icon">${item.action === "on" ? "开" : "关"}</span>
-      <div><strong>${item.action === "on" ? "定时开机" : "定时关机"}</strong>
+      <div><strong>${scheduleTargetName(item.device_id)} · ${item.action === "on" ? "定时开机" : "定时关机"}</strong>
       <small>${when.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</small></div>
       <button type="button" aria-label="删除任务">×</button>`;
     row.querySelector("button").addEventListener("click", () => removeSchedule(item.id));
@@ -553,18 +581,18 @@ document.querySelectorAll(".view-nav button").forEach((button) => {
 
 el("#scheduleForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  const device = selectedDevice();
   const timeValue = el("#scheduleTime").value;
-  if (!device || !timeValue) return;
+  const targetId = el("#scheduleTarget").value;
+  if (!targetId || !timeValue) return;
   try {
     await api("/api/schedules", {
       method: "POST",
       headers: requestHeaders(true),
       body: JSON.stringify({
-        device_id: device.id,
+        device_id: targetId,
         action: el("#scheduleAction").value,
         run_at: new Date(timeValue).toISOString(),
-        label: `${device.room}定时任务`,
+        label: `${scheduleTargetName(targetId)}定时任务`,
       }),
     });
     el("#scheduleForm").reset();
@@ -574,6 +602,7 @@ el("#scheduleForm").addEventListener("submit", async (event) => {
     showToast(error.message);
   }
 });
+el("#scheduleTarget").addEventListener("change", renderSchedules);
 
 async function removeSchedule(id) {
   try {
