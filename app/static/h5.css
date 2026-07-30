@@ -386,6 +386,16 @@ dialog input[type="password"] {
   background: #f2f6f0;
   outline: none;
 }
+dialog input[type="text"], dialog select {
+  width: 100%;
+  margin-bottom: 9px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #f2f6f0;
+  outline: none;
+}
+#aupuSetupDialog input[type="password"] { margin-bottom: 9px; }
 .dialog-close { position: absolute; right: 16px; top: 12px; border: 0; background: transparent; color: var(--muted); font-size: 24px; }
 .error-text { min-height: 17px; color: #b95f52; }
 .tv-screen-content {
@@ -531,6 +541,82 @@ html, body { height: 100%; overflow: hidden; }
   min-height: 0;
   margin-top: 0;
   overflow: hidden;
+}
+.aupu-view {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+body[data-view="aupu"] #controlView { display: none; }
+body[data-view="aupu"] .room-tabs { display: none; }
+body[data-view="aupu"] .status-line { display: none; }
+body[data-view="aupu"] #aupuView { display: grid; }
+.aupu-view.is-busy { opacity: .65; pointer-events: none; }
+.aupu-card {
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  width: 100%;
+  min-height: 0;
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(191,229,184,.7), transparent 190px),
+    linear-gradient(145deg, rgba(255,255,255,.9), rgba(242,248,240,.82));
+  box-shadow: var(--shadow);
+}
+.aupu-header { display: flex; align-items: center; justify-content: space-between; }
+.aupu-header h2 { margin: 5px 0 3px; font-size: 27px; }
+.aupu-header p { margin: 0; color: var(--muted); font-size: 11px; }
+.aupu-device-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  color: white;
+  border-radius: 19px;
+  background: var(--green);
+  box-shadow: 0 10px 28px rgba(47,109,75,.24);
+  font-size: 20px;
+}
+.aupu-current {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  padding: 19px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255,255,255,.7);
+}
+.aupu-current span { color: var(--muted); font-size: 10px; }
+.aupu-current strong { color: var(--green); font-size: 28px; }
+.aupu-mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.aupu-mode-grid button {
+  min-height: 48px;
+  color: #56645a;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255,255,255,.74);
+  font-size: 12px;
+  font-weight: 650;
+}
+.aupu-mode-grid button:first-child { grid-column: 1 / -1; }
+.aupu-mode-grid button.active {
+  color: white;
+  border-color: var(--green);
+  background: var(--green);
+  box-shadow: 0 8px 22px rgba(47,109,75,.18);
+}
+.aupu-switches { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.aupu-switches .switch-card { display: flex; }
+.aupu-setup-button {
+  padding: 13px;
+  color: white;
+  border: 0;
+  border-radius: 14px;
+  background: var(--green);
+  font-weight: 700;
 }
 body[data-view="schedule"] #controlView { display: none; }
 body[data-view="schedule"] .room-tabs { display: none; }
@@ -825,7 +911,7 @@ body[data-view="tv"] #tvView { display: block; }
 .schedule-empty { width: 100%; }
 .view-nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   margin-bottom: 7px;
   padding-top: 9px;
@@ -836,7 +922,7 @@ body[data-view="tv"] #tvView { display: block; }
   border: 1px solid var(--line);
   border-radius: 13px;
   background: rgba(255,255,255,.58);
-  font-size: 11px;
+  font-size: 10px;
 }
 .view-nav button.active { color: white; border-color: var(--green); background: var(--green); }
 

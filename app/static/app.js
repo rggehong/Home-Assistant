@@ -4,6 +4,7 @@ const state = {
   devices: [],
   schedules: [],
   tv: null,
+  aupu: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -18,6 +19,7 @@ const authError = document.querySelector("#authError");
 const logoutButton = document.querySelector("#logoutButton");
 const toast = document.querySelector("#toast");
 const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
+const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -121,16 +123,18 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules, tv] = await Promise.all([
+    const [devices, schedules, tv, aupu] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
       api("/api/tv", { headers: headers() }),
+      api("/api/aupu", { headers: headers() }),
     ]);
     state.authenticated = true;
     updateAuthControls();
     state.devices = devices;
     state.schedules = schedules;
     state.tv = tv;
+    state.aupu = aupu;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
@@ -171,6 +175,49 @@ function render() {
   renderScheduleRoomOptions();
   renderSchedules();
   renderTV();
+  renderAupu();
+}
+
+function renderAupu() {
+  const device = state.aupu;
+  if (!device) return;
+  document.querySelector("#desktopAupuStatus").textContent = device.online
+    ? `${device.ip} · ${device.configured ? device.mode_name : "已发现，等待连接"}`
+    : `${device.ip} · ${device.error || "离线"}`;
+  document.querySelector("#desktopAupuModes").replaceChildren(...device.modes.map((mode) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.aupuMode = mode.value;
+    button.textContent = mode.label;
+    button.classList.toggle("active", mode.value === device.mode);
+    button.disabled = !device.configured || !device.online;
+    return button;
+  }));
+  const light = document.querySelector("#desktopAupuLight");
+  const external = document.querySelector("#desktopAupuExternalLight");
+  light.checked = Boolean(device.light);
+  external.checked = Boolean(device.external_light);
+  light.disabled = !device.configured || !device.online;
+  external.disabled = !device.configured || !device.online;
+  document.querySelector("#desktopAupuSetup").hidden = device.configured;
+}
+
+async function sendAupuCommand(payload) {
+  document.querySelector("#desktopAupu").classList.add("is-busy");
+  try {
+    state.aupu = await api("/api/aupu/command", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(payload),
+    });
+    renderAupu();
+    showToast("浴霸设置已生效");
+  } catch (error) {
+    renderAupu();
+    showToast(error.message);
+  } finally {
+    document.querySelector("#desktopAupu").classList.remove("is-busy");
+  }
 }
 
 function renderTV() {
@@ -579,6 +626,49 @@ document.querySelector("#desktopTvScreenButton").addEventListener("click", () =>
 document.querySelector("#refreshDesktopTvScreen").addEventListener("click", captureTVScreen);
 document.querySelector("#closeDesktopTvScreenDialog").addEventListener("click", () => {
   tvScreenDialog.close();
+});
+document.querySelector("#desktopAupuModes").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-aupu-mode]");
+  if (button) sendAupuCommand({ mode: Number(button.dataset.aupuMode) });
+});
+document.querySelector("#desktopAupuLight").addEventListener("change", (event) => {
+  sendAupuCommand({ light: event.target.checked });
+});
+document.querySelector("#desktopAupuExternalLight").addEventListener("change", (event) => {
+  sendAupuCommand({ external_light: event.target.checked });
+});
+document.querySelector("#desktopAupuSetup").addEventListener("click", () => {
+  document.querySelector("#desktopAupuSetupError").textContent = "";
+  document.querySelector("#desktopAupuPassword").value = "";
+  if (!aupuSetupDialog.open) aupuSetupDialog.showModal();
+});
+document.querySelector("#closeDesktopAupuSetupDialog").addEventListener("click", () => {
+  aupuSetupDialog.close();
+});
+document.querySelector("#desktopAupuSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  submit.disabled = true;
+  document.querySelector("#desktopAupuSetupError").textContent = "";
+  try {
+    state.aupu = await api("/api/aupu/setup", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({
+        username: document.querySelector("#desktopAupuUsername").value,
+        password: document.querySelector("#desktopAupuPassword").value,
+        locale: document.querySelector("#desktopAupuLocale").value,
+      }),
+    });
+    document.querySelector("#desktopAupuPassword").value = "";
+    aupuSetupDialog.close();
+    renderAupu();
+    showToast("Q360A-Pro 已连接");
+  } catch (error) {
+    document.querySelector("#desktopAupuSetupError").textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
 });
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));

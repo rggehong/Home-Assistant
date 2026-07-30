@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=25">
+    <link rel="stylesheet" href="/static/h5.css?v=26">
   </head>
   <body>
     <main class="app-shell">
@@ -131,6 +131,39 @@
           </div>
 
         </section>
+      </section>
+
+      <section class="aupu-view" id="aupuView">
+        <article class="aupu-card">
+          <header class="aupu-header">
+            <div>
+              <span class="micro-label">AUPU BATH HEATER</span>
+              <h2>奥普浴霸</h2>
+              <p id="aupuStatus">正在读取 Q360A-Pro</p>
+            </div>
+            <span class="aupu-device-icon" aria-hidden="true">浴</span>
+          </header>
+
+          <div class="aupu-current">
+            <span>当前模式</span>
+            <strong id="aupuModeName">—</strong>
+          </div>
+
+          <div class="aupu-mode-grid" id="aupuModes" aria-label="浴霸运行模式"></div>
+
+          <div class="aupu-switches">
+            <label class="switch-card">
+              <span><strong>主照明</strong><small>浴霸面板照明</small></span>
+              <input type="checkbox" id="aupuLight"><i></i>
+            </label>
+            <label class="switch-card">
+              <span><strong>外接照明</strong><small>独立外接灯具</small></span>
+              <input type="checkbox" id="aupuExternalLight"><i></i>
+            </label>
+          </div>
+
+          <button class="aupu-setup-button" id="aupuSetupButton" type="button">连接米家</button>
+        </article>
       </section>
 
       <section class="tv-view" id="tvView">
@@ -261,6 +294,7 @@
 
       <nav class="view-nav" aria-label="页面功能">
         <button class="active" data-view="control">格力空调</button>
+        <button data-view="aupu">奥普浴霸</button>
         <button data-view="tv">索尼电视</button>
         <button data-view="schedule">定时任务</button>
       </nav>
@@ -282,6 +316,26 @@
       </div>
     </dialog>
 
+    <dialog id="aupuSetupDialog">
+      <form id="aupuSetupForm">
+        <button type="button" class="dialog-close" id="closeAupuSetupDialog" aria-label="关闭">×</button>
+        <span class="micro-label">一次性安全绑定</span>
+        <h3>连接米家</h3>
+        <p>用于获取 Q360A-Pro 的局域网控制令牌。密码仅在本次请求中使用，不会保存。</p>
+        <input id="aupuUsername" type="text" autocomplete="username" placeholder="小米账号 / 手机号 / 邮箱" required>
+        <input id="aupuPassword" type="password" autocomplete="current-password" placeholder="米家账号密码" required>
+        <select id="aupuLocale" aria-label="米家地区">
+          <option value="cn">中国大陆</option>
+          <option value="tw">中国台湾</option>
+          <option value="sg">新加坡</option>
+          <option value="us">美国</option>
+          <option value="de">欧洲</option>
+        </select>
+        <button class="primary-button" type="submit">连接 Q360A-Pro</button>
+        <p class="error-text" id="aupuSetupError"></p>
+      </form>
+    </dialog>
+
     <dialog id="authDialog">
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
@@ -296,6 +350,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=23" defer></script>
+    <script src="/static/h5.js?v=24" defer></script>
   </body>
 </html>

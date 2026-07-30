@@ -4,6 +4,7 @@ const model = {
   devices: [],
   schedules: [],
   tv: null,
+  aupu: null,
   tvForeground: null,
   selectedId: null,
   drafts: new Map(),
@@ -17,6 +18,7 @@ const authDialog = el("#authDialog");
 const logoutButton = el("#logoutButton");
 const toast = el("#toast");
 const tvScreenDialog = el("#tvScreenDialog");
+const aupuSetupDialog = el("#aupuSetupDialog");
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
 const MIN_TEMPERATURE = 16;
@@ -136,16 +138,18 @@ function ensureDraft(device) {
 async function loadAll(refresh = true) {
   setStatus("正在同步空调状态", "");
   try {
-    const [devices, schedules, tv] = await Promise.all([
+    const [devices, schedules, tv, aupu] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
       api("/api/schedules", { headers: requestHeaders() }),
       api("/api/tv", { headers: requestHeaders() }),
+      api("/api/aupu", { headers: requestHeaders() }),
     ]);
     model.authenticated = true;
     updateAuthControls();
     model.devices = devices;
     model.schedules = schedules;
     model.tv = tv;
+    model.aupu = aupu;
     devices.forEach(ensureDraft);
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
@@ -171,6 +175,48 @@ function render() {
   renderScheduleTargets();
   renderSchedules();
   renderTV();
+  renderAupu();
+}
+
+function renderAupu() {
+  const device = model.aupu;
+  if (!device) return;
+  el("#aupuStatus").textContent = device.online
+    ? `${device.ip} · ${device.configured ? "本地在线" : "已发现，等待连接"}`
+    : `${device.ip} · ${device.error || "离线"}`;
+  el("#aupuModeName").textContent = device.mode_name || "—";
+  el("#aupuModes").replaceChildren(...device.modes.map((mode) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.aupuMode = mode.value;
+    button.textContent = mode.label;
+    button.classList.toggle("active", mode.value === device.mode);
+    button.disabled = !device.configured || !device.online;
+    return button;
+  }));
+  el("#aupuLight").checked = Boolean(device.light);
+  el("#aupuExternalLight").checked = Boolean(device.external_light);
+  el("#aupuLight").disabled = !device.configured || !device.online;
+  el("#aupuExternalLight").disabled = !device.configured || !device.online;
+  el("#aupuSetupButton").hidden = device.configured;
+}
+
+async function sendAupuCommand(payload) {
+  el("#aupuView").classList.add("is-busy");
+  try {
+    model.aupu = await api("/api/aupu/command", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify(payload),
+    });
+    renderAupu();
+    showToast("浴霸设置已生效");
+  } catch (error) {
+    renderAupu();
+    showToast(error.message);
+  } finally {
+    el("#aupuView").classList.remove("is-busy");
+  }
 }
 
 function renderTV() {
@@ -722,6 +768,48 @@ el("#tvScreenButton").addEventListener("click", () => {
 });
 el("#refreshTvScreen").addEventListener("click", captureTVScreen);
 el("#closeTvScreenDialog").addEventListener("click", () => tvScreenDialog.close());
+
+el("#aupuModes").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-aupu-mode]");
+  if (button) sendAupuCommand({ mode: Number(button.dataset.aupuMode) });
+});
+el("#aupuLight").addEventListener("change", (event) => {
+  sendAupuCommand({ light: event.target.checked });
+});
+el("#aupuExternalLight").addEventListener("change", (event) => {
+  sendAupuCommand({ external_light: event.target.checked });
+});
+el("#aupuSetupButton").addEventListener("click", () => {
+  el("#aupuSetupError").textContent = "";
+  el("#aupuPassword").value = "";
+  if (!aupuSetupDialog.open) aupuSetupDialog.showModal();
+});
+el("#closeAupuSetupDialog").addEventListener("click", () => aupuSetupDialog.close());
+el("#aupuSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  submit.disabled = true;
+  el("#aupuSetupError").textContent = "";
+  try {
+    model.aupu = await api("/api/aupu/setup", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({
+        username: el("#aupuUsername").value,
+        password: el("#aupuPassword").value,
+        locale: el("#aupuLocale").value,
+      }),
+    });
+    el("#aupuPassword").value = "";
+    aupuSetupDialog.close();
+    renderAupu();
+    showToast("Q360A-Pro 已连接");
+  } catch (error) {
+    el("#aupuSetupError").textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
 
 document.querySelectorAll(".view-nav button").forEach((button) => {
   button.addEventListener("click", () => {

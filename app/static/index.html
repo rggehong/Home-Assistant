@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=23">
+    <link rel="stylesheet" href="/static/styles.css?v=24">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -49,6 +49,21 @@
           <h3>房间空调</h3>
         </div>
         <p id="lastUpdated">等待首次同步</p>
+      </section>
+
+      <section class="desktop-aupu" id="desktopAupu">
+        <div class="desktop-aupu-title">
+          <span class="aupu-mark">浴</span>
+          <div><strong>奥普浴霸 · Q360A-Pro</strong><small id="desktopAupuStatus">正在读取 192.168.0.144</small></div>
+        </div>
+        <div class="desktop-aupu-modes" id="desktopAupuModes" aria-label="浴霸运行模式"></div>
+        <label class="mini-toggle desktop-aupu-toggle">
+          <span>主照明</span><input type="checkbox" id="desktopAupuLight"><i></i>
+        </label>
+        <label class="mini-toggle desktop-aupu-toggle">
+          <span>外接照明</span><input type="checkbox" id="desktopAupuExternalLight"><i></i>
+        </label>
+        <button class="desktop-aupu-setup" id="desktopAupuSetup" type="button">连接米家</button>
       </section>
 
       <div class="workspace">
@@ -210,7 +225,32 @@
       </form>
     </dialog>
 
+    <dialog id="desktopAupuSetupDialog">
+      <form id="desktopAupuSetupForm">
+        <button class="dialog-close" type="button" id="closeDesktopAupuSetupDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">AUPU LOCAL CONTROL</p>
+        <h3>连接米家</h3>
+        <p>用于获取 Q360A-Pro 的局域网令牌。密码只在本次请求中使用，不会保存。</p>
+        <label for="desktopAupuUsername">小米账号</label>
+        <input id="desktopAupuUsername" type="text" autocomplete="username" placeholder="手机号 / 邮箱 / 小米账号" required>
+        <label for="desktopAupuPassword">米家账号密码</label>
+        <input id="desktopAupuPassword" type="password" autocomplete="current-password" required>
+        <label for="desktopAupuLocale">米家地区</label>
+        <select id="desktopAupuLocale">
+          <option value="cn">中国大陆</option>
+          <option value="tw">中国台湾</option>
+          <option value="sg">新加坡</option>
+          <option value="us">美国</option>
+          <option value="de">欧洲</option>
+        </select>
+        <div class="dialog-actions">
+          <button class="primary" type="submit">连接 Q360A-Pro</button>
+        </div>
+        <p class="dialog-error" id="desktopAupuSetupError"></p>
+      </form>
+    </dialog>
+
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=24" defer></script>
+    <script src="/static/app.js?v=25" defer></script>
   </body>
 </html>

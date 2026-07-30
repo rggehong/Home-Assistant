@@ -30,6 +30,7 @@ from greeclimate.device import (
     VerticalSwing,
 )
 from greeclimate.discovery import Discovery
+from app.aupu import AupuCommand, AupuError, AupuSetupRequest, aupu
 from app.sony import SonyError, TVCommand, sony_tv
 
 
@@ -758,6 +759,27 @@ async def devices(refresh: bool = True) -> list[dict[str, Any]]:
 @app.get("/api/tv", dependencies=[Depends(require_token)])
 async def tv_status() -> dict[str, Any]:
     return await sony_tv.status()
+
+
+@app.get("/api/aupu", dependencies=[Depends(require_token)])
+async def aupu_status() -> dict[str, Any]:
+    return await aupu.status()
+
+
+@app.post("/api/aupu/setup", dependencies=[Depends(require_token)])
+async def aupu_setup(payload: AupuSetupRequest) -> dict[str, Any]:
+    try:
+        return await aupu.setup(payload)
+    except AupuError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/aupu/command", dependencies=[Depends(require_token)])
+async def aupu_command(payload: AupuCommand) -> dict[str, Any]:
+    try:
+        return await aupu.command(payload)
+    except AupuError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.get("/api/tv/screenshot", dependencies=[Depends(require_token)])
