@@ -237,13 +237,6 @@ button { color: inherit; }
   cursor: pointer;
 }
 .apply-button:hover { filter: brightness(1.08); }
-.instant-hint {
-  margin: 13px 0 0;
-  color: var(--muted);
-  font-size: 9px;
-  text-align: center;
-  letter-spacing: .05em;
-}
 
 .advanced-controls {
   display: grid;
@@ -495,7 +488,6 @@ dialog input:focus { border-color: var(--green); }
   .advanced-controls { margin-top: 7px; }
   .comfort-toggles { margin-top: 7px; }
   .mini-toggle { padding: 6px 3px; }
-  .instant-hint { margin-top: 7px; }
   .desktop-schedules {
     height: 100%;
     min-height: 0;

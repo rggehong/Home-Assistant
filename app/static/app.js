@@ -192,8 +192,7 @@ function createCard(device) {
       ${device.capabilities.turbo ? `<label class="mini-toggle"><span>强劲风</span><input type="checkbox" data-field="turbo" ${draft.turbo ? "checked" : ""}><i></i></label>` : ""}
       ${device.capabilities.health ? `<label class="mini-toggle"><span>健康</span><input type="checkbox" data-field="health" ${draft.health ? "checked" : ""}><i></i></label>` : ""}
       ${device.capabilities.auxiliary_heat ? `<label class="mini-toggle"><span>辅热</span><input type="checkbox" data-field="auxiliaryHeat" ${draft.auxiliaryHeat ? "checked" : ""}><i></i></label>` : ""}
-    </div>
-    <p class="instant-hint">所有调节都会立即生效</p>`;
+    </div>`;
   return card;
 }
 

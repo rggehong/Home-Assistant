@@ -265,16 +265,6 @@ select, input[type="datetime-local"] {
 }
 .primary-button { margin-top: 16px; color: white; border: 0; background: var(--green); box-shadow: 0 10px 24px rgba(47,109,75,.18); }
 .secondary-button { margin-top: 13px; color: var(--green); border: 1px solid #bcd2c1; background: var(--green-soft); }
-.instant-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  margin: 16px 0 0;
-  color: var(--muted);
-  font-size: 10px;
-}
-.instant-note i { width: 6px; height: 6px; border-radius: 50%; background: #68b87d; }
 
 .schedule-fields { align-items: end; gap: 9px; }
 .schedule-fields label:first-child { flex: 0 0 37%; }
@@ -428,7 +418,6 @@ html, body { height: 100%; overflow: hidden; }
 .switch-card i { width: 34px; height: 20px; }
 .switch-card i::after { width: 14px; height: 14px; }
 .switch-card input:checked + i::after { transform: translateX(14px); }
-.instant-note { margin-top: 8px; }
 
 #scheduleView {
   display: none;
@@ -495,7 +484,6 @@ body[data-view="schedule"] #scheduleView { display: block; }
   .control-panel .section-title { display: none; }
   .select-grid select { padding: 6px 4px; }
   .switch-card { padding: 6px 8px; }
-  .instant-note { margin-top: 5px; }
   .view-nav { padding-top: 5px; }
   .view-nav button { padding: 7px; }
 }
