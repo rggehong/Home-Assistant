@@ -20,6 +20,7 @@ const logoutButton = document.querySelector("#logoutButton");
 const toast = document.querySelector("#toast");
 const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
 const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
+let desktopAupuQrPollTimer = null;
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -639,34 +640,60 @@ document.querySelector("#desktopAupuExternalLight").addEventListener("change", (
 });
 document.querySelector("#desktopAupuSetup").addEventListener("click", () => {
   document.querySelector("#desktopAupuSetupError").textContent = "";
-  document.querySelector("#desktopAupuPassword").value = "";
+  document.querySelector("#desktopAupuQrBox").hidden = true;
+  document.querySelector("#desktopAupuQrStart").disabled = false;
+  clearTimeout(desktopAupuQrPollTimer);
   if (!aupuSetupDialog.open) aupuSetupDialog.showModal();
 });
 document.querySelector("#closeDesktopAupuSetupDialog").addEventListener("click", () => {
+  clearTimeout(desktopAupuQrPollTimer);
   aupuSetupDialog.close();
 });
+async function pollDesktopAupuQr(sessionId) {
+  try {
+    const result = await api(`/api/aupu/qr/${sessionId}`, { headers: headers() });
+    if (result.status === "connected") {
+      state.aupu = result.device;
+      clearTimeout(desktopAupuQrPollTimer);
+      aupuSetupDialog.close();
+      renderAupu();
+      showToast("Q360A-Pro 已连接");
+      return;
+    }
+    if (result.status === "error" || result.status === "expired") {
+      document.querySelector("#desktopAupuSetupError").textContent =
+        result.error || "二维码已失效，请重新生成";
+      document.querySelector("#desktopAupuQrStatus").textContent = "二维码已失效";
+      document.querySelector("#desktopAupuQrStart").disabled = false;
+      return;
+    }
+    document.querySelector("#desktopAupuQrStatus").textContent = "等待在米家 App 中确认…";
+    desktopAupuQrPollTimer = setTimeout(() => pollDesktopAupuQr(sessionId), 1800);
+  } catch (error) {
+    document.querySelector("#desktopAupuSetupError").textContent = error.message;
+    document.querySelector("#desktopAupuQrStart").disabled = false;
+  }
+}
 document.querySelector("#desktopAupuSetupForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const submit = event.submitter;
   submit.disabled = true;
   document.querySelector("#desktopAupuSetupError").textContent = "";
   try {
-    state.aupu = await api("/api/aupu/setup", {
+    const result = await api("/api/aupu/qr/start", {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify({
-        username: document.querySelector("#desktopAupuUsername").value,
-        password: document.querySelector("#desktopAupuPassword").value,
         locale: document.querySelector("#desktopAupuLocale").value,
       }),
     });
-    document.querySelector("#desktopAupuPassword").value = "";
-    aupuSetupDialog.close();
-    renderAupu();
-    showToast("Q360A-Pro 已连接");
+    document.querySelector("#desktopAupuQrImage").src = result.qr_image;
+    document.querySelector("#desktopAupuQrBox").hidden = false;
+    document.querySelector("#desktopAupuQrStatus").textContent =
+      "请使用米家 App 扫码并确认";
+    pollDesktopAupuQr(result.session_id);
   } catch (error) {
     document.querySelector("#desktopAupuSetupError").textContent = error.message;
-  } finally {
     submit.disabled = false;
   }
 });

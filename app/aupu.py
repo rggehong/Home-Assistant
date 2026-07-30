@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
+import logging
 import os
 import socket
 import struct
@@ -9,9 +11,11 @@ import time
 import hashlib
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from Crypto.Cipher import AES
 from pydantic import BaseModel, Field
+import requests
 
 
 AUPU_IP = os.getenv("AUPU_IP", "192.168.0.144")
@@ -49,9 +53,7 @@ class AupuCommand(BaseModel):
     external_light: bool | None = None
 
 
-class AupuSetupRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=160)
-    password: str = Field(min_length=1, max_length=256)
+class AupuQrStartRequest(BaseModel):
     locale: str = Field(default="cn", pattern=r"^(cn|de|us|ru|tw|sg|in|i2)$")
 
 
@@ -65,6 +67,8 @@ class AupuController:
         )
         self.path = data_dir / "aupu.json"
         self.lock = asyncio.Lock()
+        self.qr_sessions: dict[str, dict[str, Any]] = {}
+        self.qr_tasks: set[asyncio.Task[Any]] = set()
 
     def _load_config(self) -> dict[str, Any]:
         token = os.getenv("AUPU_MIIO_TOKEN", "").strip()
@@ -122,22 +126,11 @@ class AupuController:
             return device.get(key)
         return getattr(device, key, None)
 
-    def _cloud_bind(self, username: str, password: str, locale: str) -> dict[str, Any]:
-        try:
-            from micloud import MiCloud
-        except ImportError as exc:
-            raise AupuError("服务器缺少米家连接组件") from exc
-
-        try:
-            cloud = MiCloud(username, password)
-            if not cloud.login():
-                raise AupuError("米家登录失败，请检查账号、密码和地区")
-            devices = cloud.get_devices(country=locale)
-        except Exception as exc:
-            if isinstance(exc, AupuError):
-                raise
-            raise AupuError("米家登录失败，请检查账号、密码和地区") from exc
-
+    def _select_cloud_device(
+        self,
+        devices: Any,
+        locale: str,
+    ) -> dict[str, Any]:
         matches = []
         values = devices.values() if isinstance(devices, dict) else devices
         for device in values:
@@ -171,6 +164,154 @@ class AupuController:
         selected["token"] = token
         self._save_config(selected)
         return selected
+
+    @staticmethod
+    def _xiaomi_json(response_text: str) -> dict[str, Any]:
+        try:
+            return json.loads(response_text.replace("&&&START&&&", ""))
+        except json.JSONDecodeError as exc:
+            raise AupuError("小米登录服务返回了无法识别的数据") from exc
+
+    def _qr_start_sync(self, locale: str) -> dict[str, Any]:
+        session = requests.Session()
+        agent = "APP/com.xiaomi.mihome APPV/10.5.201"
+        session.headers.update({"User-Agent": agent})
+        params = {
+            "_qrsize": "480",
+            "qs": "%3Fsid%3Dxiaomiio%26_json%3Dtrue",
+            "callback": "https://sts.api.io.mi.com/sts",
+            "_hasLogo": "false",
+            "sid": "xiaomiio",
+            "serviceParam": "",
+            "_locale": "zh_CN",
+            "_dc": str(int(time.time() * 1000)),
+        }
+        try:
+            response = session.get(
+                "https://account.xiaomi.com/longPolling/loginUrl",
+                params=params,
+                timeout=10,
+            )
+            response.raise_for_status()
+            data = self._xiaomi_json(response.text)
+            image_response = session.get(data["qr"], timeout=10)
+            image_response.raise_for_status()
+        except (requests.RequestException, KeyError) as exc:
+            raise AupuError("暂时无法获取小米登录二维码，请稍后重试") from exc
+
+        session_id = uuid4().hex
+        timeout_seconds = min(300, max(60, int(data.get("timeout") or 120)))
+        self.qr_sessions[session_id] = {
+            "status": "pending",
+            "created_at": time.monotonic(),
+            "locale": locale,
+            "session": session,
+            "long_poll_url": data["lp"],
+            "timeout": timeout_seconds,
+        }
+        media_type = image_response.headers.get("Content-Type", "image/png").split(";")[0]
+        return {
+            "session_id": session_id,
+            "status": "pending",
+            "expires_in": timeout_seconds,
+            "qr_image": (
+                f"data:{media_type};base64,"
+                + base64.b64encode(image_response.content).decode("ascii")
+            ),
+        }
+
+    def _qr_complete_sync(self, session_id: str) -> None:
+        state = self.qr_sessions.get(session_id)
+        if not state:
+            return
+        session: requests.Session = state["session"]
+        try:
+            response = session.get(
+                state["long_poll_url"],
+                timeout=state["timeout"] + 10,
+            )
+            response.raise_for_status()
+            data = self._xiaomi_json(response.text)
+            location = data.get("location")
+            if not location:
+                raise AupuError("二维码未被确认或已经过期")
+            token_response = session.get(
+                location,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=10,
+            )
+            token_response.raise_for_status()
+            service_token = (
+                token_response.cookies.get("serviceToken")
+                or session.cookies.get("serviceToken")
+            )
+            if not service_token:
+                raise AupuError("小米未返回有效的登录令牌")
+
+            try:
+                from micloud import MiCloud
+            except ImportError as exc:
+                raise AupuError("服务器缺少米家连接组件") from exc
+
+            # micloud logs account IDs, cookies and complete device responses at
+            # DEBUG level. Keep this short cloud exchange out of application logs.
+            previous_disable = logging.root.manager.disable
+            logging.disable(logging.CRITICAL)
+            try:
+                cloud = MiCloud()
+                cloud.user_id = data["userId"]
+                cloud.ssecurity = data["ssecurity"]
+                cloud.service_token = service_token
+                devices = cloud.get_devices(country=state["locale"])
+            finally:
+                logging.disable(previous_disable)
+
+            if not devices:
+                raise AupuError("米家账号中没有读取到设备，请检查所选地区")
+            self._select_cloud_device(devices, state["locale"])
+            state["status"] = "connected"
+        except requests.Timeout:
+            state["status"] = "expired"
+            state["error"] = "二维码已过期，请重新生成"
+        except (requests.RequestException, KeyError, AupuError) as exc:
+            state["status"] = "error"
+            state["error"] = (
+                str(exc) if isinstance(exc, AupuError)
+                else "小米二维码登录失败，请重新生成"
+            )
+        finally:
+            state.pop("session", None)
+            state.pop("long_poll_url", None)
+
+    async def start_qr(self, payload: AupuQrStartRequest) -> dict[str, Any]:
+        async with self.lock:
+            now = time.monotonic()
+            self.qr_sessions = {
+                key: value
+                for key, value in self.qr_sessions.items()
+                if now - value.get("created_at", now) < 600
+            }
+            result = await asyncio.to_thread(self._qr_start_sync, payload.locale)
+            task = asyncio.create_task(
+                asyncio.to_thread(self._qr_complete_sync, result["session_id"])
+            )
+            self.qr_tasks.add(task)
+            task.add_done_callback(self.qr_tasks.discard)
+            return result
+
+    async def qr_status(self, session_id: str) -> dict[str, Any]:
+        state = self.qr_sessions.get(session_id)
+        if not state:
+            raise AupuError("二维码会话不存在或已经过期")
+        result = {
+            "session_id": session_id,
+            "status": state["status"],
+        }
+        if state.get("error"):
+            result["error"] = state["error"]
+        if state["status"] == "connected":
+            result["device"] = await self.status()
+        return result
 
     @staticmethod
     def _crypt(token: bytes, data: bytes, encrypt: bool) -> bytes:
@@ -314,16 +455,6 @@ class AupuController:
                 "external_light": None,
                 "error": str(exc),
             }
-
-    async def setup(self, payload: AupuSetupRequest) -> dict[str, Any]:
-        async with self.lock:
-            await asyncio.to_thread(
-                self._cloud_bind,
-                payload.username,
-                payload.password,
-                payload.locale,
-            )
-            return await self.status()
 
     def _set(self, config: dict[str, Any], payload: AupuCommand) -> None:
         updates = []

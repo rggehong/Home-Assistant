@@ -351,6 +351,25 @@ button { color: inherit; }
   border-radius: 12px;
   background: #202a23;
 }
+#desktopAupuSetupDialog .aupu-qr-box {
+  display: grid;
+  place-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: white;
+}
+#desktopAupuSetupDialog .aupu-qr-box img {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+}
+#desktopAupuSetupDialog .aupu-qr-box strong {
+  color: #2b6f4c;
+  font-size: 11px;
+}
 .desktop-tv {
   min-height: 0;
   padding: 0;

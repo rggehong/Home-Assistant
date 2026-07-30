@@ -30,10 +30,11 @@ from greeclimate.device import (
     VerticalSwing,
 )
 from greeclimate.discovery import Discovery
-from app.aupu import AupuCommand, AupuError, AupuSetupRequest, aupu
+from app.aupu import AupuCommand, AupuError, AupuQrStartRequest, aupu
 from app.sony import SonyError, TVCommand, sony_tv
 
 
+logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("greeclimate").setLevel(logging.WARNING)
 scheduler_logger = logging.getLogger("gree_home.scheduler")
 
@@ -766,12 +767,20 @@ async def aupu_status() -> dict[str, Any]:
     return await aupu.status()
 
 
-@app.post("/api/aupu/setup", dependencies=[Depends(require_token)])
-async def aupu_setup(payload: AupuSetupRequest) -> dict[str, Any]:
+@app.post("/api/aupu/qr/start", dependencies=[Depends(require_token)])
+async def aupu_qr_start(payload: AupuQrStartRequest) -> dict[str, Any]:
     try:
-        return await aupu.setup(payload)
+        return await aupu.start_qr(payload)
     except AupuError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/aupu/qr/{session_id}", dependencies=[Depends(require_token)])
+async def aupu_qr_status(session_id: str) -> dict[str, Any]:
+    try:
+        return await aupu.qr_status(session_id)
+    except AupuError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/aupu/command", dependencies=[Depends(require_token)])

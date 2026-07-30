@@ -19,6 +19,7 @@ const logoutButton = el("#logoutButton");
 const toast = el("#toast");
 const tvScreenDialog = el("#tvScreenDialog");
 const aupuSetupDialog = el("#aupuSetupDialog");
+let aupuQrPollTimer = null;
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
 const MIN_TEMPERATURE = 16;
@@ -781,32 +782,60 @@ el("#aupuExternalLight").addEventListener("change", (event) => {
 });
 el("#aupuSetupButton").addEventListener("click", () => {
   el("#aupuSetupError").textContent = "";
-  el("#aupuPassword").value = "";
+  el("#aupuQrBox").hidden = true;
+  el("#aupuQrStart").disabled = false;
+  clearTimeout(aupuQrPollTimer);
   if (!aupuSetupDialog.open) aupuSetupDialog.showModal();
 });
-el("#closeAupuSetupDialog").addEventListener("click", () => aupuSetupDialog.close());
+el("#closeAupuSetupDialog").addEventListener("click", () => {
+  clearTimeout(aupuQrPollTimer);
+  aupuSetupDialog.close();
+});
+async function pollAupuQr(sessionId) {
+  try {
+    const result = await api(`/api/aupu/qr/${sessionId}`, {
+      headers: requestHeaders(),
+    });
+    if (result.status === "connected") {
+      model.aupu = result.device;
+      clearTimeout(aupuQrPollTimer);
+      aupuSetupDialog.close();
+      renderAupu();
+      showToast("Q360A-Pro 已连接");
+      return;
+    }
+    if (result.status === "error" || result.status === "expired") {
+      el("#aupuSetupError").textContent = result.error || "二维码已失效，请重新生成";
+      el("#aupuQrStatus").textContent = "二维码已失效";
+      el("#aupuQrStart").disabled = false;
+      return;
+    }
+    el("#aupuQrStatus").textContent = "等待在米家 App 中确认…";
+    aupuQrPollTimer = setTimeout(() => pollAupuQr(sessionId), 1800);
+  } catch (error) {
+    el("#aupuSetupError").textContent = error.message;
+    el("#aupuQrStart").disabled = false;
+  }
+}
 el("#aupuSetupForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const submit = event.submitter;
   submit.disabled = true;
   el("#aupuSetupError").textContent = "";
   try {
-    model.aupu = await api("/api/aupu/setup", {
+    const result = await api("/api/aupu/qr/start", {
       method: "POST",
       headers: requestHeaders(true),
       body: JSON.stringify({
-        username: el("#aupuUsername").value,
-        password: el("#aupuPassword").value,
         locale: el("#aupuLocale").value,
       }),
     });
-    el("#aupuPassword").value = "";
-    aupuSetupDialog.close();
-    renderAupu();
-    showToast("Q360A-Pro 已连接");
+    el("#aupuQrImage").src = result.qr_image;
+    el("#aupuQrBox").hidden = false;
+    el("#aupuQrStatus").textContent = "请使用米家 App 扫码并确认";
+    pollAupuQr(result.session_id);
   } catch (error) {
     el("#aupuSetupError").textContent = error.message;
-  } finally {
     submit.disabled = false;
   }
 });

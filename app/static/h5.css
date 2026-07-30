@@ -396,6 +396,18 @@ dialog input[type="text"], dialog select {
   outline: none;
 }
 #aupuSetupDialog input[type="password"] { margin-bottom: 9px; }
+.aupu-qr-box {
+  display: grid;
+  place-items: center;
+  gap: 9px;
+  margin: 4px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: white;
+}
+.aupu-qr-box img { width: min(210px, 70vw); aspect-ratio: 1; object-fit: contain; }
+.aupu-qr-box strong { color: var(--green); font-size: 11px; }
 .dialog-close { position: absolute; right: 16px; top: 12px; border: 0; background: transparent; color: var(--muted); font-size: 24px; }
 .error-text { min-height: 17px; color: #b95f52; }
 .tv-screen-content {
