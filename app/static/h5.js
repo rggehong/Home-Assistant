@@ -312,12 +312,11 @@ function scheduleTargetName(deviceId) {
 
 function renderSchedules() {
   const list = el("#scheduleList");
-  const targetId = el("#scheduleTarget").value;
-  const items = model.schedules.filter((item) =>
-    item.device_id === targetId && item.status === "pending"
-  );
+  const items = model.schedules
+    .filter((item) => item.status === "pending")
+    .sort((left, right) => new Date(left.run_at) - new Date(right.run_at));
   if (!items.length) {
-    list.innerHTML = `<div class="schedule-empty">${scheduleTargetName(targetId)}暂无待执行任务</div>`;
+    list.innerHTML = '<div class="schedule-empty">暂无待执行任务</div>';
     return;
   }
   list.replaceChildren(...items.map((item) => {

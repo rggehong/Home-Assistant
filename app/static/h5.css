@@ -271,15 +271,39 @@ select, input[type="datetime-local"] {
   display: grid;
   grid-template-columns: 1fr;
   align-items: end;
-  gap: 7px;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #dbe7dd;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(237,245,238,.76));
 }
 .schedule-target-field { grid-column: 1 / -1; }
+.schedule-fields label {
+  grid-template-columns: 68px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  padding: 5px 7px 5px 11px;
+  border: 1px solid rgba(207,222,210,.78);
+  border-radius: 13px;
+  background: rgba(255,255,255,.82);
+}
+.schedule-fields label > span {
+  color: #607067;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
 .schedule-fields select,
 .schedule-fields input {
   box-sizing: border-box;
-  height: 42px;
+  height: 34px;
   min-width: 0;
+  padding: 6px 9px;
+  border-color: transparent;
+  border-radius: 9px;
+  background-color: #eef4ee;
   font-size: 11px;
+  font-weight: 650;
 }
 .schedule-time-selects {
   display: grid;
@@ -290,21 +314,22 @@ select, input[type="datetime-local"] {
 }
 .schedule-time-selects select {
   min-width: 0;
-  padding: 8px 5px;
-  font-size: 10px;
+  padding: 6px 4px;
+  font-size: 9px;
 }
 .schedule-quick-times {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  margin-top: 9px;
+  margin-top: 8px;
 }
 .schedule-quick-times button {
-  padding: 7px 3px;
+  padding: 8px 3px;
   color: var(--green);
-  border: 1px solid #c5d8c9;
-  border-radius: 10px;
-  background: rgba(255,255,255,.62);
+  border: 1px solid #bdd3c2;
+  border-radius: 999px;
+  background: rgba(255,255,255,.76);
+  box-shadow: 0 3px 10px rgba(47,109,75,.05);
   font-size: 9px;
   font-weight: 650;
 }

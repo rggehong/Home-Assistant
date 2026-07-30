@@ -128,6 +128,31 @@ class SonyTV:
     async def send_remote(self, command: str) -> None:
         await asyncio.to_thread(self._ircc_sync, command)
 
+    async def set_power_verified(
+        self,
+        power: bool,
+        attempts: int = 3,
+    ) -> dict[str, Any]:
+        state = await self.status()
+        if bool(state.get("power")) == power:
+            return state
+
+        last_error: Exception | None = None
+        for attempt in range(attempts):
+            try:
+                await self.call("system", "setPowerStatus", [{"status": power}])
+            except Exception as exc:
+                last_error = exc
+            await asyncio.sleep(1.5 + attempt)
+            state = await self.status()
+            if bool(state.get("power")) == power:
+                return state
+
+        if last_error is not None:
+            raise SonyError(f"电视电源操作失败：{last_error}")
+        target = "开机" if power else "关机"
+        raise SonyError(f"电视未确认完成{target}")
+
     async def status(self) -> dict[str, Any]:
         result = {
             "id": "sony-living-tv",

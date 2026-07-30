@@ -34,6 +34,7 @@ from app.sony import SonyError, TVCommand, sony_tv
 
 
 logging.getLogger("greeclimate").setLevel(logging.WARNING)
+scheduler_logger = logging.getLogger("gree_home.scheduler")
 
 MODE_NAMES = {
     "auto": Mode.Auto,
@@ -486,9 +487,7 @@ class ScheduleStore:
                     continue
                 try:
                     if item["device_id"] == SONY_TV_DEVICE_ID:
-                        await sony_tv.command(
-                            TVCommand(power=item["action"] == "on")
-                        )
+                        await sony_tv.set_power_verified(item["action"] == "on")
                     else:
                         await registry.command(
                             item["device_id"],
@@ -497,8 +496,21 @@ class ScheduleStore:
                 except Exception as exc:
                     item["status"] = "failed"
                     item["error"] = str(exc)
+                    scheduler_logger.error(
+                        "schedule failed id=%s device=%s action=%s error=%s",
+                        item.get("id"),
+                        item.get("device_id"),
+                        item.get("action"),
+                        exc,
+                    )
                 else:
                     item["status"] = "executed"
+                    scheduler_logger.info(
+                        "schedule executed id=%s device=%s action=%s",
+                        item.get("id"),
+                        item.get("device_id"),
+                        item.get("action"),
+                    )
                 item["executed_at"] = datetime.now(timezone.utc).isoformat()
                 changed = True
             if changed:
