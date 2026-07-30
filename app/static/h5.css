@@ -268,10 +268,12 @@ select, input[type="datetime-local"] {
 
 .schedule-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.35fr;
+  grid-template-columns: .8fr 1.4fr;
   align-items: end;
   gap: 7px;
 }
+.schedule-target-field { grid-column: 1 / -1; }
+.schedule-fields input { min-width: 0; font-size: 11px; }
 .schedule-fields label:first-child { flex: 0 0 37%; }
 .schedule-fields label:last-child { flex: 1; min-width: 0; }
 .schedule-list { display: grid; gap: 8px; margin-top: 15px; }
