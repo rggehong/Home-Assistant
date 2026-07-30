@@ -32,6 +32,24 @@ REMOTE_CODES = {
     "menu": "AAAAAgAAAMQAAABPAw==",
 }
 
+FOREGROUND_APP_NAMES = {
+    "com.familycast.tv": "AirPlay 投屏",
+    "com.dangbei.TVHomeLauncher": "当贝桌面",
+    "com.dangbeimarket": "当贝市场",
+    "com.netflix.ninja": "Netflix",
+    "com.google.android.youtube.tv": "YouTube",
+    "com.google.android.tvlauncher": "Android TV 主页",
+    "com.google.android.apps.tv.launcherx": "Google TV 主页",
+    "com.sony.dtv.tvx": "电视",
+    "com.sony.dtv.tvprogramguide": "电视节目指南",
+    "com.sony.dtv.settings": "索尼电视设置",
+    "com.android.settings": "系统设置",
+    "com.ktcp.video": "云视听极光",
+    "com.youku.tv": "酷喵",
+    "com.gitvvideo": "银河奇异果",
+    "com.mgtv.tv": "芒果 TV",
+}
+
 
 class SonyError(RuntimeError):
     pass
@@ -131,24 +149,29 @@ class SonyTV:
     async def send_remote(self, command: str) -> None:
         await asyncio.to_thread(self._ircc_sync, command)
 
-    def _screenshot_sync(self) -> bytes:
+    def _adb_run(
+        self,
+        *args: str,
+        timeout: float = 8,
+    ) -> subprocess.CompletedProcess[bytes]:
         adb = shutil.which("adb")
         if not adb:
-            raise SonyError("服务器尚未安装 ADB，无法抓取电视画面")
+            raise SonyError("服务器尚未安装 ADB，无法读取电视状态")
+        try:
+            return subprocess.run(
+                [adb, *args],
+                check=False,
+                capture_output=True,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise SonyError("电视 ADB 请求超时") from exc
 
-        def run(*args: str, timeout: float = 8) -> subprocess.CompletedProcess[bytes]:
-            try:
-                return subprocess.run(
-                    [adb, *args],
-                    check=False,
-                    capture_output=True,
-                    timeout=timeout,
-                )
-            except subprocess.TimeoutExpired as exc:
-                raise SonyError("电视截图请求超时") from exc
-
-        run("start-server", timeout=5)
-        devices = run("devices", "-l", timeout=5).stdout.decode(errors="replace")
+    def _adb_endpoint_sync(self) -> str:
+        self._adb_run("start-server", timeout=5)
+        devices = self._adb_run(
+            "devices", "-l", timeout=5
+        ).stdout.decode(errors="replace")
         endpoints = [
             line.split()[0]
             for line in devices.splitlines()[1:]
@@ -160,7 +183,7 @@ class SonyTV:
         if configured_endpoint:
             candidates.append(configured_endpoint)
 
-        mdns = run("mdns", "services", timeout=5)
+        mdns = self._adb_run("mdns", "services", timeout=5)
         mdns_text = mdns.stdout.decode(errors="replace")
         discovered = [
             match.group(0)
@@ -176,7 +199,7 @@ class SonyTV:
         for candidate in dict.fromkeys(candidates):
             if endpoint:
                 break
-            connected = run("connect", candidate, timeout=6)
+            connected = self._adb_run("connect", candidate, timeout=6)
             message = (connected.stdout + connected.stderr).decode(errors="replace").lower()
             if "connected to" in message or "already connected" in message:
                 endpoint = candidate
@@ -190,8 +213,13 @@ class SonyTV:
             raise SonyError(
                 "电视未开启无线调试。请在电视“开发者选项 → 无线调试”中开启后重试"
             )
+        return endpoint
 
-        capture = run("-s", endpoint, "exec-out", "screencap", "-p", timeout=15)
+    def _screenshot_sync(self) -> bytes:
+        endpoint = self._adb_endpoint_sync()
+        capture = self._adb_run(
+            "-s", endpoint, "exec-out", "screencap", "-p", timeout=15
+        )
         if capture.returncode != 0 or not capture.stdout.startswith(b"\x89PNG\r\n\x1a\n"):
             detail = capture.stderr.decode(errors="replace").strip()
             raise SonyError(detail or "电视没有返回有效画面")
@@ -201,6 +229,50 @@ class SonyTV:
 
     async def screenshot(self) -> bytes:
         return await asyncio.to_thread(self._screenshot_sync)
+
+    def _foreground_app_sync(self) -> dict[str, Any]:
+        endpoint = self._adb_endpoint_sync()
+        activities = self._adb_run(
+            "-s",
+            endpoint,
+            "shell",
+            "dumpsys",
+            "activity",
+            "activities",
+            timeout=10,
+        )
+        text = activities.stdout.decode(errors="replace")
+        match = re.search(
+            r"topResumedActivity=.*?\bu\d+\s+([A-Za-z0-9_.$-]+)/([^\s}]+)",
+            text,
+        )
+        if not match:
+            windows = self._adb_run(
+                "-s", endpoint, "shell", "dumpsys", "window", timeout=10
+            )
+            text = windows.stdout.decode(errors="replace")
+            match = re.search(
+                r"mCurrentFocus=.*?\bu\d+\s+([A-Za-z0-9_.$-]+)/([^\s}]+)",
+                text,
+            )
+        if not match:
+            return {
+                "available": False,
+                "name": "无法识别",
+                "package": None,
+                "activity": None,
+            }
+
+        package, activity = match.groups()
+        return {
+            "available": True,
+            "name": FOREGROUND_APP_NAMES.get(package, package),
+            "package": package,
+            "activity": activity,
+        }
+
+    async def foreground_app(self) -> dict[str, Any]:
+        return await asyncio.to_thread(self._foreground_app_sync)
 
     async def set_power_verified(
         self,

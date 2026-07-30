@@ -631,6 +631,17 @@ dialog input:focus { border-color: var(--green); }
 .tv-screen-dialog { width: min(760px, calc(100% - 32px)); }
 .tv-screen-dialog h3 { margin-right: 35px; }
 .tv-screen-dialog p { margin: 7px 0 14px; }
+.tv-screen-dialog .tv-foreground {
+  display: inline-flex;
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  color: #77d9a5;
+  border: 1px solid #365443;
+  border-radius: 999px;
+  background: #17231b;
+  font-size: 11px;
+  font-weight: 700;
+}
 .tv-screen-frame {
   display: grid;
   place-items: center;

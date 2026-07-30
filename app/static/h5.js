@@ -213,6 +213,25 @@ async function sendTVCommand(payload) {
   }
 }
 
+async function loadTVForeground() {
+  const target = el("#tvForegroundApp");
+  target.textContent = "前台应用：正在识别";
+  target.removeAttribute("title");
+  try {
+    const foreground = await api("/api/tv/foreground", {
+      headers: requestHeaders(),
+    });
+    target.textContent = foreground.available
+      ? `前台应用：${foreground.name}`
+      : "前台应用：暂时无法识别";
+    if (foreground.package) {
+      target.title = `${foreground.package}/${foreground.activity || ""}`;
+    }
+  } catch {
+    target.textContent = "前台应用：暂时无法读取";
+  }
+}
+
 async function captureTVScreen() {
   const image = el("#tvScreenImage");
   const placeholder = el("#tvScreenPlaceholder");
@@ -222,6 +241,7 @@ async function captureTVScreen() {
   placeholder.hidden = false;
   placeholder.textContent = "正在连接电视并抓取当前画面…";
   image.hidden = true;
+  await loadTVForeground();
   try {
     const blob = await apiBlob(`/api/tv/screenshot?t=${Date.now()}`);
     image.src = await new Promise((resolve, reject) => {

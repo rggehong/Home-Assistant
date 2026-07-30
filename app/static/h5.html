@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>清风 H5 · 家庭空调</title>
-    <link rel="stylesheet" href="/static/h5.css?v=21">
+    <link rel="stylesheet" href="/static/h5.css?v=22">
   </head>
   <body>
     <main class="app-shell">
@@ -248,6 +248,7 @@
         <span class="micro-label">SONY SCREEN</span>
         <h3>正在播放的电视画面</h3>
         <p id="tvScreenNowPlaying">读取当前播放状态</p>
+        <p class="tv-foreground" id="tvForegroundApp">前台应用：正在识别</p>
         <div class="tv-screen-frame">
           <img id="tvScreenImage" alt="索尼电视当前画面" hidden>
           <div id="tvScreenPlaceholder">点击“刷新画面”获取一张实时截图</div>
@@ -271,6 +272,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=20" defer></script>
+    <script src="/static/h5.js?v=21" defer></script>
   </body>
 </html>

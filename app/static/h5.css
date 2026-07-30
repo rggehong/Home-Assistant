@@ -394,6 +394,17 @@ dialog input[type="password"] {
 }
 .tv-screen-dialog h3 { margin-right: 30px; font-size: 20px; }
 .tv-screen-dialog p { margin: 6px 0 12px; }
+.tv-screen-dialog .tv-foreground {
+  display: inline-flex;
+  margin: 0 0 10px;
+  padding: 5px 9px;
+  color: #286c48;
+  border: 1px solid #c5ddcc;
+  border-radius: 999px;
+  background: #edf6ef;
+  font-size: 10px;
+  font-weight: 700;
+}
 .tv-screen-frame {
   display: grid;
   place-items: center;
