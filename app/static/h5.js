@@ -188,8 +188,11 @@ function renderDevice() {
   el("#horizontalField").hidden = horizontal.length === 0;
   fillSelect(el("#horizontalSelect"), horizontal, (value) => horizontalLabels[value] || value, draft.horizontal);
 
+  el("#sleepCard").hidden = !device.capabilities.sleep;
   el("#sleepSwitch").checked = draft.sleep;
+  el("#lightCard").hidden = !device.capabilities.light;
   el("#lightSwitch").checked = draft.light;
+  el("#quietCard").hidden = !device.capabilities.quiet;
   el("#quietSwitch").checked = draft.quiet;
   el("#lowerOutletCard").hidden = !device.capabilities.lower_outlet;
   el("#lowerOutletSwitch").checked = draft.lowerOutlet;

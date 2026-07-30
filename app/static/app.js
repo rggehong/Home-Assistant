@@ -184,9 +184,9 @@ function createCard(device) {
       <div class="field" ${horizontal.length ? "" : "hidden"}><label>左右风向</label><select data-field="horizontal">${horizontalOptions}</select></div>
     </div>
     <div class="comfort-toggles">
-      <label class="mini-toggle"><span>睡眠</span><input type="checkbox" data-field="sleep" ${draft.sleep ? "checked" : ""}><i></i></label>
-      <label class="mini-toggle"><span>面板灯</span><input type="checkbox" data-field="light" ${draft.light ? "checked" : ""}><i></i></label>
-      <label class="mini-toggle"><span>静音</span><input type="checkbox" data-field="quiet" ${draft.quiet ? "checked" : ""}><i></i></label>
+      ${device.capabilities.sleep ? `<label class="mini-toggle"><span>睡眠</span><input type="checkbox" data-field="sleep" ${draft.sleep ? "checked" : ""}><i></i></label>` : ""}
+      ${device.capabilities.light ? `<label class="mini-toggle"><span>面板灯</span><input type="checkbox" data-field="light" ${draft.light ? "checked" : ""}><i></i></label>` : ""}
+      ${device.capabilities.quiet ? `<label class="mini-toggle"><span>静音</span><input type="checkbox" data-field="quiet" ${draft.quiet ? "checked" : ""}><i></i></label>` : ""}
       ${device.capabilities.lower_outlet ? `<label class="mini-toggle"><span>下出风</span><input type="checkbox" data-field="lowerOutlet" ${draft.lowerOutlet ? "checked" : ""}><i></i></label>` : ""}
       ${device.capabilities.anti_direct ? `<label class="mini-toggle"><span>防直吹</span><input type="checkbox" data-field="antiDirect" ${draft.antiDirect ? "checked" : ""}><i></i></label>` : ""}
       ${device.capabilities.turbo ? `<label class="mini-toggle"><span>强劲风</span><input type="checkbox" data-field="turbo" ${draft.turbo ? "checked" : ""}><i></i></label>` : ""}

@@ -189,12 +189,20 @@ def _serialize(device: Device) -> dict[str, Any]:
         "capabilities": {
             "vertical_swing": room.get("vertical_swing", list(VERTICAL_SWING_NAMES)),
             "horizontal_swing": room.get("horizontal_swing", list(HORIZONTAL_SWING_NAMES)),
-            "lower_outlet": room.get("lower_outlet", False),
+            "lower_outlet": (
+                room.get("lower_outlet", False)
+                and device.raw_properties.get(ExtraProps.LOWER_OUTLET.value) is not None
+            ),
             "anti_direct": room.get("anti_direct", False),
-            "turbo": room.get("turbo", False),
-            "health": room.get("health", False),
-            "auxiliary_heat": room.get("auxiliary_heat", False),
-            "sleep": True,
+            "turbo": room.get("turbo", False) and device.turbo is not None,
+            "health": room.get("health", False) and device.anion is not None,
+            "auxiliary_heat": (
+                room.get("auxiliary_heat", False)
+                and device.steady_heat is not None
+            ),
+            "sleep": device.sleep is not None,
+            "light": device.light is not None,
+            "quiet": device.quiet is not None,
             "schedules": True,
         },
         "online": device.has_valid_state,
