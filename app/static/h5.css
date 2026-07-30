@@ -273,9 +273,45 @@ select, input[type="datetime-local"] {
   gap: 7px;
 }
 .schedule-target-field { grid-column: 1 / -1; }
-.schedule-fields input { min-width: 0; font-size: 11px; }
-.schedule-fields label:first-child { flex: 0 0 37%; }
-.schedule-fields label:last-child { flex: 1; min-width: 0; }
+.schedule-fields select,
+.schedule-fields input {
+  box-sizing: border-box;
+  height: 42px;
+  min-width: 0;
+  font-size: 11px;
+}
+.schedule-time-selects {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, .75fr) minmax(0, .75fr);
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+.schedule-time-selects select {
+  min-width: 0;
+  padding: 8px 5px;
+  font-size: 10px;
+}
+.schedule-quick-times {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 9px;
+}
+.schedule-quick-times button {
+  padding: 7px 3px;
+  color: var(--green);
+  border: 1px solid #c5d8c9;
+  border-radius: 10px;
+  background: rgba(255,255,255,.62);
+  font-size: 9px;
+  font-weight: 650;
+}
+.schedule-quick-times button:active {
+  color: white;
+  border-color: var(--green);
+  background: var(--green);
+}
 .schedule-list { display: grid; gap: 8px; margin-top: 15px; }
 .schedule-item {
   display: grid;

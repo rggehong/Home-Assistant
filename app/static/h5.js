@@ -596,6 +596,7 @@ el("#scheduleForm").addEventListener("submit", async (event) => {
       }),
     });
     el("#scheduleForm").reset();
+    setScheduleTimeAfterMinutes(10);
     showToast("定时任务已添加");
     await loadAll(false);
   } catch (error) {
@@ -674,16 +675,65 @@ function showToast(message) {
   showToast.timer = setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
-function setMinimumScheduleTime() {
-  const next = new Date(Date.now() + 60_000);
-  const local = new Date(next.getTime() - next.getTimezoneOffset() * 60_000);
-  el("#scheduleTime").min = local.toISOString().slice(0, 16);
+function localScheduleValue(date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
 }
+
+function applyScheduleTime(value) {
+  const [date, time] = value.split("T");
+  const [hour, minute] = time.split(":");
+  el("#scheduleDay").value = date;
+  el("#scheduleHour").value = hour;
+  el("#scheduleMinute").value = minute;
+  el("#scheduleTime").value = value;
+}
+
+function syncScheduleTimeFromSelects() {
+  el("#scheduleTime").value =
+    `${el("#scheduleDay").value}T${el("#scheduleHour").value}:${el("#scheduleMinute").value}`;
+}
+
+function setScheduleTimeAfterMinutes(minutes) {
+  const next = new Date(Math.ceil(Date.now() / 60_000) * 60_000 + minutes * 60_000);
+  applyScheduleTime(localScheduleValue(next));
+}
+
+function initializeScheduleTime() {
+  const daySelect = el("#scheduleDay");
+  daySelect.innerHTML = Array.from({ length: 8 }, (_, index) => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + index);
+    const value = localScheduleValue(date).slice(0, 10);
+    const label = index === 0 ? "今天" : index === 1 ? "明天" :
+      date.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", weekday: "short" });
+    return `<option value="${value}">${label}</option>`;
+  }).join("");
+  el("#scheduleHour").innerHTML = Array.from({ length: 24 }, (_, hour) => {
+    const value = String(hour).padStart(2, "0");
+    return `<option value="${value}">${value}时</option>`;
+  }).join("");
+  el("#scheduleMinute").innerHTML = Array.from({ length: 60 }, (_, minute) => {
+    const value = String(minute).padStart(2, "0");
+    return `<option value="${value}">${value}分</option>`;
+  }).join("");
+  setScheduleTimeAfterMinutes(10);
+}
+
+document.querySelectorAll("[data-schedule-delay]").forEach((button) => {
+  button.addEventListener("click", () => {
+    setScheduleTimeAfterMinutes(Number(button.dataset.scheduleDelay));
+  });
+});
+["#scheduleDay", "#scheduleHour", "#scheduleMinute"].forEach((selector) => {
+  el(selector).addEventListener("change", syncScheduleTimeFromSelects);
+});
 
 el("#today").textContent = new Date().toLocaleDateString("zh-CN", {
   month: "long", day: "numeric", weekday: "long",
 });
-setMinimumScheduleTime();
+initializeScheduleTime();
 bootstrap();
 setInterval(() => {
   if (model.authenticated && !document.hidden) loadAll(true);

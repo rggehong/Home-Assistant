@@ -437,7 +437,7 @@ button { color: inherit; }
 .schedule-heading { margin-bottom: 25px; }
 .schedule-form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.7fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
   align-items: end;
   gap: 12px;
 }
@@ -445,6 +445,8 @@ button { color: inherit; }
 .schedule-form label span { color: var(--muted); font-size: 10px; }
 .schedule-form select,
 .schedule-form input {
+  box-sizing: border-box;
+  height: 42px;
   width: 100%;
   min-width: 0;
   padding: 12px;
@@ -453,6 +455,39 @@ button { color: inherit; }
   border-radius: 12px;
   background: #202a23;
   outline: none;
+}
+.schedule-time-selects {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, .75fr) minmax(0, .75fr);
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+.schedule-time-selects select {
+  min-width: 0;
+  padding: 8px 5px;
+  font-size: 9px;
+}
+.schedule-quick-times {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+.schedule-quick-times button {
+  padding: 8px 4px;
+  color: var(--green-bright);
+  border: 1px solid #34483b;
+  border-radius: 10px;
+  background: #202a23;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.schedule-quick-times button:hover,
+.schedule-quick-times button:focus-visible {
+  border-color: var(--green-bright);
+  background: #27362d;
 }
 .schedule-submit {
   padding: 13px 20px;

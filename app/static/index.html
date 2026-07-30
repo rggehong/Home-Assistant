@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#18201c">
     <title>清风 · 家庭空调</title>
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=14">
+    <link rel="stylesheet" href="/static/styles.css?v=16">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -124,9 +124,22 @@
           </label>
           <label>
             <span>执行时间</span>
-            <input id="scheduleTime" type="datetime-local" required>
+            <div class="schedule-time-selects">
+              <select id="scheduleDay" aria-label="执行日期"></select>
+              <select id="scheduleHour" aria-label="执行小时"></select>
+              <select id="scheduleMinute" aria-label="执行分钟"></select>
+            </div>
+            <input id="scheduleTime" type="hidden">
           </label>
           <button class="schedule-submit" type="submit">添加任务</button>
+          <div class="schedule-quick-times" aria-label="快捷设置执行时间">
+            <button type="button" data-schedule-delay="10">10分钟</button>
+            <button type="button" data-schedule-delay="30">30分钟</button>
+            <button type="button" data-schedule-delay="60">1小时</button>
+            <button type="button" data-schedule-delay="120">2小时</button>
+            <button type="button" data-schedule-delay="240">4小时</button>
+            <button type="button" data-schedule-delay="480">8小时</button>
+          </div>
         </form>
         <div class="desktop-schedule-list" id="scheduleList"></div>
         </section>
@@ -156,6 +169,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=14" defer></script>
+    <script src="/static/app.js?v=16" defer></script>
   </body>
 </html>
