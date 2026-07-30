@@ -345,7 +345,7 @@ button { color: inherit; }
 .remote-volume-rocker button:active { transform: translateY(1px); filter: brightness(.82); }
 .remote-key:disabled, .remote-direction:disabled, .remote-ok:disabled,
 .remote-volume-rocker button:disabled { cursor: not-allowed; opacity: .3; }
-.remote-power { position: relative; color: #66d99d; font-size: 0; }
+.remote-power { position: relative; color: #df6666; font-size: 0; }
 .remote-power::before {
   content: "";
   width: 12px;
@@ -364,7 +364,10 @@ button { color: inherit; }
   border-radius: 2px;
   background: currentColor;
 }
-.remote-power.is-on { box-shadow: 0 0 15px rgba(93,211,148,.25), 0 3px 5px rgba(0,0,0,.48); }
+.remote-power.is-on {
+  color: #66d99d;
+  box-shadow: 0 0 15px rgba(93,211,148,.25), 0 3px 5px rgba(0,0,0,.48);
+}
 .remote-icon { font-size: 17px; }
 .remote-sensor {
   width: 27px;

@@ -12,8 +12,10 @@ from pydantic import BaseModel, Field
 REMOTE_CODES = {
     "tv": "AAAAAQAAAAEAAAAkAw==",
     "input": "AAAAAQAAAAEAAAAlAw==",
-    "settings": "AAAAAgAAAMQAAABLAw==",
-    "options": "AAAAAgAAAJcAAAA2Aw==",
+    # On the K-75XR51Z, `Options` opens quick settings while `ActionMenu`
+    # opens the physical remote's colors/numbers/subtitles/audio panel.
+    "settings": "AAAAAgAAAJcAAAA2Aw==",
+    "options": "AAAAAgAAAMQAAABLAw==",
     "up": "AAAAAQAAAAEAAAB0Aw==",
     "down": "AAAAAQAAAAEAAAB1Aw==",
     "left": "AAAAAQAAAAEAAAA0Aw==",

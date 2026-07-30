@@ -540,7 +540,7 @@ body[data-view="tv"] #tvView { display: block; }
 }
 .remote-key:disabled, .remote-direction:disabled, .remote-ok:disabled,
 .remote-volume-rocker button:disabled { cursor: not-allowed; opacity: .3; }
-.remote-power { position: relative; color: #66d99d; font-size: 0; }
+.remote-power { position: relative; color: #df6666; font-size: 0; }
 .remote-power::before {
   content: "";
   width: 15px;
@@ -559,7 +559,10 @@ body[data-view="tv"] #tvView { display: block; }
   border-radius: 2px;
   background: currentColor;
 }
-.remote-power.is-on { box-shadow: 0 0 18px rgba(93,211,148,.26), 0 3px 5px rgba(0,0,0,.48); }
+.remote-power.is-on {
+  color: #66d99d;
+  box-shadow: 0 0 18px rgba(93,211,148,.26), 0 3px 5px rgba(0,0,0,.48);
+}
 .remote-icon { font-size: 21px; }
 .remote-sensor {
   width: 35px;
