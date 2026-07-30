@@ -7,6 +7,7 @@ const state = {
   aupu: null,
   plug: null,
   purifier: null,
+  waterHeater: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -156,13 +157,14 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules, tv, aupu, plug, purifier] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug, purifier, waterHeater] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
       api("/api/tv", { headers: headers() }),
       api("/api/aupu", { headers: headers() }),
       api("/api/plug", { headers: headers() }),
       api("/api/purifier", { headers: headers() }),
+      api("/api/water-heater", { headers: headers() }),
     ]);
     state.authenticated = true;
     updateAuthControls();
@@ -172,6 +174,7 @@ async function loadAll(refresh = true) {
     state.aupu = aupu;
     state.plug = plug;
     state.purifier = purifier;
+    state.waterHeater = waterHeater;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
@@ -215,6 +218,19 @@ function render() {
   renderAupu();
   renderPlug();
   renderPurifier();
+  renderWaterHeater();
+}
+
+function renderWaterHeater() {
+  const device = state.waterHeater;
+  if (!device) return;
+  document.querySelector("#desktopWaterHeaterStatus").textContent =
+    `${device.ip} · ${device.status_text}`;
+  document.querySelector("#desktopWaterHeaterControl").textContent =
+    device.control_ready ? "已可控制" : "等待云授权";
+  const badge = document.querySelector("#desktopWaterHeaterBadge");
+  badge.textContent = device.reachable ? "局域网在线" : "当前离线";
+  badge.classList.toggle("online", Boolean(device.reachable));
 }
 
 function renderPurifier() {

@@ -7,6 +7,7 @@ const model = {
   aupu: null,
   plug: null,
   purifier: null,
+  waterHeater: null,
   tvForeground: null,
   selectedId: null,
   drafts: new Map(),
@@ -171,13 +172,14 @@ function ensureDraft(device) {
 async function loadAll(refresh = true) {
   setStatus("正在同步空调状态", "");
   try {
-    const [devices, schedules, tv, aupu, plug, purifier] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug, purifier, waterHeater] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
       api("/api/schedules", { headers: requestHeaders() }),
       api("/api/tv", { headers: requestHeaders() }),
       api("/api/aupu", { headers: requestHeaders() }),
       api("/api/plug", { headers: requestHeaders() }),
       api("/api/purifier", { headers: requestHeaders() }),
+      api("/api/water-heater", { headers: requestHeaders() }),
     ]);
     model.authenticated = true;
     updateAuthControls();
@@ -187,6 +189,7 @@ async function loadAll(refresh = true) {
     model.aupu = aupu;
     model.plug = plug;
     model.purifier = purifier;
+    model.waterHeater = waterHeater;
     devices.forEach(ensureDraft);
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
@@ -215,6 +218,18 @@ function render() {
   renderAupu();
   renderPlug();
   renderPurifier();
+  renderWaterHeater();
+}
+
+function renderWaterHeater() {
+  const device = model.waterHeater;
+  if (!device) return;
+  el("#waterHeaterStatus").textContent = `${device.ip} · ${device.status_text}`;
+  el("#waterHeaterLanStatus").textContent =
+    device.reachable ? "局域网在线" : "当前离线";
+  el("#waterHeaterCloudStatus").textContent =
+    device.control_ready ? "已授权" : "等待华为授权";
+  el("#waterHeaterNotice").textContent = device.notice;
 }
 
 function renderPurifier() {

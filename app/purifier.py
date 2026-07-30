@@ -116,6 +116,32 @@ class PurifierController:
                 return merged
         return data
 
+    @staticmethod
+    def _normalise_key(value: str) -> str:
+        return "".join(character for character in value.lower() if character.isalnum())
+
+    @classmethod
+    def _find_value(cls, data: Any, *aliases: str) -> str:
+        wanted = {cls._normalise_key(alias) for alias in aliases}
+        stack: list[Any] = [data]
+        while stack:
+            item = stack.pop()
+            if isinstance(item, dict):
+                for key, value in item.items():
+                    if cls._normalise_key(str(key)) in wanted and value not in (None, ""):
+                        if isinstance(value, (str, int, float)):
+                            return str(value)
+                    if isinstance(value, (dict, list)):
+                        stack.append(value)
+                    elif isinstance(value, str) and value[:1] in ("{", "["):
+                        try:
+                            stack.append(json.loads(value))
+                        except json.JSONDecodeError:
+                            pass
+            elif isinstance(item, list):
+                stack.extend(item)
+        return ""
+
     def _request_sync(
         self,
         path: str,
@@ -224,21 +250,44 @@ class PurifierController:
         }
         async with self.lock:
             data, token = await self._request("/user/login", params)
-            result = self._result(data)
             if not self._is_success(data):
                 raise PurifierError(self._response_message(data) or "AI-LiNK 登录失败")
-            token = token or str(result.get("Authorization") or result.get("token") or "")
+            token = token or self._find_value(
+                data,
+                "Authorization",
+                "token",
+                "accessToken",
+                "access_token",
+            )
             config = {
                 "mobile": payload.mobile,
                 "token": token,
-                "user_id": str(result.get("User_Id") or result.get("userId") or ""),
-                "family_id": str(result.get("Family_Id") or result.get("familyId") or ""),
-                "family_name": str(result.get("Family_Name") or result.get("familyName") or ""),
-                "uk": str(result.get("uk") or result.get("Uk") or ""),
+                "user_id": self._find_value(
+                    data,
+                    "User_Id",
+                    "userId",
+                    "UserID",
+                    "uid",
+                ),
+                "family_id": self._find_value(
+                    data,
+                    "Family_Id",
+                    "familyId",
+                    "FamilyID",
+                ),
+                "family_name": self._find_value(
+                    data,
+                    "Family_Name",
+                    "familyName",
+                ),
+                "uk": self._find_value(data, "uk", "familyUk", "family_uk"),
                 "bound_at": int(time.time()),
             }
-            if not config["token"] or not config["user_id"] or not config["family_id"]:
-                raise PurifierError("AI-LiNK 已登录，但未返回完整的家庭授权信息")
+            if not config["token"]:
+                raise PurifierError("AI-LiNK 已登录，但服务端未返回登录令牌")
+            # Newer AI-LiNK versions may not return family metadata in the
+            # login response. Keep the valid token and let the device-list
+            # request complete the binding instead of forcing another SMS login.
             self._save_config(config)
             return await self.status(refresh=True)
 
@@ -299,8 +348,8 @@ class PurifierController:
             data, token = await self._request(
                 "/tsData/getDeviceList_V2",
                 {
-                    "Family_Id": config["family_id"],
-                    "User_Id": config["user_id"],
+                    "Family_Id": config.get("family_id", ""),
+                    "User_Id": config.get("user_id", ""),
                 },
                 config,
             )
@@ -312,6 +361,20 @@ class PurifierController:
                 if str(data.get("status")) == "401":
                     message = "AI-LiNK 授权已过期，请重新连接"
                 raise PurifierError(message)
+            changed = False
+            for key, aliases in (
+                ("user_id", ("User_Id", "userId", "UserID", "uid")),
+                ("family_id", ("Family_Id", "familyId", "FamilyID")),
+                ("family_name", ("Family_Name", "familyName")),
+                ("uk", ("uk", "familyUk", "family_uk")),
+            ):
+                if not config.get(key):
+                    value = self._find_value(data, *aliases)
+                    if value:
+                        config[key] = value
+                        changed = True
+            if changed:
+                self._save_config(config)
             devices = self._device_list(data)
             device = self._select_purifier(devices)
             if device is None:
@@ -335,7 +398,11 @@ class PurifierController:
                 base["detail_url"] = url
             return base
         except PurifierError as exc:
-            base["error"] = str(exc)
+            message = str(exc)
+            if message.strip().lower() == "resource not found":
+                message = "AI-LiNK 授权已保存，设备数据接口仍在适配"
+                base["authorization_saved"] = True
+            base["error"] = message
             return base
 
 

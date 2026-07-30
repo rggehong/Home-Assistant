@@ -256,6 +256,31 @@
         </article>
       </section>
 
+      <section class="water-heater-view" id="waterHeaterView">
+        <article class="water-heater-card">
+          <header class="purifier-header">
+            <div>
+              <span class="micro-label">A.O. SMITH · HUAWEI</span>
+              <h2>燃气热水器</h2>
+              <p id="waterHeaterStatus">正在探测 192.168.0.108</p>
+            </div>
+            <span class="purifier-device-icon water-heater-icon" aria-hidden="true">热</span>
+          </header>
+          <div class="purifier-model water-heater-model">
+            <span>设备型号</span>
+            <strong>JSQ31-VJSAi</strong>
+          </div>
+          <div class="purifier-info">
+            <div><span>当前平台</span><strong>华为智慧生活</strong></div>
+            <div><span>连接方式</span><strong>华为云端</strong></div>
+            <div><span>局域网状态</span><strong id="waterHeaterLanStatus">识别中</strong></div>
+            <div><span>控制授权</span><strong id="waterHeaterCloudStatus">等待授权</strong></div>
+          </div>
+          <p class="water-heater-notice" id="waterHeaterNotice">正在识别设备的可用控制方式。</p>
+          <button class="aupu-setup-button water-heater-auth" type="button" disabled>等待华为云授权</button>
+        </article>
+      </section>
+
       <section class="tv-view" id="tvView">
         <article class="tv-card remote-stage">
           <div class="tv-remote">
@@ -387,6 +412,7 @@
         <button data-view="aupu">奥普浴霸</button>
         <button data-view="plug">智能插座</button>
         <button data-view="purifier">史密斯净水机</button>
+        <button data-view="water-heater">燃气热水器</button>
         <button data-view="tv">索尼电视</button>
         <button data-view="schedule">定时任务</button>
       </nav>

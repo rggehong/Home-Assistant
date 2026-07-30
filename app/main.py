@@ -39,6 +39,7 @@ from app.purifier import (
     purifier,
 )
 from app.sony import SonyError, TVCommand, sony_tv
+from app.water_heater import water_heater
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -823,6 +824,11 @@ async def plug_command(payload: PlugCommand) -> dict[str, Any]:
 @app.get("/api/purifier", dependencies=[Depends(require_token)])
 async def purifier_status() -> dict[str, Any]:
     return await purifier.status()
+
+
+@app.get("/api/water-heater", dependencies=[Depends(require_token)])
+async def water_heater_status() -> dict[str, Any]:
+    return await water_heater.status()
 
 
 @app.post("/api/purifier/captcha", dependencies=[Depends(require_token)])
