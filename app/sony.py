@@ -34,7 +34,7 @@ REMOTE_CODES = {
 
 FOREGROUND_APP_NAMES = {
     "com.familycast.tv": "AirPlay 投屏",
-    "com.dangbei.TVHomeLauncher": "当贝桌面",
+    "com.dangbei.TVHomeLauncher": "电视主页",
     "com.dangbeimarket": "当贝市场",
     "com.netflix.ninja": "Netflix",
     "com.google.android.youtube.tv": "YouTube",
@@ -70,6 +70,15 @@ TV_APP_PACKAGES = {
         "name": "网易云",
         "package": "com.netease.cloudmusic.tv",
     },
+}
+
+PROTECTED_TV_PACKAGES = {
+    "com.android.systemui",
+    "com.dangbei.TVHomeLauncher",
+    "com.google.android.apps.tv.launcherx",
+    "com.google.android.tvlauncher",
+    "com.sony.dtv.settings",
+    "com.sony.dtv.tvx",
 }
 
 
@@ -327,6 +336,47 @@ class SonyTV:
         await asyncio.sleep(1)
         foreground = await self.foreground_app()
         return {**app, "foreground": foreground}
+
+    def _cleanup_apps_sync(self) -> dict[str, Any]:
+        endpoint = self._adb_endpoint_sync()
+        foreground = self._foreground_app_sync()
+        package = foreground.get("package")
+        stopped_package = None
+        stopped_name = None
+
+        home = self._adb_run(
+            "-s", endpoint, "shell", "input", "keyevent", "KEYCODE_HOME", timeout=8
+        )
+        if home.returncode != 0:
+            raise SonyError("无法返回电视主页")
+        if (
+            package
+            and package not in PROTECTED_TV_PACKAGES
+            and not package.startswith("android.")
+        ):
+            stopped = self._adb_run(
+                "-s", endpoint, "shell", "am", "force-stop", package, timeout=10
+            )
+            if stopped.returncode != 0:
+                raise SonyError("无法结束当前前台应用")
+            stopped_package = package
+            stopped_name = foreground.get("name") or package
+
+        killed = self._adb_run(
+            "-s", endpoint, "shell", "am", "kill-all", timeout=10
+        )
+        if killed.returncode != 0:
+            raise SonyError("无法清理电视后台进程")
+        return {
+            "ok": True,
+            "stopped_package": stopped_package,
+            "stopped_name": stopped_name,
+        }
+
+    async def cleanup_apps(self) -> dict[str, Any]:
+        result = await asyncio.to_thread(self._cleanup_apps_sync)
+        await asyncio.sleep(1)
+        return {**result, "foreground": await self.foreground_app()}
 
     async def set_power_verified(
         self,

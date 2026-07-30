@@ -542,6 +542,7 @@ body[data-view="schedule"] #scheduleView { display: block; }
 }
 body[data-view="tv"] #controlView { display: none; }
 body[data-view="tv"] .room-tabs { display: none; }
+body[data-view="tv"] .status-line { display: none; }
 body[data-view="tv"] #tvView { display: block; }
 .tv-card {
   height: 100%;
@@ -625,6 +626,25 @@ body[data-view="tv"] #tvView { display: block; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tv-app-heading-actions {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+.tv-cleanup-button {
+  flex: none;
+  padding: 3px 7px;
+  color: #ffaaa2;
+  border: 1px solid rgba(229, 93, 81, .42);
+  border-radius: 999px;
+  background: rgba(139, 45, 38, .22);
+  font-size: 7px;
+  font-weight: 750;
+}
+.tv-cleanup-button:disabled { cursor: not-allowed; opacity: .38; }
 .tv-app-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

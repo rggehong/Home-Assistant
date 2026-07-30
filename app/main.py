@@ -640,6 +640,15 @@ STATIC_DIR = Path(__file__).with_name("static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> FileResponse:
+    return FileResponse(
+        STATIC_DIR / "favicon.ico",
+        media_type="image/x-icon",
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
+
+
 @app.get("/", include_in_schema=False)
 async def dashboard() -> FileResponse:
     return FileResponse(
@@ -776,6 +785,14 @@ async def tv_foreground() -> dict[str, Any]:
 async def tv_launch_app(app_id: str) -> dict[str, Any]:
     try:
         return await sony_tv.launch_app(app_id)
+    except SonyError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/tv/cleanup", dependencies=[Depends(require_token)])
+async def tv_cleanup_apps() -> dict[str, Any]:
+    try:
+        return await sony_tv.cleanup_apps()
     except SonyError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

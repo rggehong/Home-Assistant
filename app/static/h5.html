@@ -6,15 +6,16 @@
     <meta name="theme-color" content="#eef3ec">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>清风 H5 · 家庭空调</title>
-    <link rel="stylesheet" href="/static/h5.css?v=23">
+    <title>智能家居</title>
+    <link rel="icon" href="/favicon.ico?v=1" sizes="any">
+    <link rel="stylesheet" href="/static/h5.css?v=24">
   </head>
   <body>
     <main class="app-shell">
       <header class="mobile-header">
         <div>
           <p id="today">家庭气候</p>
-          <h1>清风</h1>
+          <h1>智能家居</h1>
         </div>
         <div class="header-actions">
           <button id="syncButton" class="round-button" aria-label="刷新">↻</button>
@@ -151,7 +152,10 @@
             <section class="tv-app-section" aria-label="快捷应用">
               <div class="tv-app-heading">
                 <span>快捷应用</span>
-                <small id="tvActiveApp">读取前台应用</small>
+                <div class="tv-app-heading-actions">
+                  <small id="tvActiveApp">读取前台应用</small>
+                  <button class="tv-cleanup-button" type="button" data-tv-cleanup>一键清理</button>
+                </div>
               </div>
               <div class="tv-app-grid">
                 <button class="tv-app-button app-bilibili" type="button" data-tv-app="bilibili" data-tv-app-package="com.xiaodianshi.tv.yst" aria-label="打开 bilibili">
@@ -283,7 +287,7 @@
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
         <span class="micro-label">安全访问</span>
-        <h3>登录清风家庭</h3>
+        <h3>登录家庭</h3>
         <p>输入一次家庭访问密码，此设备将安全保持登录 30 天。</p>
         <input id="passwordInput" type="password" autocomplete="current-password" placeholder="家庭访问密码" required>
         <button class="primary-button" type="submit">登录</button>
@@ -293,6 +297,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=22" defer></script>
+    <script src="/static/h5.js?v=23" defer></script>
   </body>
 </html>

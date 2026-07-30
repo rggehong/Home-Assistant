@@ -72,7 +72,7 @@ async function api(path, options = {}) {
     state.authenticated = false;
     setConnection("需要登录", "error");
     openAuthDialog();
-    const error = new Error(body.detail || "请先登录清风家庭");
+    const error = new Error(body.detail || "请先登录家庭");
     error.isAuthError = true;
     throw error;
   }
@@ -91,7 +91,7 @@ async function apiBlob(path) {
   if (response.status === 401) {
     state.authenticated = false;
     openAuthDialog();
-    throw new Error("请先登录清风家庭");
+    throw new Error("请先登录家庭");
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -252,11 +252,37 @@ function renderTVApps() {
     button.disabled = !state.tv?.configured || !state.tv?.online;
     if (active) activeLabel = button.querySelector("b")?.textContent || "";
   });
+  document.querySelectorAll("[data-tv-cleanup]").forEach((button) => {
+    button.disabled = !state.tv?.configured || !state.tv?.online;
+  });
   document.querySelector("#desktopTvActiveApp").textContent = activeLabel
     ? `${activeLabel} 正在运行`
     : foreground?.available
       ? foreground.name
       : "选择后立即打开";
+}
+
+async function cleanupTVApps() {
+  document.querySelectorAll("[data-tv-app], [data-tv-cleanup]").forEach((item) => {
+    item.disabled = true;
+  });
+  showToast("正在清理电视应用");
+  try {
+    const result = await api("/api/tv/cleanup", {
+      method: "POST",
+      headers: headers(),
+    });
+    state.tvForeground = result.foreground || null;
+    renderTVApps();
+    showToast(
+      result.stopped_name
+        ? `已关闭 ${result.stopped_name} 并完成清理`
+        : "后台进程已清理"
+    );
+  } catch (error) {
+    renderTVApps();
+    showToast(error.message);
+  }
 }
 
 async function launchTVApp(button) {
@@ -542,6 +568,9 @@ document.querySelectorAll("[data-tv-remote]").forEach((button) => {
 });
 document.querySelectorAll("[data-tv-app]").forEach((button) => {
   button.addEventListener("click", () => launchTVApp(button));
+});
+document.querySelectorAll("[data-tv-cleanup]").forEach((button) => {
+  button.addEventListener("click", cleanupTVApps);
 });
 document.querySelector("#desktopTvScreenButton").addEventListener("click", () => {
   if (!tvScreenDialog.open) tvScreenDialog.showModal();
