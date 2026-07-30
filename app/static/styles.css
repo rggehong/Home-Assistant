@@ -301,7 +301,7 @@ button { color: inherit; }
   display: grid;
   grid-template-rows: repeat(9, auto);
   align-content: space-between;
-  gap: 4px;
+  gap: 3px;
   width: 100%;
   height: 100%;
   padding: 11px 16px 10px;
@@ -345,12 +345,86 @@ button { color: inherit; }
   cursor: pointer;
 }
 .tv-screen-open:disabled { cursor: not-allowed; opacity: .35; }
+.tv-app-section {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid #303a34;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(50,61,54,.7), rgba(20,25,22,.82));
+}
+.tv-app-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.tv-app-heading span {
+  color: #e7ebe8;
+  font-size: 7px;
+  font-weight: 750;
+  letter-spacing: .06em;
+}
+.tv-app-heading small {
+  overflow: hidden;
+  color: #7f8d84;
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tv-app-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.tv-app-button {
+  display: grid;
+  grid-template-rows: 15px auto;
+  place-items: center;
+  min-width: 0;
+  height: 31px;
+  padding: 2px;
+  color: white;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  background: #222824;
+  box-shadow: inset 0 1px rgba(255,255,255,.05);
+  cursor: pointer;
+}
+.tv-app-button i {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.12);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 850;
+}
+.tv-app-button b {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 6px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tv-app-button.active {
+  border-color: #6dd69e;
+  box-shadow: 0 0 0 1px rgba(109,214,158,.18), 0 4px 12px rgba(0,0,0,.2);
+}
+.tv-app-button:disabled { cursor: not-allowed; opacity: .38; }
+.app-bilibili i { color: white; background: #fb7299; }
+.app-iqiyi i { color: white; background: #00be06; }
+.app-netflix i { color: white; background: #e50914; font-family: Arial, sans-serif; }
+.app-netease i { color: white; background: #d52b2b; }
 .remote-row-three, .remote-row-sides { grid-template-columns: repeat(3, 1fr); justify-items: center; }
 .remote-key {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   color: #f5f6f5;
   border: 1px solid #080909;
@@ -402,7 +476,7 @@ button { color: inherit; }
   justify-self: center;
   display: grid;
   grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-  width: min(104px, 14vh);
+  width: min(88px, 12vh);
   aspect-ratio: 1;
   padding: 4px;
   border: 1px solid #090a09;
@@ -434,8 +508,8 @@ button { color: inherit; }
 .remote-volume-rocker {
   justify-self: center;
   display: grid;
-  grid-template-rows: 29px 10px 29px;
-  width: 42px;
+  grid-template-rows: 23px 8px 23px;
+  width: 39px;
   overflow: hidden;
   border: 1px solid #080909;
   border-radius: 22px;

@@ -4,6 +4,7 @@ const model = {
   devices: [],
   schedules: [],
   tv: null,
+  tvForeground: null,
   selectedId: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -197,6 +198,7 @@ function renderTV() {
   document.querySelectorAll("[data-tv-remote]").forEach((button) => {
     button.disabled = !tv.configured || !tv.online;
   });
+  renderTVApps();
 }
 
 async function sendTVCommand(payload) {
@@ -221,6 +223,7 @@ async function loadTVForeground() {
     const foreground = await api("/api/tv/foreground", {
       headers: requestHeaders(),
     });
+    model.tvForeground = foreground;
     target.textContent = foreground.available
       ? `前台应用：${foreground.name}`
       : "前台应用：暂时无法识别";
@@ -228,7 +231,50 @@ async function loadTVForeground() {
       target.title = `${foreground.package}/${foreground.activity || ""}`;
     }
   } catch {
+    model.tvForeground = null;
     target.textContent = "前台应用：暂时无法读取";
+  }
+  renderTVApps();
+}
+
+function renderTVApps() {
+  const foreground = model.tvForeground;
+  const buttons = document.querySelectorAll("[data-tv-app]");
+  let activeLabel = "";
+  buttons.forEach((button) => {
+    const active = Boolean(
+      foreground?.available &&
+      foreground.package === button.dataset.tvAppPackage
+    );
+    button.classList.toggle("active", active);
+    button.disabled = !model.tv?.configured || !model.tv?.online;
+    if (active) activeLabel = button.querySelector("b")?.textContent || "";
+  });
+  el("#tvActiveApp").textContent = activeLabel
+    ? `${activeLabel} 正在运行`
+    : foreground?.available
+      ? foreground.name
+      : "选择后立即打开";
+}
+
+async function launchTVApp(button) {
+  const appId = button.dataset.tvApp;
+  const label = button.querySelector("b")?.textContent || "应用";
+  document.querySelectorAll("[data-tv-app]").forEach((item) => {
+    item.disabled = true;
+  });
+  showToast(`正在打开 ${label}`);
+  try {
+    const result = await api(`/api/tv/apps/${appId}`, {
+      method: "POST",
+      headers: requestHeaders(),
+    });
+    model.tvForeground = result.foreground || null;
+    renderTVApps();
+    showToast(`已打开 ${label}`);
+  } catch (error) {
+    renderTVApps();
+    showToast(error.message);
   }
 }
 
@@ -638,6 +684,9 @@ document.querySelectorAll("[data-tv-remote]").forEach((button) => {
     sendTVCommand({ remote: button.dataset.tvRemote });
   });
 });
+document.querySelectorAll("[data-tv-app]").forEach((button) => {
+  button.addEventListener("click", () => launchTVApp(button));
+});
 el("#tvScreenButton").addEventListener("click", () => {
   if (!tvScreenDialog.open) tvScreenDialog.showModal();
   captureTVScreen();
@@ -651,6 +700,7 @@ document.querySelectorAll(".view-nav button").forEach((button) => {
     document.querySelectorAll(".view-nav button").forEach((item) => {
       item.classList.toggle("active", item === button);
     });
+    if (button.dataset.view === "tv") loadTVForeground();
   });
 });
 

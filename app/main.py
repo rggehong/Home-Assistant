@@ -772,6 +772,14 @@ async def tv_foreground() -> dict[str, Any]:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+@app.post("/api/tv/apps/{app_id}", dependencies=[Depends(require_token)])
+async def tv_launch_app(app_id: str) -> dict[str, Any]:
+    try:
+        return await sony_tv.launch_app(app_id)
+    except SonyError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @app.post("/api/tv/command", dependencies=[Depends(require_token)])
 async def tv_command(payload: TVCommand) -> dict[str, Any]:
     try:

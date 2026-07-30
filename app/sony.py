@@ -46,9 +46,30 @@ FOREGROUND_APP_NAMES = {
     "com.android.settings": "系统设置",
     "com.ktcp.video": "云视听极光",
     "com.xiaodianshi.tv.yst": "云视听小电视",
+    "com.gitvdemo.video": "爱奇艺",
     "com.youku.tv": "酷喵",
     "com.gitvvideo": "银河奇异果",
     "com.mgtv.tv": "芒果 TV",
+    "com.netease.cloudmusic.tv": "网易云",
+}
+
+TV_APP_PACKAGES = {
+    "bilibili": {
+        "name": "bilibili",
+        "package": "com.xiaodianshi.tv.yst",
+    },
+    "iqiyi": {
+        "name": "爱奇艺",
+        "package": "com.gitvdemo.video",
+    },
+    "netflix": {
+        "name": "Netflix",
+        "package": "com.netflix.ninja",
+    },
+    "netease": {
+        "name": "网易云",
+        "package": "com.netease.cloudmusic.tv",
+    },
 }
 
 
@@ -274,6 +295,38 @@ class SonyTV:
 
     async def foreground_app(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._foreground_app_sync)
+
+    def _launch_app_sync(self, app_id: str) -> dict[str, str]:
+        app = TV_APP_PACKAGES.get(app_id)
+        if app is None:
+            raise SonyError("不支持的电视应用快捷键")
+        endpoint = self._adb_endpoint_sync()
+        launched = self._adb_run(
+            "-s",
+            endpoint,
+            "shell",
+            "monkey",
+            "-p",
+            app["package"],
+            "-c",
+            "android.intent.category.LEANBACK_LAUNCHER",
+            "1",
+            timeout=15,
+        )
+        output = (launched.stdout + launched.stderr).decode(errors="replace")
+        if launched.returncode != 0 or "Events injected: 1" not in output:
+            raise SonyError(f"无法启动{app['name']}，请确认电视已安装该应用")
+        return {
+            "id": app_id,
+            "name": app["name"],
+            "package": app["package"],
+        }
+
+    async def launch_app(self, app_id: str) -> dict[str, Any]:
+        app = await asyncio.to_thread(self._launch_app_sync, app_id)
+        await asyncio.sleep(1)
+        foreground = await self.foreground_app()
+        return {**app, "foreground": foreground}
 
     async def set_power_verified(
         self,
