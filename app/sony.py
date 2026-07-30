@@ -45,6 +45,7 @@ FOREGROUND_APP_NAMES = {
     "com.sony.dtv.settings": "索尼电视设置",
     "com.android.settings": "系统设置",
     "com.ktcp.video": "云视听极光",
+    "com.xiaodianshi.tv.yst": "云视听小电视",
     "com.youku.tv": "酷喵",
     "com.gitvvideo": "银河奇异果",
     "com.mgtv.tv": "芒果 TV",
