@@ -5,8 +5,8 @@
   --line: rgba(235, 242, 229, 0.12);
   --panel: rgba(35, 45, 39, 0.78);
   --panel-strong: #263129;
-  --green: #a8d5a2;
-  --green-bright: #c9efb7;
+  --green: #07c160;
+  --green-bright: #39d98a;
   --cream: #eee5cf;
   --dark: #111713;
   --danger: #ff9e8d;
@@ -422,7 +422,7 @@ button { color: inherit; }
   background: rgba(255,255,255,.72);
   box-shadow: 0 12px 28px rgba(25, 56, 39, .08);
 }
-.tmall-mark { color: white; background: #2f6d4b; }
+.tmall-mark { color: white; background: #07c160; }
 .dreame-mark { color: white; background: #2d7652; }
 .desktop-tmall-list { display: flex; gap: 7px; }
 .desktop-tmall-list span {
@@ -436,7 +436,7 @@ button { color: inherit; }
 .desktop-smart-note { color: var(--muted); font-size: 9px; line-height: 1.4; }
 .desktop-tmall-bridge {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   padding: 9px 11px;
   border: 1px solid #f0d7c7;
   border-radius: 12px;
@@ -694,8 +694,8 @@ button { color: inherit; }
 .remote-stage { display: grid; place-items: center; min-height: 0; }
 .tv-remote {
   display: grid;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
-  align-content: space-between;
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr);
+  align-content: stretch;
   gap: 3px;
   width: 100%;
   height: 100%;
@@ -704,14 +704,14 @@ button { color: inherit; }
   border: 1px solid #080a09;
   border-radius: 26px;
   background:
-    linear-gradient(145deg, rgba(255,255,255,.055), transparent 28%),
-    linear-gradient(180deg, #252826, #111312 72%, #090a0a);
-  box-shadow: 0 16px 28px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.07);
+    linear-gradient(145deg, rgba(255,255,255,.12), transparent 30%),
+    linear-gradient(180deg, #4a504d 0%, #303532 46%, #202421 100%);
+  box-shadow: 0 16px 28px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.13);
 }
 .remote-header, .remote-row { display: grid; align-items: center; }
 .remote-header { grid-template-columns: 1fr auto; }
 .remote-header > div { display: grid; gap: 1px; }
-.remote-brand { color: #64d196; font-size: 7px; font-weight: 800; letter-spacing: .18em; }
+.remote-brand { color: #07c160; font-size: 7px; font-weight: 800; letter-spacing: .18em; }
 .remote-header strong { font-size: 10px; font-weight: 650; }
 .desktop-tv-status {
   flex: 1;
@@ -731,7 +731,7 @@ button { color: inherit; }
 .tv-screen-open {
   flex: none;
   padding: 3px 7px;
-  color: #69d39a;
+  color: #07c160;
   border: 1px solid #34483b;
   border-radius: 999px;
   background: #172019;
@@ -839,8 +839,8 @@ button { color: inherit; }
   white-space: nowrap;
 }
 .tv-app-button.active {
-  border-color: #6dd69e;
-  box-shadow: 0 0 0 1px rgba(109,214,158,.18), 0 4px 12px rgba(0,0,0,.2);
+  border-color: #07c160;
+  box-shadow: 0 0 0 1px rgba(7,193,96,.18), 0 4px 12px rgba(0,0,0,.2);
 }
 .tv-app-button:disabled { cursor: not-allowed; opacity: .38; }
 .app-bilibili i { color: white; background: #fb7299; }
@@ -850,9 +850,10 @@ button { color: inherit; }
 .remote-row-three, .remote-row-sides { grid-template-columns: repeat(3, 1fr); justify-items: center; }
 .remote-lower-controls {
   display: grid;
-  gap: 4px;
-  align-self: center;
-  transform: translateY(-10px);
+  gap: 12px;
+  align-self: start;
+  margin-top: 0;
+  transform: translateY(-12px);
 }
 .remote-control-cluster {
   display: grid;
@@ -862,7 +863,7 @@ button { color: inherit; }
 .remote-control-column {
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .remote-key {
   display: grid;
@@ -902,8 +903,8 @@ button { color: inherit; }
   background: currentColor;
 }
 .remote-power.is-on {
-  color: #66d99d;
-  box-shadow: 0 0 15px rgba(93,211,148,.25), 0 3px 5px rgba(0,0,0,.48);
+  color: #07c160;
+  box-shadow: 0 0 15px rgba(7,193,96,.25), 0 3px 5px rgba(0,0,0,.48);
 }
 .remote-icon { font-size: 17px; }
 .remote-sensor {
@@ -916,18 +917,19 @@ button { color: inherit; }
 }
 .remote-led { width: 13px; height: 4px; border-radius: 99px; background: #050606; }
 .remote-dpad {
-  align-self: center;
+  align-self: start;
   justify-self: center;
   display: grid;
   grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-  width: min(88px, 12vh);
+  width: min(80px, 11vh);
   aspect-ratio: 1;
   padding: 4px;
   border: 1px solid #090a09;
   border-radius: 50%;
   background: radial-gradient(circle at 45% 38%, #303431, #161917 70%);
   box-shadow: 0 4px 7px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.07);
-  transform: translateY(-4px);
+  margin-top: 0;
+  transform: translateY(-6px);
 }
 .remote-direction, .remote-ok {
   color: #9fa5a1;
@@ -952,7 +954,7 @@ button { color: inherit; }
 .remote-volume-rocker {
   justify-self: center;
   display: grid;
-  grid-template-rows: 30px 10px 30px;
+  grid-template-rows: 27px 10px 27px;
   width: 42px;
   overflow: hidden;
   border: 1px solid #080909;
@@ -962,7 +964,7 @@ button { color: inherit; }
 }
 .remote-volume-rocker button { color: white; border: 0; background: transparent; font-size: 15px; }
 .remote-volume-rocker span { color: #7d8580; text-align: center; font-size: 5px; letter-spacing: .12em; }
-.desktop-tv-input { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px; }
+.desktop-tv-input { display: grid; grid-template-columns: auto 1fr; align-self: end; align-items: center; gap: 6px; }
 .desktop-tv-input span { color: #858d88; font-size: 7px; white-space: nowrap; }
 .desktop-tv-input select {
   min-width: 0;

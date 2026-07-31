@@ -181,30 +181,10 @@ function ensureDraft(device) {
 async function loadAll(refresh = true) {
   setStatus("正在同步空调状态", "");
   try {
-    const [devices, schedules, tv, aupu, plug, opple, purifier, waterHeater, tmall, dreame] = await Promise.all([
-      api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() }),
-      api("/api/schedules", { headers: requestHeaders() }),
-      api("/api/tv", { headers: requestHeaders() }),
-      api("/api/aupu", { headers: requestHeaders() }),
-      api("/api/plug", { headers: requestHeaders() }),
-      api("/api/opple", { headers: requestHeaders() }),
-      api("/api/purifier", { headers: requestHeaders() }),
-      api("/api/water-heater", { headers: requestHeaders() }),
-      api("/api/tmall", { headers: requestHeaders() }),
-      api("/api/dreame", { headers: requestHeaders() }),
-    ]);
+    const devices = await api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() });
     model.authenticated = true;
     updateAuthControls();
     model.devices = devices;
-    model.schedules = schedules;
-    model.tv = tv;
-    model.aupu = aupu;
-    model.plug = plug;
-    model.opple = opple;
-    model.purifier = purifier;
-    model.waterHeater = waterHeater;
-    model.tmall = tmall;
-    model.dreame = dreame;
     devices.forEach(ensureDraft);
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
@@ -216,6 +196,59 @@ async function loadAll(refresh = true) {
       setStatus("连接失败", "error");
       showToast(error.message);
     }
+  }
+}
+
+const viewLoads = new Map();
+
+async function loadViewData(view, force = false) {
+  if (!view || view === "control") return;
+  if (!force && viewLoads.has(view)) return viewLoads.get(view);
+
+  const request = (async () => {
+    try {
+      if (view === "tv") {
+        model.tv = await api("/api/tv", { headers: requestHeaders() });
+        renderTV();
+        loadTVForeground();
+      } else if (view === "aupu") {
+        [model.aupu, model.schedules] = await Promise.all([
+          api("/api/aupu", { headers: requestHeaders() }),
+          api("/api/schedules", { headers: requestHeaders() }),
+        ]);
+        renderAupu();
+      } else if (view === "opple") {
+        model.opple = await api("/api/opple", { headers: requestHeaders() });
+        renderOpple();
+      } else if (view === "plug") {
+        model.plug = await api("/api/plug", { headers: requestHeaders() });
+        renderPlug();
+      } else if (view === "smart-device") {
+        model.tmall = await api("/api/tmall", { headers: requestHeaders() });
+        renderSmartDevices();
+      } else if (view === "dreame") {
+        model.dreame = await api("/api/dreame", { headers: requestHeaders() });
+        renderSmartDevices();
+      } else if (view === "purifier") {
+        model.purifier = await api("/api/purifier", { headers: requestHeaders() });
+        renderPurifier();
+      } else if (view === "water-heater") {
+        model.waterHeater = await api("/api/water-heater", { headers: requestHeaders() });
+        renderWaterHeater();
+      } else if (view === "schedule") {
+        model.schedules = await api("/api/schedules", { headers: requestHeaders() });
+        renderSchedules();
+      }
+    } catch (error) {
+      if (!error.isAuthError) showToast(error.message);
+    }
+  })();
+
+  viewLoads.set(view, request);
+  try {
+    await request;
+  } finally {
+    if (viewLoads.get(view) === request) viewLoads.delete(view);
   }
 }
 
@@ -1394,11 +1427,12 @@ el("#purifierSetupForm").addEventListener("submit", async (event) => {
 
 document.querySelectorAll(".view-nav button").forEach((button) => {
   button.addEventListener("click", () => {
-    document.body.dataset.view = button.dataset.view;
+    const view = button.dataset.view;
+    document.body.dataset.view = view;
     document.querySelectorAll(".view-nav button").forEach((item) => {
       item.classList.toggle("active", item === button);
     });
-    if (button.dataset.view === "tv") loadTVForeground();
+    loadViewData(view);
   });
 });
 
@@ -1446,7 +1480,10 @@ async function removeSchedule(id) {
   }
 }
 
-el("#syncButton").addEventListener("click", () => loadAll(true));
+el("#syncButton").addEventListener("click", async () => {
+  await loadAll(true);
+  await loadViewData(document.body.dataset.view || "control", true);
+});
 el("#authButton").addEventListener("click", openAuthDialog);
 el("#closeDialog").addEventListener("click", () => authDialog.close());
 el("#authForm").addEventListener("submit", async (event) => {
@@ -1463,6 +1500,7 @@ el("#authForm").addEventListener("submit", async (event) => {
     sessionStorage.removeItem("greeApiToken");
     authDialog.close();
     await loadAll(true);
+    await loadViewData(document.body.dataset.view || "control", true);
   } catch (error) {
     el("#authError").textContent = error.message;
   }

@@ -35,6 +35,7 @@ let desktopAupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
 let oppleCommandTimer = null;
 let opplePendingCommand = {};
+const secondaryLoads = new Map();
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -164,38 +165,18 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules, tv, aupu, plug, opple, purifier, waterHeater, tmall, dreame] = await Promise.all([
-      api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
-      api("/api/schedules", { headers: headers() }),
-      api("/api/tv", { headers: headers() }),
-      api("/api/aupu", { headers: headers() }),
-      api("/api/plug", { headers: headers() }),
-      api("/api/opple", { headers: headers() }),
-      api("/api/purifier", { headers: headers() }),
-      api("/api/water-heater", { headers: headers() }),
-      api("/api/tmall", { headers: headers() }),
-      api("/api/dreame", { headers: headers() }),
-    ]);
+    const devices = await api(`/api/devices?refresh=${refresh}`, { headers: headers() });
     state.authenticated = true;
     updateAuthControls();
     state.devices = devices;
-    state.schedules = schedules;
-    state.tv = tv;
-    state.aupu = aupu;
-    state.plug = plug;
-    state.opple = opple;
-    state.purifier = purifier;
-    state.waterHeater = waterHeater;
-    state.tmall = tmall;
-    state.dreame = dreame;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
     render();
-    loadTVForeground();
     setConnection("本地在线", "online");
     document.querySelector("#lastUpdated").textContent =
       `更新于 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+    loadSecondaryData();
   } catch (error) {
     if (error.isAuthError) {
       renderEmpty("请先登录", "输入一次家庭访问密码，此设备将保持登录 30 天。");
@@ -204,6 +185,62 @@ async function loadAll(refresh = true) {
       showToast(error.message);
     }
   }
+}
+
+function loadSecondary(key, path, apply) {
+  if (secondaryLoads.has(key)) return secondaryLoads.get(key);
+  const request = api(path, { headers: headers() })
+    .then((value) => {
+      state.authenticated = true;
+      apply(value);
+    })
+    .catch(() => {})
+    .finally(() => secondaryLoads.delete(key));
+  secondaryLoads.set(key, request);
+  return request;
+}
+
+function loadSecondaryData() {
+  return Promise.allSettled([
+    loadSecondary("schedules", "/api/schedules", (value) => {
+      state.schedules = value;
+      renderSchedules();
+      renderAupu();
+    }),
+    loadSecondary("tv", "/api/tv", (value) => {
+      state.tv = value;
+      renderTV();
+      loadTVForeground();
+    }),
+    loadSecondary("aupu", "/api/aupu", (value) => {
+      state.aupu = value;
+      renderAupu();
+    }),
+    loadSecondary("plug", "/api/plug", (value) => {
+      state.plug = value;
+      renderPlug();
+    }),
+    loadSecondary("opple", "/api/opple", (value) => {
+      state.opple = value;
+      renderOpple();
+    }),
+    loadSecondary("purifier", "/api/purifier", (value) => {
+      state.purifier = value;
+      renderPurifier();
+    }),
+    loadSecondary("water-heater", "/api/water-heater", (value) => {
+      state.waterHeater = value;
+      renderWaterHeater();
+    }),
+    loadSecondary("tmall", "/api/tmall", (value) => {
+      state.tmall = value;
+      renderSmartDevices();
+    }),
+    loadSecondary("dreame", "/api/dreame", (value) => {
+      state.dreame = value;
+      renderSmartDevices();
+    }),
+  ]);
 }
 
 function setConnection(text, className) {

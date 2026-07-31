@@ -5,9 +5,9 @@
   --ink: #1d2821;
   --muted: #7a877d;
   --line: #dfe7df;
-  --green: #2f6d4b;
-  --green-soft: #d9eadc;
-  --lime: #bde3b7;
+  --green: #07c160;
+  --green-soft: #e8f8ef;
+  --lime: #9fe7bf;
   --shadow: 0 18px 50px rgba(38, 68, 48, .09);
   font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
@@ -99,7 +99,7 @@ button { color: inherit; }
   background: var(--green-soft);
   font-size: 21px;
 }
-.climate-card:not(.is-off) .power-button { color: white; background: var(--green); box-shadow: 0 8px 24px rgba(47,109,75,.24); }
+.climate-card:not(.is-off) .power-button { color: white; background: var(--green); box-shadow: 0 8px 24px rgba(7,193,96,.24); }
 
 .thermostat { position: relative; justify-content: center; padding: 22px 0 18px; }
 .temperature-ring {
@@ -125,10 +125,10 @@ button { color: inherit; }
   transition: box-shadow .18s ease, transform .18s ease;
 }
 .temperature-ring:hover {
-  box-shadow: 0 16px 48px rgba(47, 109, 75, .18);
+  box-shadow: 0 16px 48px rgba(7, 193, 96, .18);
 }
 .temperature-ring:focus-visible {
-  box-shadow: 0 0 0 4px rgba(47, 109, 75, .18), 0 16px 48px rgba(47, 109, 75, .16);
+  box-shadow: 0 0 0 4px rgba(7, 193, 96, .18), 0 16px 48px rgba(7, 193, 96, .16);
 }
 .temperature-ring.is-dragging {
   cursor: grabbing;
@@ -264,7 +264,7 @@ select, input[type="datetime-local"] {
   border-radius: 15px;
   font-weight: 700;
 }
-.primary-button { margin-top: 16px; color: white; border: 0; background: var(--green); box-shadow: 0 10px 24px rgba(47,109,75,.18); }
+.primary-button { margin-top: 16px; color: white; border: 0; background: var(--green); box-shadow: 0 10px 24px rgba(7,193,96,.18); }
 .secondary-button { margin-top: 13px; color: var(--green); border: 1px solid #bcd2c1; background: var(--green-soft); }
 
 .schedule-fields {
@@ -329,7 +329,7 @@ select, input[type="datetime-local"] {
   border: 1px solid #bdd3c2;
   border-radius: 999px;
   background: rgba(255,255,255,.76);
-  box-shadow: 0 3px 10px rgba(47,109,75,.05);
+  box-shadow: 0 3px 10px rgba(7,193,96,.05);
   font-size: 9px;
   font-weight: 650;
 }
@@ -638,7 +638,7 @@ body[data-view="dreame"] #dreameDeviceView { display: block; }
   height: 54px;
   color: white;
   border-radius: 18px;
-  background: linear-gradient(145deg, #3f835e, #2f6d4b);
+  background: linear-gradient(145deg, #22d477, #07c160);
   font-size: 20px;
   font-weight: 800;
 }
@@ -917,7 +917,7 @@ body[data-view="purifier"] #purifierView { display: grid; }
   color: white;
   border-radius: 19px;
   background: var(--green);
-  box-shadow: 0 10px 28px rgba(47,109,75,.24);
+  box-shadow: 0 10px 28px rgba(7,193,96,.24);
   font-size: 20px;
 }
 .purifier-model {
@@ -987,7 +987,7 @@ body[data-view="plug"] #plugView { display: grid; }
   color: white;
   border-color: var(--green);
   background: var(--green);
-  box-shadow: 0 10px 28px rgba(47,109,75,.24);
+  box-shadow: 0 10px 28px rgba(7,193,96,.24);
 }
 .plug-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .plug-metrics div {
@@ -1137,7 +1137,7 @@ body[data-view="aupu"] #aupuView { display: grid; }
   color: white;
   border-radius: 19px;
   background: var(--green);
-  box-shadow: 0 10px 28px rgba(47,109,75,.24);
+  box-shadow: 0 10px 28px rgba(7,193,96,.24);
   font-size: 20px;
 }
 .aupu-current {
@@ -1166,7 +1166,7 @@ body[data-view="aupu"] #aupuView { display: grid; }
   color: white;
   border-color: var(--green);
   background: var(--green);
-  box-shadow: 0 8px 22px rgba(47,109,75,.18);
+  box-shadow: 0 8px 22px rgba(7,193,96,.18);
 }
 .aupu-mode-action {
   display: grid;
@@ -1262,8 +1262,8 @@ body[data-view="tv"] #tvView { display: block; }
 .remote-stage { display: grid; place-items: center; min-height: 0; }
 .tv-remote {
   display: grid;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
-  align-content: space-between;
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr);
+  align-content: stretch;
   gap: 5px;
   width: min(100%, 310px);
   height: 100%;
@@ -1273,14 +1273,14 @@ body[data-view="tv"] #tvView { display: block; }
   border: 1px solid #080a09;
   border-radius: 34px;
   background:
-    linear-gradient(145deg, rgba(255,255,255,.055), transparent 28%),
-    linear-gradient(180deg, #252826, #111312 72%, #090a0a);
-  box-shadow: 0 20px 38px rgba(12,18,14,.28), inset 0 1px rgba(255,255,255,.07);
+    linear-gradient(145deg, rgba(255,255,255,.12), transparent 30%),
+    linear-gradient(180deg, #4a504d 0%, #303532 46%, #202421 100%);
+  box-shadow: 0 20px 38px rgba(12,18,14,.3), inset 0 1px rgba(255,255,255,.13);
 }
 .remote-header, .remote-row { display: grid; align-items: center; }
 .remote-header { grid-template-columns: 1fr auto; }
 .remote-header > div { display: grid; gap: 1px; }
-.remote-brand { color: #64d196; font-size: 8px; font-weight: 800; letter-spacing: .18em; }
+.remote-brand { color: #07c160; font-size: 8px; font-weight: 800; letter-spacing: .18em; }
 .remote-header strong { font-size: 12px; font-weight: 650; }
 .tv-status, .desktop-tv-status {
   flex: 1;
@@ -1300,7 +1300,7 @@ body[data-view="tv"] #tvView { display: block; }
 .tv-screen-open {
   flex: none;
   padding: 4px 9px;
-  color: #69d39a;
+  color: #07c160;
   border: 1px solid #355044;
   border-radius: 999px;
   background: #17201b;
@@ -1405,8 +1405,8 @@ body[data-view="tv"] #tvView { display: block; }
   white-space: nowrap;
 }
 .tv-app-button.active {
-  border-color: #6dd69e;
-  box-shadow: 0 0 0 1px rgba(109,214,158,.18), 0 5px 15px rgba(0,0,0,.2);
+  border-color: #07c160;
+  box-shadow: 0 0 0 1px rgba(7,193,96,.18), 0 5px 15px rgba(0,0,0,.2);
 }
 .tv-app-button:disabled { cursor: not-allowed; opacity: .38; }
 .app-bilibili i { color: white; background: #fb7299; }
@@ -1417,9 +1417,9 @@ body[data-view="tv"] #tvView { display: block; }
 .remote-row-sides { grid-template-columns: 1fr 1fr 1fr; justify-items: center; }
 .remote-lower-controls {
   display: grid;
-  gap: 6px;
-  align-self: center;
-  transform: translateY(-18px);
+  gap: 18px;
+  align-self: start;
+  margin-top: 12px;
 }
 .remote-control-cluster {
   display: grid;
@@ -1472,8 +1472,8 @@ body[data-view="tv"] #tvView { display: block; }
   background: currentColor;
 }
 .remote-power.is-on {
-  color: #66d99d;
-  box-shadow: 0 0 18px rgba(93,211,148,.26), 0 3px 5px rgba(0,0,0,.48);
+  color: #07c160;
+  box-shadow: 0 0 18px rgba(7,193,96,.26), 0 3px 5px rgba(0,0,0,.48);
 }
 .remote-icon { font-size: 21px; }
 .remote-sensor {
@@ -1486,7 +1486,7 @@ body[data-view="tv"] #tvView { display: block; }
 }
 .remote-led { width: 16px; height: 5px; border-radius: 99px; background: #050606; }
 .remote-dpad {
-  align-self: center;
+  align-self: start;
   justify-self: center;
   display: grid;
   grid-template: repeat(3, 1fr) / repeat(3, 1fr);
@@ -1497,7 +1497,7 @@ body[data-view="tv"] #tvView { display: block; }
   border-radius: 50%;
   background: radial-gradient(circle at 45% 38%, #303431, #161917 70%);
   box-shadow: 0 5px 8px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.07);
-  transform: translateY(-8px);
+  margin-top: 12px;
 }
 .remote-direction, .remote-ok {
   color: #9fa5a1;
@@ -1537,7 +1537,7 @@ body[data-view="tv"] #tvView { display: block; }
   font-size: 20px;
 }
 .remote-volume-rocker span { color: #7d8580; text-align: center; font-size: 7px; letter-spacing: .12em; }
-.tv-input-field { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+.tv-input-field { display: grid; grid-template-columns: auto 1fr; align-self: end; align-items: center; gap: 8px; }
 .tv-input-field span { color: #858d88; font-size: 8px; white-space: nowrap; }
 .tv-input-field select {
   min-width: 0;
@@ -1617,8 +1617,8 @@ body[data-view="tv"] #tvView { display: block; }
   .remote-key b { font-size: 8px; }
   .remote-dpad { width: min(112px, 21vh); }
   .remote-control-column { gap: 8px; }
-  .remote-lower-controls { transform: translateY(-10px); }
-  .remote-dpad { transform: translateY(-4px); }
+  .remote-lower-controls { gap: 11px; margin-top: 6px; }
+  .remote-dpad { margin-top: 6px; }
   .remote-volume-rocker { grid-template-rows: 34px 10px 34px; width: 46px; }
 }
 
@@ -1629,9 +1629,9 @@ body[data-view="tv"] #tvView { display: block; }
   --ink: #242424;
   --muted: #8a8a8a;
   --line: #ececec;
-  --green: #2f6d4b;
-  --green-soft: #d9eadc;
-  --lime: #bde3b7;
+  --green: #07c160;
+  --green-soft: #e8f8ef;
+  --lime: #9fe7bf;
   --shadow: 0 8px 26px rgba(0, 0, 0, .055);
   font-family: "MiSans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
@@ -1714,7 +1714,7 @@ body {
 }
 
 .status-line.online i {
-  background: #52c26d;
+  background: #07c160;
   box-shadow: none;
 }
 
@@ -1794,7 +1794,7 @@ body {
 .opple-power-button.is-on {
   color: #fff;
   background: var(--green);
-  box-shadow: 0 6px 16px rgba(47, 109, 75, .22);
+  box-shadow: 0 6px 16px rgba(7, 193, 96, .22);
 }
 
 .temperature-ring {
@@ -1804,12 +1804,12 @@ body {
     #eeeeee var(--dial-fill) 270deg,
     transparent 270deg 360deg
   );
-  box-shadow: 0 8px 24px rgba(47, 109, 75, .09);
+  box-shadow: 0 8px 24px rgba(7, 193, 96, .09);
 }
 
 .temperature-ring:hover,
 .temperature-ring:focus-visible {
-  box-shadow: 0 0 0 4px rgba(47, 109, 75, .11), 0 8px 24px rgba(47, 109, 75, .1);
+  box-shadow: 0 0 0 4px rgba(7, 193, 96, .11), 0 8px 24px rgba(7, 193, 96, .1);
 }
 
 .ring-inner {
@@ -1825,7 +1825,7 @@ body {
 
 .dial-handle {
   background: var(--green);
-  box-shadow: 0 3px 9px rgba(47, 109, 75, .28);
+  box-shadow: 0 3px 9px rgba(7, 193, 96, .28);
 }
 
 .temp-button {
@@ -1864,7 +1864,7 @@ input[type="datetime-local"] {
 
 .primary-button {
   background: var(--green);
-  box-shadow: 0 8px 18px rgba(47, 109, 75, .18);
+  box-shadow: 0 8px 18px rgba(7, 193, 96, .18);
 }
 
 .secondary-button,
@@ -1877,7 +1877,7 @@ input[type="datetime-local"] {
 .aupu-device-icon,
 .purifier-device-icon,
 .dreame-icon {
-  background: linear-gradient(145deg, #3f835e, #2f6d4b);
+  background: linear-gradient(145deg, #22d477, #07c160);
 }
 
 .aupu-current strong,
