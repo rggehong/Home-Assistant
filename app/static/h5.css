@@ -587,6 +587,7 @@ html, body { height: 100%; overflow: hidden; }
 }
 .smart-device-view {
   display: none;
+  flex: 1 1 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   min-height: 0;
@@ -1568,6 +1569,30 @@ body {
   letter-spacing: .01em;
 }
 
+.header-overview {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.header-overview > p { flex: 0 0 auto; }
+
+.mobile-header .status-line {
+  max-width: min(48vw, 190px);
+  margin: 0;
+  padding: 5px 8px;
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-header .status-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .header-actions { gap: 8px; }
 
 .round-button,
@@ -1841,16 +1866,52 @@ input[type="datetime-local"] {
   line-height: 20px;
 }
 
-.view-nav button[data-view="control"]::before { content: "❄"; }
-.view-nav button[data-view="aupu"]::before { content: "♨"; }
-.view-nav button[data-view="plug"]::before { content: "⌁"; }
-.view-nav button[data-view="opple"]::before { content: "☀"; }
-.view-nav button[data-view="smart-device"]::before { content: "◉"; }
-.view-nav button[data-view="dreame"]::before { content: "◎"; }
-.view-nav button[data-view="purifier"]::before { content: "◇"; }
-.view-nav button[data-view="water-heater"]::before { content: "♨"; }
-.view-nav button[data-view="tv"]::before { content: "▣"; }
+.view-nav button:not([data-view="schedule"])::before {
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: -.02em;
+}
+.view-nav button[data-view="control"]::before { content: "GREE"; }
+.view-nav button[data-view="tv"]::before {
+  content: "SONY";
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 9px;
+  letter-spacing: .04em;
+}
+.view-nav button[data-view="aupu"]::before { content: "AUPU"; }
+.view-nav button[data-view="opple"]::before { content: "OPPLE"; }
+.view-nav button[data-view="plug"]::before { content: "MIJIA"; }
+.view-nav button[data-view="smart-device"]::before { content: "TMALL"; }
+.view-nav button[data-view="dreame"]::before { content: "DREAME"; font-size: 7px; }
+.view-nav button[data-view="purifier"]::before,
+.view-nav button[data-view="water-heater"]::before { content: "A.O.SMITH"; font-size: 6px; }
 .view-nav button[data-view="schedule"]::before { content: "◷"; }
+
+.view-nav button::before { content: none !important; display: none; }
+
+.view-nav .brand-mark {
+  display: grid;
+  place-items: center;
+  height: 20px;
+  color: currentColor;
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  font-size: 8px;
+  font-weight: 850;
+  line-height: 20px;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+}
+
+.view-nav .brand-sony {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 9px;
+  letter-spacing: .04em;
+}
+
+.view-nav .brand-dreame { font-size: 7px; }
+.view-nav .brand-smith { font-size: 6px; }
+.view-nav .brand-symbol { font-size: 17px; font-weight: 500; }
 
 .view-nav button.active {
   color: var(--green);
@@ -1873,4 +1934,110 @@ dialog {
   .view-nav { padding-top: 5px; }
   .view-nav button { min-height: 41px; padding: 2px; }
   .view-nav button::before { height: 17px; font-size: 14px; line-height: 17px; }
+}
+
+/* Light Mijia-style Sony remote */
+.tv-remote {
+  color: var(--ink);
+  border: 0;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.remote-brand { color: var(--green); }
+.remote-header strong { color: var(--ink); }
+.tv-status, .desktop-tv-status { color: #8d8d8d; }
+
+.tv-screen-open {
+  color: var(--green);
+  border-color: #ffd6ba;
+  background: var(--green-soft);
+}
+
+.tv-app-section {
+  border: 0;
+  background: #f6f6f6;
+}
+
+.tv-app-heading span { color: #444; }
+.tv-app-heading small { color: #969696; }
+
+.tv-cleanup-button {
+  color: #d65e54;
+  border-color: #f0cbc7;
+  background: #fff0ee;
+}
+
+.tv-app-button {
+  color: #4b4b4b;
+  border-color: #ededed;
+  background: #fff;
+  box-shadow: none;
+}
+
+.tv-app-button.active {
+  color: var(--green);
+  border-color: #ffc99f;
+  background: #fff7f1;
+  box-shadow: 0 0 0 1px rgba(255, 107, 0, .08);
+}
+
+.remote-key {
+  color: #3f3f3f;
+  border: 0;
+  background: #f1f1f1;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, .065);
+}
+
+.remote-power {
+  color: #fff;
+  background: #e65a54;
+  box-shadow: 0 5px 14px rgba(230, 90, 84, .2);
+}
+
+.remote-power.is-on {
+  color: #fff;
+  background: var(--green);
+  box-shadow: 0 5px 14px rgba(255, 107, 0, .22);
+}
+
+.remote-sensor {
+  border: 0;
+  background: #f1f1f1;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, .05);
+}
+
+.remote-led { background: #d5d5d5; }
+
+.remote-dpad {
+  border: 0;
+  background: #f2f2f2;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .07), inset 0 1px #fff;
+}
+
+.remote-direction { color: #777; }
+
+.remote-ok {
+  color: var(--green);
+  border: 0;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
+}
+
+.remote-voice { color: #aaa; }
+
+.remote-volume-rocker {
+  border: 0;
+  background: #f1f1f1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .07);
+}
+
+.remote-volume-rocker button { color: #3b3b3b; }
+.remote-volume-rocker span { color: #989898; }
+.tv-input-field span { color: #898989; }
+
+.tv-input-field select {
+  color: #3e3e3e;
+  border: 0;
+  background: #f3f3f3;
 }

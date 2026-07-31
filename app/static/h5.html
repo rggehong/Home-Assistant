@@ -8,13 +8,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=36">
+    <link rel="stylesheet" href="/static/h5.css?v=41">
   </head>
   <body>
     <main class="app-shell">
       <header class="mobile-header">
-        <div>
+        <div class="header-overview">
           <p id="today">家庭气候</p>
+          <div class="status-line" id="statusLine"><i></i><span>正在连接本地空调</span></div>
         </div>
         <div class="header-actions">
           <button id="syncButton" class="round-button" aria-label="刷新">↻</button>
@@ -22,7 +23,6 @@
         </div>
       </header>
 
-      <div class="status-line" id="statusLine"><i></i><span>正在连接本地空调</span></div>
       <nav class="room-tabs" id="roomTabs" aria-label="选择房间"></nav>
 
       <section id="controlView">
@@ -141,7 +141,6 @@
               <h2>奥普浴霸</h2>
               <p id="aupuStatus">正在读取 Q360A-Pro</p>
             </div>
-            <span class="aupu-device-icon" aria-hidden="true">浴</span>
           </header>
 
           <div class="aupu-current">
@@ -272,7 +271,6 @@
               <h2>天猫精灵</h2>
               <p id="tmallSummary">正在读取局域网状态</p>
             </div>
-            <span class="smart-device-icon" aria-hidden="true">猫</span>
           </header>
           <div class="tmall-device-list" id="tmallDeviceList"></div>
           <div class="tmall-bridge">
@@ -292,7 +290,6 @@
               <h2 id="dreameName">追觅 X30</h2>
               <p id="dreameStatus">192.168.0.106 · 等待连接</p>
             </div>
-            <span class="smart-device-icon dreame-icon" aria-hidden="true">扫</span>
           </header>
           <div class="dreame-metrics">
             <div><strong id="dreameBattery">—</strong><span>电量 %</span></div>
@@ -362,7 +359,6 @@
               <h2>史密斯净水机</h2>
               <p id="purifierStatus">正在读取 192.168.0.138</p>
             </div>
-            <span class="purifier-device-icon" aria-hidden="true">净</span>
           </header>
           <div class="purifier-model">
             <span>设备型号</span>
@@ -386,7 +382,6 @@
               <h2>燃气热水器</h2>
               <p id="waterHeaterStatus">正在探测 192.168.0.108</p>
             </div>
-            <span class="purifier-device-icon water-heater-icon" aria-hidden="true">热</span>
           </header>
           <div class="purifier-model water-heater-model">
             <span>设备型号</span>
@@ -530,16 +525,16 @@
       </section>
 
       <nav class="view-nav" aria-label="页面功能">
-        <button class="active" data-view="control">格力空调</button>
-        <button data-view="aupu">奥普浴霸</button>
-        <button data-view="plug">智能插座</button>
-        <button data-view="opple">欧普照明</button>
-        <button data-view="smart-device">天猫精灵</button>
-        <button data-view="dreame">追觅扫地机</button>
-        <button data-view="purifier">史密斯净水机</button>
-        <button data-view="water-heater">燃气热水器</button>
-        <button data-view="tv">索尼电视</button>
-        <button data-view="schedule">定时任务</button>
+        <button class="active" data-view="control"><span class="brand-mark brand-gree" aria-hidden="true">GREE</span><span>格力空调</span></button>
+        <button data-view="tv"><span class="brand-mark brand-sony" aria-hidden="true">SONY</span><span>索尼电视</span></button>
+        <button data-view="aupu"><span class="brand-mark" aria-hidden="true">AUPU</span><span>奥普浴霸</span></button>
+        <button data-view="opple"><span class="brand-mark" aria-hidden="true">OPPLE</span><span>欧普照明</span></button>
+        <button data-view="plug"><span class="brand-mark" aria-hidden="true">MIJIA</span><span>智能插座</span></button>
+        <button data-view="smart-device"><span class="brand-mark" aria-hidden="true">TMALL</span><span>天猫精灵</span></button>
+        <button data-view="dreame"><span class="brand-mark brand-dreame" aria-hidden="true">DREAME</span><span>追觅扫地机</span></button>
+        <button data-view="purifier"><span class="brand-mark brand-smith" aria-hidden="true">A.O.SMITH</span><span>史密斯净水机</span></button>
+        <button data-view="water-heater"><span class="brand-mark brand-smith" aria-hidden="true">A.O.SMITH</span><span>燃气热水器</span></button>
+        <button data-view="schedule"><span class="brand-mark brand-symbol" aria-hidden="true">◷</span><span>定时任务</span></button>
       </nav>
     </main>
 
