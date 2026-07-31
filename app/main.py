@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import hashlib
 import hmac
 import json
@@ -13,10 +14,11 @@ from enum import Enum, IntEnum
 from ipaddress import IPv4Address
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import parse_qs, parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import uuid4
 
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -49,6 +51,7 @@ from app.dreame import (
     dreame,
 )
 from app.tmall import tmall_status
+from app.aligenie import aligenie_oauth, error_response, response_header
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -855,7 +858,432 @@ async def water_heater_status() -> dict[str, Any]:
 
 @app.get("/api/tmall", dependencies=[Depends(require_token)])
 async def tmall_devices_status() -> dict[str, Any]:
-    return await tmall_status()
+    result = await tmall_status()
+    result["voice_bridge"] = aligenie_oauth.setup()
+    return result
+
+
+@app.get("/api/aligenie/setup", dependencies=[Depends(require_token)])
+async def aligenie_setup() -> dict[str, Any]:
+    return aligenie_oauth.setup(include_secret=True)
+
+
+def _aligenie_authorize_page(
+    client_id: str,
+    redirect_uri: str,
+    state: str,
+    error: str = "",
+) -> str:
+    values = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "state": state,
+    }
+    hidden = "".join(
+        f'<input type="hidden" name="{name}" value="{html.escape(value, quote=True)}">'
+        for name, value in values.items()
+    )
+    error_html = (
+        f'<p class="error">{html.escape(error)}</p>'
+        if error
+        else ""
+    )
+    return f"""<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>授权天猫精灵</title>
+<style>
+body{{margin:0;background:#edf5ef;color:#173226;font-family:system-ui,sans-serif}}
+main{{max-width:420px;margin:12vh auto;padding:28px;border-radius:28px;background:white;
+box-shadow:0 18px 60px #1b4c3020}}h1{{margin:0 0 8px}}p{{color:#66776e;line-height:1.6}}
+input,button{{box-sizing:border-box;width:100%;min-height:48px;margin-top:12px;
+border-radius:14px}}input{{padding:0 14px;border:1px solid #d6e3da}}
+button{{border:0;background:#2b7651;color:white;font-weight:700}}.error{{color:#b83b32}}
+</style></head><body><main><small>ALIGENIE · 智能家居</small>
+<h1>授权天猫精灵</h1>
+<p>允许天猫精灵语音控制本家庭系统中的空调、智能插座和欧普照明。</p>
+{error_html}<form method="post">{hidden}
+<input type="password" name="password" autocomplete="current-password"
+placeholder="家庭访问密码" required>
+<button type="submit">确认授权</button></form></main></body></html>"""
+
+
+@app.get("/aligenie/oauth/authorize", response_class=HTMLResponse)
+async def aligenie_authorize(
+    client_id: str = "",
+    redirect_uri: str = "",
+    response_type: str = "",
+    state: str = "",
+) -> HTMLResponse:
+    if (
+        response_type != "code"
+        or not aligenie_oauth.valid_client(client_id)
+        or not aligenie_oauth.valid_redirect_uri(redirect_uri)
+    ):
+        return HTMLResponse("无效的天猫精灵授权请求", status_code=400)
+    return HTMLResponse(_aligenie_authorize_page(client_id, redirect_uri, state))
+
+
+@app.post("/aligenie/oauth/authorize")
+async def aligenie_authorize_submit(request: Request) -> Response:
+    form = parse_qs((await request.body()).decode("utf-8", "replace"))
+    client_id = str(form.get("client_id", [""])[0])
+    redirect_uri = str(form.get("redirect_uri", [""])[0])
+    state = str(form.get("state", [""])[0])
+    password = str(form.get("password", [""])[0])
+    if (
+        not aligenie_oauth.valid_client(client_id)
+        or not aligenie_oauth.valid_redirect_uri(redirect_uri)
+    ):
+        return HTMLResponse("无效的天猫精灵授权请求", status_code=400)
+    if not _same_secret(password, _login_password()):
+        return HTMLResponse(
+            _aligenie_authorize_page(
+                client_id,
+                redirect_uri,
+                state,
+                "家庭访问密码错误",
+            ),
+            status_code=401,
+        )
+    code = aligenie_oauth.issue_code(client_id, redirect_uri)
+    split = urlsplit(redirect_uri)
+    query = dict(parse_qsl(split.query, keep_blank_values=True))
+    query.update({"code": code, "state": state})
+    target = urlunsplit(
+        (split.scheme, split.netloc, split.path, urlencode(query), split.fragment)
+    )
+    return RedirectResponse(target, status_code=303)
+
+
+@app.post("/aligenie/oauth/token")
+async def aligenie_token(request: Request) -> JSONResponse:
+    body = await request.body()
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            values = json.loads(body)
+        except json.JSONDecodeError:
+            values = {}
+    else:
+        values = {
+            key: items[0]
+            for key, items in parse_qs(body.decode("utf-8", "replace")).items()
+        }
+    result = aligenie_oauth.exchange(
+        grant_type=str(values.get("grant_type") or ""),
+        client_id=str(values.get("client_id") or ""),
+        client_secret=str(values.get("client_secret") or ""),
+        code=str(values.get("code") or ""),
+        refresh_token=str(values.get("refresh_token") or ""),
+        redirect_uri=str(values.get("redirect_uri") or ""),
+    )
+    return JSONResponse(result, headers={"Cache-Control": "no-store"})
+
+
+def _aligenie_property(name: str, value: Any) -> dict[str, str]:
+    if isinstance(value, bool):
+        value = "on" if value else "off"
+    return {"name": name, "value": str(value)}
+
+
+async def _aligenie_devices() -> list[dict[str, Any]]:
+    if not registry.devices:
+        air_conditioners = await registry.discover()
+    else:
+        air_conditioners = await registry.refresh()
+    result = [
+        {
+            "deviceId": f"gree:{device['id']}",
+            "deviceName": f"{device['room']}空调",
+            "deviceType": "aircondition",
+            "zone": device["room"],
+            "brand": "格力",
+            "model": device.get("model_name") or device.get("model") or "",
+            "properties": [
+                _aligenie_property("powerstate", bool(device.get("power"))),
+                _aligenie_property(
+                    "temperature",
+                    device.get("target_temperature") or 26,
+                ),
+            ],
+            "actions": [
+                "TurnOn",
+                "TurnOff",
+                "SetTemperature",
+                "AdjustUpTemperature",
+                "AdjustDownTemperature",
+                "SetMode",
+                "Query",
+                "QueryPowerState",
+                "QueryTemperature",
+                "QueryMode",
+            ],
+            "extensions": {},
+        }
+        for device in air_conditioners
+    ]
+    plug_state, light_state = await asyncio.gather(plug.status(), opple_light.status())
+    if plug_state.get("configured"):
+        result.append(
+            {
+                "deviceId": "plug:mijia-plug-3",
+                "deviceName": "智能插座",
+                "deviceType": "outlet",
+                "zone": "",
+                "brand": "米家",
+                "model": plug_state.get("model") or "",
+                "properties": [
+                    _aligenie_property("powerstate", bool(plug_state.get("on")))
+                ],
+                "actions": ["TurnOn", "TurnOff", "Query", "QueryPowerState"],
+                "extensions": {},
+            }
+        )
+    result.append(
+        {
+            "deviceId": "opple:light-139",
+            "deviceName": "欧普照明",
+            "deviceType": "light",
+            "zone": "",
+            "brand": "欧普",
+            "model": light_state.get("model") or "",
+            "properties": [
+                _aligenie_property("powerstate", bool(light_state.get("power"))),
+                _aligenie_property("brightness", light_state.get("brightness") or 1),
+            ],
+            "actions": [
+                "TurnOn",
+                "TurnOff",
+                "SetBrightness",
+                "AdjustUpBrightness",
+                "AdjustDownBrightness",
+                "Query",
+                "QueryPowerState",
+                "QueryBrightness",
+            ],
+            "extensions": {},
+        }
+    )
+    return result
+
+
+async def _aligenie_state(device_id: str) -> tuple[str, dict[str, Any]]:
+    if device_id.startswith("gree:"):
+        values = await registry.refresh(device_id.removeprefix("gree:"))
+        return "gree", values[0]
+    if device_id == "plug:mijia-plug-3":
+        return "plug", await plug.status()
+    if device_id == "opple:light-139":
+        return "opple", await opple_light.status()
+    raise KeyError(device_id)
+
+
+def _aligenie_properties(kind: str, state: dict[str, Any]) -> list[dict[str, str]]:
+    if kind == "gree":
+        return [
+            _aligenie_property("powerstate", bool(state.get("power"))),
+            _aligenie_property("temperature", state.get("target_temperature") or 26),
+            _aligenie_property("mode", str(state.get("mode") or "auto").lower()),
+        ]
+    if kind == "plug":
+        return [_aligenie_property("powerstate", bool(state.get("on")))]
+    return [
+        _aligenie_property("powerstate", bool(state.get("power"))),
+        _aligenie_property("brightness", state.get("brightness") or 1),
+    ]
+
+
+async def _aligenie_control(
+    kind: str,
+    device_id: str,
+    name: str,
+    value: Any,
+    state: dict[str, Any],
+) -> None:
+    if name in {"TurnOn", "TurnOff"}:
+        enabled = name == "TurnOn"
+        if kind == "gree":
+            await registry.command(
+                device_id.removeprefix("gree:"),
+                Command(power=enabled),
+            )
+        elif kind == "plug":
+            await plug.command(PlugCommand(on=enabled))
+        else:
+            await opple_light.command(OppleCommand(power=enabled))
+        return
+    if kind == "gree" and name in {
+        "SetTemperature",
+        "AdjustUpTemperature",
+        "AdjustDownTemperature",
+    }:
+        if name == "SetTemperature":
+            temperature = float(value)
+        else:
+            step = float(value or 1)
+            if name == "AdjustDownTemperature":
+                step = -step
+            temperature = float(state.get("target_temperature") or 26) + step
+        temperature = max(16, min(30, round(temperature * 2) / 2))
+        await registry.command(
+            device_id.removeprefix("gree:"),
+            Command(target_temperature=temperature),
+        )
+        return
+    if kind == "gree" and name == "SetMode":
+        modes = {
+            "auto": "auto",
+            "自动": "auto",
+            "cool": "cool",
+            "制冷": "cool",
+            "heat": "heat",
+            "制热": "heat",
+            "dry": "dry",
+            "除湿": "dry",
+            "fan": "fan",
+            "送风": "fan",
+        }
+        mode = modes.get(str(value).lower())
+        if not mode:
+            raise ValueError("unsupported mode")
+        await registry.command(
+            device_id.removeprefix("gree:"),
+            Command(mode=mode),
+        )
+        return
+    if kind == "opple" and name in {
+        "SetBrightness",
+        "AdjustUpBrightness",
+        "AdjustDownBrightness",
+    }:
+        if name == "SetBrightness":
+            if value == "max":
+                brightness = 100
+            elif value == "min":
+                brightness = 4
+            else:
+                brightness = int(value)
+        else:
+            step = int(value or 25)
+            if name == "AdjustDownBrightness":
+                step = -step
+            brightness = int(state.get("brightness") or 50) + step
+        await opple_light.command(
+            OppleCommand(brightness=max(4, min(100, brightness)))
+        )
+        return
+    raise ValueError("unsupported action")
+
+
+@app.post("/aligenie/gateway")
+async def aligenie_gateway(request: Request) -> dict[str, Any]:
+    try:
+        message = await request.json()
+    except Exception:
+        message = {}
+    header = message.get("header") if isinstance(message, dict) else {}
+    payload = message.get("payload") if isinstance(message, dict) else {}
+    header = header if isinstance(header, dict) else {}
+    payload = payload if isinstance(payload, dict) else {}
+    namespace = str(header.get("namespace") or "AliGenie.Iot.Device.Control")
+    name = str(header.get("name") or "")
+    message_id = str(header.get("messageId") or uuid4())
+    device_id = str(payload.get("deviceId") or "")
+    if not aligenie_oauth.valid_access_token(str(payload.get("accessToken") or "")):
+        return error_response(
+            namespace,
+            message_id,
+            device_id,
+            "ACCESS_TOKEN_INVALIDATE",
+            "access_token is invalidate",
+        )
+    if (
+        namespace == "AliGenie.Iot.Device.Discovery"
+        and name == "DiscoveryDevices"
+    ):
+        return {
+            "header": response_header(
+                namespace,
+                "DiscoveryDevicesResponse",
+                message_id,
+            ),
+            "payload": {"devices": await _aligenie_devices()},
+        }
+    try:
+        kind, state = await _aligenie_state(device_id)
+    except KeyError:
+        return error_response(
+            namespace,
+            message_id,
+            device_id,
+            "DEVICE_IS_NOT_EXIST",
+            "device is not exist",
+        )
+    if state.get("online") is False:
+        return error_response(
+            namespace,
+            message_id,
+            device_id,
+            "IOT_DEVICE_OFFLINE",
+            "device is offline",
+        )
+    try:
+        if namespace == "AliGenie.Iot.Device.Control":
+            await _aligenie_control(
+                kind,
+                device_id,
+                name,
+                payload.get("value"),
+                state,
+            )
+            return {
+                "header": response_header(namespace, f"{name}Response", message_id),
+                "payload": {"deviceId": device_id},
+            }
+        if namespace == "AliGenie.Iot.Device.Query":
+            properties = _aligenie_properties(kind, state)
+            property_names = {
+                "QueryPowerState": "powerstate",
+                "QueryTemperature": "temperature",
+                "QueryBrightness": "brightness",
+                "QueryMode": "mode",
+            }
+            selected = property_names.get(name)
+            if name != "Query" and selected is None:
+                raise ValueError("unsupported query")
+            if selected:
+                properties = [item for item in properties if item["name"] == selected]
+            if name != "Query" and not properties:
+                raise ValueError("unsupported query")
+            return {
+                "properties": properties,
+                "header": response_header(namespace, f"{name}Response", message_id),
+                "payload": {"deviceId": device_id},
+            }
+    except (ValueError, TypeError):
+        return error_response(
+            namespace,
+            message_id,
+            device_id,
+            "DEVICE_NOT_SUPPORT_FUNCTION",
+            "device not support",
+        )
+    except Exception:
+        return error_response(
+            namespace,
+            message_id,
+            device_id,
+            "SERVICE_ERROR",
+            "service error",
+        )
+    return error_response(
+        namespace,
+        message_id,
+        device_id,
+        "INVALIDATE_CONTROL_ORDER",
+        "invalidate control order",
+    )
 
 
 @app.get("/api/dreame", dependencies=[Depends(require_token)])

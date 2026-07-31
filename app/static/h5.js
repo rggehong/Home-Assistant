@@ -248,6 +248,11 @@ function renderSmartDevices() {
       row.innerHTML = `<div><strong>${device.name}</strong><span>${device.ip}</span></div><b class="device-presence ${device.online ? "online" : ""}">${device.online ? "在线" : "离线"}</b>`;
       return row;
     }));
+    const bridge = tmall.voice_bridge || {};
+    el("#tmallBridgeStatus").textContent = bridge.configured
+      ? "146 技能网关已就绪"
+      : "等待生成 AliGenie 技能凭据";
+    if (bridge.developer_url) el("#tmallDeveloperLink").href = bridge.developer_url;
   }
   if (dreame) {
     el("#dreameName").textContent = dreame.device_name || dreame.model_name || "追觅 X30";

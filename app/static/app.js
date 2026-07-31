@@ -261,6 +261,13 @@ function renderSmartDevices() {
       item.textContent = `${device.ip} ${device.online ? "在线" : "离线"}`;
       return item;
     }));
+    const bridge = tmall.voice_bridge || {};
+    document.querySelector("#desktopTmallBridgeStatus").textContent = bridge.configured
+      ? "146 技能网关已就绪"
+      : "等待生成 AliGenie 技能凭据";
+    if (bridge.developer_url) {
+      document.querySelector("#desktopTmallDeveloperLink").href = bridge.developer_url;
+    }
   }
   if (dreame) {
     document.querySelector("#desktopDreameName").textContent =

@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=34">
+    <link rel="stylesheet" href="/static/h5.css?v=35">
   </head>
   <body>
     <main class="app-shell">
@@ -275,6 +275,11 @@
             <span class="smart-device-icon" aria-hidden="true">猫</span>
           </header>
           <div class="tmall-device-list" id="tmallDeviceList"></div>
+          <div class="tmall-bridge">
+            <div><strong>全屋语音联动</strong><span id="tmallBridgeStatus">正在检查技能网关</span></div>
+            <p>接入后可直接对天猫精灵说“打开客厅空调”“把欧普照明调到 50%”。</p>
+            <a id="tmallDeveloperLink" href="https://open.bot.tmall.com/" target="_blank" rel="noopener">打开 AliGenie 开放平台</a>
+          </div>
           <p class="smart-device-note" id="tmallNotice"></p>
         </article>
       </section>
@@ -648,6 +653,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=34" defer></script>
+    <script src="/static/h5.js?v=35" defer></script>
   </body>
 </html>

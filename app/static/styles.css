@@ -434,6 +434,22 @@ button { color: inherit; }
 }
 .desktop-tmall-list span.online { color: #246c48; background: #d9efdf; }
 .desktop-smart-note { color: var(--muted); font-size: 9px; line-height: 1.4; }
+.desktop-tmall-bridge {
+  display: grid;
+  gap: 3px;
+  padding: 9px 11px;
+  border: 1px solid #f0d7c7;
+  border-radius: 12px;
+  background: #fff8f3;
+}
+.desktop-tmall-bridge strong { color: #7a3c1d; font-size: 10px; }
+.desktop-tmall-bridge span { color: #8a7569; font-size: 8px; }
+.desktop-tmall-bridge a {
+  color: #d15826;
+  font-size: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
 .desktop-dreame-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .desktop-dreame-metrics span { display: grid; padding: 7px; border-radius: 12px; background: #edf4ef; text-align: center; }
 .desktop-dreame-metrics small { color: var(--muted); font-size: 8px; }

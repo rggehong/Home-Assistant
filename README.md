@@ -17,6 +17,8 @@ AI‑LiNK 官方云服务授权接入；燃气热水器当前通过华为智慧�
 - 奥普 Q360A-Pro 浴霸和米家智能插座 3：扫码绑定米家后本地控制
 - 欧普照明：局域网开关、亮度和色温调节
 - 天猫精灵：独立页面显示 `192.168.0.113`、`192.168.0.135` 的在线状态
+- AliGenie 云云技能网关：通过标准 OAuth2 将格力空调、米家插座和欧普照明
+  发布给天猫精灵，实现语音开关、温度、模式和亮度控制
 - 追觅 X30：独立 Web/H5 控制页面，支持清扫、暂停、停止、回充、寻找设备、
   一键集尘、清洗/烘干拖布、吸力、清洁模式、拖布湿度和清洗强度
 - 追觅 X30 基站与智能设置：断点续扫、地毯增压、智能避障、童锁、勿扰、
@@ -50,6 +52,17 @@ cp config.example.env .env
 建议同时设置 `GREE_WEB_PASSWORD` 作为网页端更易输入的家庭访问密码，并设置独立随机
 `GREE_SESSION_SECRET`。如果没有设置 `GREE_WEB_PASSWORD`，网页首次登录会兼容使用
 `GREE_API_TOKEN`，成功后由 HttpOnly Cookie 保持登录 30 天，浏览器不再保存 Token。
+
+AliGenie 开放平台创建“智能家居”标准技能后，填写以下地址：
+
+- 账户授权连接：`https://home.gezhixin.cn:4430/aligenie/oauth/authorize`
+- Access Token URL：`https://home.gezhixin.cn:4430/aligenie/oauth/token`
+- 开发者网关：`https://home.gezhixin.cn:4430/aligenie/gateway`
+- Client ID / Client Secret：来自服务器 `.env` 中的 `ALIGENIE_CLIENT_ID` 和
+  `ALIGENIE_CLIENT_SECRET`
+
+用户在天猫精灵 App 中绑定技能时，授权页使用家庭访问密码确认，不需要向阿里提供
+家庭密码或设备密钥。
 
 ```bash
 sudo cp systemd/gree-ac-control.service /etc/systemd/system/

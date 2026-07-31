@@ -655,6 +655,24 @@ body[data-view="dreame"] #dreameDeviceView { display: block; }
 }
 .tmall-device strong { display: block; font-size: 14px; }
 .tmall-device span { color: #7a8880; font-size: 11px; }
+.tmall-bridge {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid #f0d7c7;
+  border-radius: 16px;
+  background: #fff8f3;
+}
+.tmall-bridge div { display: flex; justify-content: space-between; gap: 10px; }
+.tmall-bridge strong { color: #7a3c1d; font-size: 13px; }
+.tmall-bridge span, .tmall-bridge p { margin: 0; color: #8a7569; font-size: 10px; }
+.tmall-bridge a {
+  justify-self: start;
+  color: #d15826;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
 .device-presence {
   padding: 5px 9px;
   color: #7c8781;

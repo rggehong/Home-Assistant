@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=34">
+    <link rel="stylesheet" href="/static/styles.css?v=35">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -175,7 +175,11 @@
             </div>
           </div>
           <div class="desktop-tmall-list" id="desktopTmallList"></div>
-          <small class="desktop-smart-note">已接入在线监测；控制功能需要阿里云开发者授权。</small>
+          <div class="desktop-tmall-bridge">
+            <strong id="desktopTmallBridgeStatus">正在检查语音技能网关</strong>
+            <span>可向天猫精灵发布空调、插座和欧普照明</span>
+            <a id="desktopTmallDeveloperLink" href="https://open.bot.tmall.com/" target="_blank" rel="noopener">配置 AliGenie 技能</a>
+          </div>
         </section>
       </div>
       <div class="desktop-smart-row desktop-dreame-row">
@@ -483,6 +487,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=34" defer></script>
+    <script src="/static/app.js?v=35" defer></script>
   </body>
 </html>
