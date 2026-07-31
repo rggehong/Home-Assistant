@@ -144,6 +144,7 @@ ROOMS = {
 ROOM_ORDER = {"客厅": 0, "主卧": 1, "次卧": 2}
 SONY_TV_DEVICE_ID = "sony-living-tv"
 MIJIA_PLUG_DEVICE_ID = "mijia-plug-3"
+AUPU_DEVICE_ID = "aupu-q360a-pro"
 
 
 class Command(BaseModel):
@@ -174,6 +175,7 @@ class ScheduleCreate(BaseModel):
     action: Literal["on", "off"]
     run_at: datetime
     label: str | None = Field(default=None, max_length=60)
+    command: dict[str, Any] | None = None
 
 
 class LoginRequest(BaseModel):
@@ -499,6 +501,8 @@ class ScheduleStore:
                 if payload.device_id == SONY_TV_DEVICE_ID
                 else "plug"
                 if payload.device_id == MIJIA_PLUG_DEVICE_ID
+                else "aupu"
+                if payload.device_id == AUPU_DEVICE_ID
                 else "ac"
             ),
             "action": payload.action,
@@ -507,6 +511,8 @@ class ScheduleStore:
             "status": "pending",
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
+        if payload.command:
+            item["command"] = payload.command
         self.items[item["id"]] = item
         self.save()
         return item
@@ -525,6 +531,8 @@ class ScheduleStore:
                         await sony_tv.set_power_verified(item["action"] == "on")
                     elif item["device_id"] == MIJIA_PLUG_DEVICE_ID:
                         await plug.command(PlugCommand(on=item["action"] == "on"))
+                    elif item["device_id"] == AUPU_DEVICE_ID:
+                        await aupu.command(AupuCommand(**(item.get("command") or {})))
                     else:
                         await registry.command(
                             item["device_id"],
@@ -1601,6 +1609,12 @@ async def create_schedule(payload: ScheduleCreate) -> dict[str, Any]:
     elif payload.device_id == MIJIA_PLUG_DEVICE_ID:
         if not (await plug.status()).get("configured"):
             raise HTTPException(status_code=503, detail="Mijia plug is not configured")
+    elif payload.device_id == AUPU_DEVICE_ID:
+        aupu_state = await aupu.status()
+        if not aupu_state.get("configured"):
+            raise HTTPException(status_code=503, detail="Aupu bath heater is not configured")
+        if not aupu_state.get("online"):
+            raise HTTPException(status_code=503, detail="Aupu bath heater is offline")
     elif payload.device_id not in registry.devices:
         raise HTTPException(status_code=404, detail="device not found")
     return schedules.add(payload)

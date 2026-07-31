@@ -12,6 +12,7 @@ const model = {
   tmall: null,
   dreame: null,
   tvForeground: null,
+  aupuTimers: new Map(),
   selectedId: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -20,6 +21,7 @@ const model = {
 const el = (selector) => document.querySelector(selector);
 const SONY_TV_DEVICE_ID = "sony-living-tv";
 const MIJIA_PLUG_DEVICE_ID = "mijia-plug-3";
+const AUPU_DEVICE_ID = "aupu-q360a-pro";
 const statusLine = el("#statusLine");
 const authDialog = el("#authDialog");
 const logoutButton = el("#logoutButton");
@@ -488,23 +490,52 @@ function queueOppleCommand(payload) {
 function renderAupu() {
   const device = model.aupu;
   if (!device) return;
+  model.aupuTimers.clear();
+  model.schedules
+    .filter((item) => item.status === "pending" && item.device_id === AUPU_DEVICE_ID)
+    .forEach((item) => {
+      const command = item.command || {};
+      if (command.mode === 0 && item.label?.includes("浴霸")) {
+        const modeMatch = item.label.match(/模式(\d+)/);
+        if (modeMatch) model.aupuTimers.set(`mode:${modeMatch[1]}`, item.id);
+      } else if (command.light === false) {
+        model.aupuTimers.set("light", item.id);
+      } else if (command.external_light === false) {
+        model.aupuTimers.set("external_light", item.id);
+      }
+    });
   el("#aupuStatus").textContent = device.online
     ? `${device.ip} · ${device.configured ? "本地在线" : "已发现，等待连接"}`
     : `${device.ip} · ${device.error || "离线"}`;
   el("#aupuModeName").textContent = device.mode_name || "—";
   el("#aupuModes").replaceChildren(...device.modes.map((mode) => {
+    const row = document.createElement("div");
+    row.className = "aupu-mode-action";
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.aupuMode = mode.value;
     button.textContent = mode.label;
     button.classList.toggle("active", mode.value === device.mode);
     button.disabled = !device.configured || !device.online;
-    return button;
+    const timer = document.createElement("button");
+    timer.type = "button";
+    timer.className = "aupu-timer-button";
+    timer.dataset.aupuTimer = `mode:${mode.value}`;
+    timer.setAttribute("aria-label", `${mode.label}开启30分钟后关闭`);
+    timer.innerHTML = "<span>30分钟</span>";
+    timer.disabled = button.disabled;
+    timer.classList.toggle("is-scheduled", model.aupuTimers.has(timer.dataset.aupuTimer));
+    row.append(button, timer);
+    return row;
   }));
   el("#aupuLight").checked = Boolean(device.light);
   el("#aupuExternalLight").checked = Boolean(device.external_light);
   el("#aupuLight").disabled = !device.configured || !device.online;
   el("#aupuExternalLight").disabled = !device.configured || !device.online;
+  document.querySelectorAll("[data-aupu-timer]").forEach((button) => {
+    if (button.dataset.aupuTimer === "light") button.disabled = !device.configured || !device.online;
+    if (button.dataset.aupuTimer === "external_light") button.disabled = !device.configured || !device.online;
+  });
   el("#aupuSetupButton").hidden = device.configured;
 }
 
@@ -518,11 +549,46 @@ async function sendAupuCommand(payload) {
     });
     renderAupu();
     showToast("浴霸设置已生效");
+    return model.aupu;
   } catch (error) {
     renderAupu();
     showToast(error.message);
+    return null;
   } finally {
     el("#aupuView").classList.remove("is-busy");
+  }
+}
+
+async function scheduleAupuAutoOff(command, offCommand, timerKey, label) {
+  try {
+    const updated = await sendAupuCommand(command);
+    if (!updated) return;
+    const previousId = model.aupuTimers.get(timerKey);
+    if (previousId) {
+      await api(`/api/schedules/${previousId}`, {
+        method: "DELETE",
+        headers: requestHeaders(),
+      });
+      model.schedules = model.schedules.filter((item) => item.id !== previousId);
+    }
+    const created = await api("/api/schedules", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({
+        device_id: AUPU_DEVICE_ID,
+        action: "off",
+        run_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        label: `${label} 30分钟后自动关闭${timerKey.startsWith("mode:") ? ` · 模式${timerKey.split(":")[1]}` : ""}`,
+        command: offCommand,
+      }),
+    });
+    model.aupuTimers.set(timerKey, created.id);
+    model.schedules = [created, ...model.schedules.filter((item) => item.id !== created.id)];
+    renderAupu();
+    renderSchedules();
+    showToast(`${label}已开启，30分钟后自动关闭`);
+  } catch (error) {
+    renderAupu();
   }
 }
 
@@ -800,6 +866,12 @@ function renderScheduleTargets() {
     option.textContent = "米家智能插座 3";
     options.push(option);
   }
+  if (model.aupu?.configured) {
+    const option = document.createElement("option");
+    option.value = AUPU_DEVICE_ID;
+    option.textContent = "奥普浴霸";
+    options.push(option);
+  }
   select.replaceChildren(...options);
   const fallback = selectedDevice()?.id || SONY_TV_DEVICE_ID;
   select.value = options.some((option) => option.value === previous) ? previous : fallback;
@@ -808,6 +880,7 @@ function renderScheduleTargets() {
 function scheduleTargetName(deviceId) {
   if (deviceId === SONY_TV_DEVICE_ID) return "索尼电视";
   if (deviceId === MIJIA_PLUG_DEVICE_ID) return "米家智能插座 3";
+  if (deviceId === AUPU_DEVICE_ID) return "奥普浴霸";
   const device = model.devices.find((item) => item.id === deviceId);
   return device ? `格力空调 · ${device.room}` : "格力空调";
 }
@@ -1086,12 +1159,23 @@ el("#closeTvScreenDialog").addEventListener("click", () => tvScreenDialog.close(
 el("#aupuModes").addEventListener("click", (event) => {
   const button = event.target.closest("button[data-aupu-mode]");
   if (button) sendAupuCommand({ mode: Number(button.dataset.aupuMode) });
+  const timer = event.target.closest("button[data-aupu-timer^='mode:']");
+  if (timer) {
+    const mode = Number(timer.dataset.aupuTimer.split(":")[1]);
+    scheduleAupuAutoOff({ mode }, { mode: 0 }, timer.dataset.aupuTimer, `浴霸${timer.previousElementSibling?.textContent || "功能"}`);
+  }
 });
 el("#aupuLight").addEventListener("change", (event) => {
   sendAupuCommand({ light: event.target.checked });
 });
 el("#aupuExternalLight").addEventListener("change", (event) => {
   sendAupuCommand({ external_light: event.target.checked });
+});
+document.querySelectorAll("button[data-aupu-timer='light']").forEach((button) => {
+  button.addEventListener("click", () => scheduleAupuAutoOff({ light: true }, { light: false }, "light", "主照明"));
+});
+document.querySelectorAll("button[data-aupu-timer='external_light']").forEach((button) => {
+  button.addEventListener("click", () => scheduleAupuAutoOff({ external_light: true }, { external_light: false }, "external_light", "外接照明"));
 });
 document.querySelectorAll("[data-xiaomi-setup]").forEach((button) => button.addEventListener("click", () => {
   aupuQrGeneration += 1;
@@ -1360,6 +1444,7 @@ async function removeSchedule(id) {
       headers: requestHeaders(),
     });
     model.schedules = model.schedules.filter((item) => item.id !== id);
+    renderAupu();
     renderSchedules();
     showToast("定时任务已删除");
   } catch (error) {

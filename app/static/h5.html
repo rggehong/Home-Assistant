@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=41">
+    <link rel="stylesheet" href="/static/h5.css?v=45">
   </head>
   <body>
     <main class="app-shell">
@@ -151,14 +151,20 @@
           <div class="aupu-mode-grid" id="aupuModes" aria-label="浴霸运行模式"></div>
 
           <div class="aupu-switches">
-            <label class="switch-card">
-              <span><strong>主照明</strong><small>浴霸面板照明</small></span>
-              <input type="checkbox" id="aupuLight"><i></i>
-            </label>
-            <label class="switch-card">
-              <span><strong>外接照明</strong><small>独立外接灯具</small></span>
-              <input type="checkbox" id="aupuExternalLight"><i></i>
-            </label>
+            <div class="aupu-switch-action">
+              <label class="switch-card">
+                <span><strong>主照明</strong><small>浴霸面板照明</small></span>
+                <input type="checkbox" id="aupuLight"><i></i>
+              </label>
+              <button class="aupu-timer-button" type="button" data-aupu-timer="light" aria-label="主照明开启30分钟后关闭"><span>30分钟</span></button>
+            </div>
+            <div class="aupu-switch-action">
+              <label class="switch-card">
+                <span><strong>外接照明</strong><small>独立外接灯具</small></span>
+                <input type="checkbox" id="aupuExternalLight"><i></i>
+              </label>
+              <button class="aupu-timer-button" type="button" data-aupu-timer="external_light" aria-label="外接照明开启30分钟后关闭"><span>30分钟</span></button>
+            </div>
           </div>
 
           <button class="aupu-setup-button" id="aupuSetupButton" data-xiaomi-setup type="button">连接米家</button>
@@ -648,6 +654,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=35" defer></script>
+    <script src="/static/h5.js?v=36" defer></script>
   </body>
 </html>
