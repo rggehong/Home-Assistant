@@ -6,8 +6,11 @@ const state = {
   tv: null,
   aupu: null,
   plug: null,
+  opple: null,
   purifier: null,
   waterHeater: null,
+  tmall: null,
+  dreame: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -26,9 +29,12 @@ const tvScreenDialog = document.querySelector("#desktopTvScreenDialog");
 const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
 const purifierSetupDialog = document.querySelector("#desktopPurifierSetupDialog");
 const waterHeaterAuthDialog = document.querySelector("#desktopWaterHeaterAuthDialog");
+const desktopDreameSetupDialog = document.querySelector("#desktopDreameSetupDialog");
 let desktopAupuQrPollTimer = null;
 let desktopAupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
+let oppleCommandTimer = null;
+let opplePendingCommand = {};
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -158,14 +164,17 @@ function makeDraft(device) {
 async function loadAll(refresh = true) {
   setConnection("正在同步", "");
   try {
-    const [devices, schedules, tv, aupu, plug, purifier, waterHeater] = await Promise.all([
+    const [devices, schedules, tv, aupu, plug, opple, purifier, waterHeater, tmall, dreame] = await Promise.all([
       api(`/api/devices?refresh=${refresh}`, { headers: headers() }),
       api("/api/schedules", { headers: headers() }),
       api("/api/tv", { headers: headers() }),
       api("/api/aupu", { headers: headers() }),
       api("/api/plug", { headers: headers() }),
+      api("/api/opple", { headers: headers() }),
       api("/api/purifier", { headers: headers() }),
       api("/api/water-heater", { headers: headers() }),
+      api("/api/tmall", { headers: headers() }),
+      api("/api/dreame", { headers: headers() }),
     ]);
     state.authenticated = true;
     updateAuthControls();
@@ -174,8 +183,11 @@ async function loadAll(refresh = true) {
     state.tv = tv;
     state.aupu = aupu;
     state.plug = plug;
+    state.opple = opple;
     state.purifier = purifier;
     state.waterHeater = waterHeater;
+    state.tmall = tmall;
+    state.dreame = dreame;
     devices.forEach((device) => {
       if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
     });
@@ -218,8 +230,10 @@ function render() {
   renderTV();
   renderAupu();
   renderPlug();
+  renderOpple();
   renderPurifier();
-  renderWaterHeater();
+    renderWaterHeater();
+    renderSmartDevices();
 }
 
 function renderWaterHeater() {
@@ -233,6 +247,111 @@ function renderWaterHeater() {
   badge.textContent = device.control_ready ? "查看云授权" : "配置云授权";
   badge.title = device.reachable ? "设备局域网在线" : "设备当前离线";
   badge.classList.toggle("online", Boolean(device.reachable));
+}
+
+function renderSmartDevices() {
+  const tmall = state.tmall;
+  const dreame = state.dreame;
+  if (tmall) {
+    document.querySelector("#desktopTmallStatus").textContent =
+      `${tmall.online_count}/${tmall.devices.length} 台局域网在线`;
+    document.querySelector("#desktopTmallList").replaceChildren(...tmall.devices.map((device) => {
+      const item = document.createElement("span");
+      item.classList.toggle("online", device.online);
+      item.textContent = `${device.ip} ${device.online ? "在线" : "离线"}`;
+      return item;
+    }));
+  }
+  if (dreame) {
+    document.querySelector("#desktopDreameName").textContent =
+      dreame.device_name || dreame.model_name || "追觅 X30";
+    document.querySelector("#desktopDreameStatus").textContent = dreame.configured
+      ? `${dreame.ip} · ${dreame.online ? "云端在线" : (dreame.error || "暂时离线")}`
+      : `${dreame.ip} · 等待 Dreamehome 授权`;
+    document.querySelector("#desktopDreameBattery").textContent =
+      dreame.battery == null ? "—" : `${dreame.battery}%`;
+    document.querySelector("#desktopDreameArea").textContent =
+      dreame.cleaned_area == null ? "—" : `${dreame.cleaned_area}㎡`;
+    document.querySelector("#desktopDreameTime").textContent =
+      dreame.cleaning_time == null ? "—" : `${dreame.cleaning_time}min`;
+    document.querySelector("#desktopDreameCount").textContent =
+      dreame.cleaning_count == null ? "—" : `${dreame.cleaning_count}次`;
+    document.querySelector("#desktopDreameBaseStatus").textContent =
+      dreame.base_status_text || "基站状态未知";
+    document.querySelector("#desktopDreameTankStatus").textContent =
+      `${[0, 3].includes(dreame.clean_water_tank_status) ? "清水箱正常" : "请检查清水箱"} · ${dreame.dirty_water_tank_status === 0 ? "污水箱正常" : "请检查污水箱"}`;
+    const values = {
+      cleaning_mode: dreame.cleaning_mode_value,
+      suction_level: dreame.suction_level,
+      wetness_level: dreame.wetness_level,
+      mop_wash_level: dreame.mop_wash_level,
+      volume: dreame.volume,
+    };
+    document.querySelectorAll("[data-desktop-dreame-setting]").forEach((control) => {
+      const setting = control.dataset.desktopDreameSetting;
+      if (control.type === "checkbox") {
+        control.checked = Boolean(dreame[setting]);
+      } else if (values[setting] != null) {
+        control.value = String(values[setting]);
+      }
+      control.disabled = !dreame.configured || !dreame.online;
+    });
+    document.querySelector("#desktopDreameVolumeValue").textContent = dreame.volume ?? "—";
+    const capabilities = new Set(dreame.capabilities || []);
+    document.querySelectorAll("[data-desktop-dreame-capability]").forEach((item) => {
+      item.hidden = !capabilities.has(item.dataset.desktopDreameCapability);
+    });
+    const consumables = {
+      desktopDreameMainBrush: dreame.main_brush_left,
+      desktopDreameSideBrush: dreame.side_brush_left,
+      desktopDreameFilter: dreame.filter_left,
+      desktopDreameSensor: dreame.sensor_dirty_left,
+      desktopDreameSilverIon: dreame.silver_ion_left,
+    };
+    Object.entries(consumables).forEach(([id, value]) => {
+      document.querySelector(`#${id}`).textContent = value ?? "—";
+    });
+    const baseStop = document.querySelector("#desktopDreameBaseStop");
+    baseStop.hidden = ![1, 2].includes(dreame.base_status);
+    baseStop.dataset.desktopDreame = dreame.base_status === 2 ? "stop_drying" : "stop_washing";
+    document.querySelector("#desktopDreameSetup").textContent =
+      dreame.configured ? "重新连接" : "连接 Dreamehome";
+    document.querySelectorAll("[data-desktop-dreame]").forEach((button) => {
+      button.disabled = !dreame.configured || !dreame.online;
+    });
+  }
+}
+
+async function sendDesktopDreameCommand(action) {
+  try {
+    state.dreame = await api("/api/dreame/command", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({ action }),
+    });
+    renderSmartDevices();
+    showToast("追觅 X30 指令已发送");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function sendDesktopDreameSetting(setting, value, control) {
+  control.disabled = true;
+  try {
+    state.dreame = await api("/api/dreame/setting", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({ setting, value }),
+    });
+    renderSmartDevices();
+    showToast("追觅 X30 设置已更新");
+  } catch (error) {
+    renderSmartDevices();
+    showToast(error.message);
+  } finally {
+    control.disabled = false;
+  }
 }
 
 function renderPurifier() {
@@ -319,6 +438,55 @@ async function sendPlugCommand(payload) {
   } finally {
     document.querySelector("#desktopPlug").classList.remove("is-busy");
   }
+}
+
+function renderOpple() {
+  const device = state.opple;
+  if (!device) return;
+  document.querySelector("#desktopOppleStatus").textContent = device.online
+    ? `${device.ip} · ${device.power ? "已打开" : "已关闭"} · 本地控制`
+    : `${device.ip} · ${device.error || "离线"}`;
+  const power = document.querySelector("#desktopOpplePower");
+  const brightness = document.querySelector("#desktopOppleBrightness");
+  const color = document.querySelector("#desktopOppleColor");
+  power.classList.toggle("is-on", Boolean(device.power));
+  power.disabled = !device.online;
+  brightness.disabled = !device.online;
+  color.disabled = !device.online;
+  if (Number.isFinite(device.brightness)) brightness.value = device.brightness;
+  if (Number.isFinite(device.color_temperature)) color.value = device.color_temperature;
+  document.querySelector("#desktopOppleBrightnessValue").textContent =
+    Number.isFinite(device.brightness) ? device.brightness : "—";
+  document.querySelector("#desktopOppleColorValue").textContent =
+    Number.isFinite(device.color_temperature) ? device.color_temperature : "—";
+}
+
+async function sendOppleCommand(payload) {
+  document.querySelector("#desktopOpple").classList.add("is-busy");
+  try {
+    state.opple = await api("/api/opple/command", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(payload),
+    });
+    renderOpple();
+    showToast("欧普灯设置已生效");
+  } catch (error) {
+    renderOpple();
+    showToast(error.message);
+  } finally {
+    document.querySelector("#desktopOpple").classList.remove("is-busy");
+  }
+}
+
+function queueOppleCommand(payload) {
+  opplePendingCommand = { ...opplePendingCommand, ...payload };
+  clearTimeout(oppleCommandTimer);
+  oppleCommandTimer = setTimeout(() => {
+    const command = opplePendingCommand;
+    opplePendingCommand = {};
+    sendOppleCommand(command);
+  }, 220);
 }
 
 function renderAupu() {
@@ -879,6 +1047,17 @@ document.querySelector("#desktopPlugMaxPowerEnabled").addEventListener("change",
 document.querySelector("#desktopPlugMaxPower").addEventListener("change", (event) => {
   sendPlugCommand({ max_power: Number(event.target.value) });
 });
+document.querySelector("#desktopOpplePower").addEventListener("click", () => {
+  if (state.opple?.online) sendOppleCommand({ power: !state.opple.power });
+});
+document.querySelector("#desktopOppleBrightness").addEventListener("input", (event) => {
+  document.querySelector("#desktopOppleBrightnessValue").textContent = event.target.value;
+  queueOppleCommand({ brightness: Number(event.target.value) });
+});
+document.querySelector("#desktopOppleColor").addEventListener("input", (event) => {
+  document.querySelector("#desktopOppleColorValue").textContent = event.target.value;
+  queueOppleCommand({ color_temperature: Number(event.target.value) });
+});
 document.querySelector("#desktopPurifierSetup").addEventListener("click", () => {
   document.querySelector("#desktopPurifierSetupError").textContent = "";
   document.querySelector("#desktopPurifierCaptcha").value = "";
@@ -950,6 +1129,54 @@ document.querySelector("#desktopPurifierSetupForm").addEventListener("submit", a
   } finally {
     submit.disabled = false;
   }
+});
+
+document.querySelector("#desktopDreameSetup").addEventListener("click", () => {
+  document.querySelector("#desktopDreameError").textContent = "";
+  document.querySelector("#desktopDreamePassword").value = "";
+  if (!desktopDreameSetupDialog.open) desktopDreameSetupDialog.showModal();
+});
+document.querySelector("#closeDesktopDreameSetup").addEventListener("click", () => {
+  desktopDreameSetupDialog.close();
+});
+document.querySelector("#desktopDreameSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  submit.disabled = true;
+  document.querySelector("#desktopDreameError").textContent = "";
+  try {
+    state.dreame = await api("/api/dreame/login", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({
+        username: document.querySelector("#desktopDreameUsername").value.trim(),
+        password: document.querySelector("#desktopDreamePassword").value,
+        country: document.querySelector("#desktopDreameCountry").value,
+      }),
+    });
+    document.querySelector("#desktopDreamePassword").value = "";
+    desktopDreameSetupDialog.close();
+    renderSmartDevices();
+    showToast("追觅 X30 已接入");
+  } catch (error) {
+    document.querySelector("#desktopDreameError").textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+document.querySelectorAll("[data-desktop-dreame]").forEach((button) => {
+  button.addEventListener("click", () => sendDesktopDreameCommand(button.dataset.desktopDreame));
+});
+document.querySelectorAll("[data-desktop-dreame-setting]").forEach((control) => {
+  if (control.type === "range") {
+    control.addEventListener("input", () => {
+      document.querySelector("#desktopDreameVolumeValue").textContent = control.value;
+    });
+  }
+  control.addEventListener("change", () => {
+    const value = control.type === "checkbox" ? control.checked : Number(control.value);
+    sendDesktopDreameSetting(control.dataset.desktopDreameSetting, value, control);
+  });
 });
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));

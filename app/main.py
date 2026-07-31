@@ -32,6 +32,7 @@ from greeclimate.device import (
 from greeclimate.discovery import Discovery
 from app.aupu import AupuCommand, AupuError, AupuQrStartRequest, aupu
 from app.plug import PlugCommand, plug
+from app.opple import OppleCommand, OppleError, opple_light
 from app.purifier import (
     PurifierError,
     PurifierLoginRequest,
@@ -40,6 +41,14 @@ from app.purifier import (
 )
 from app.sony import SonyError, TVCommand, sony_tv
 from app.water_heater import water_heater
+from app.dreame import (
+    DreameCommand,
+    DreameError,
+    DreameLoginRequest,
+    DreameSettingRequest,
+    dreame,
+)
+from app.tmall import tmall_status
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -813,6 +822,19 @@ async def plug_status() -> dict[str, Any]:
     return await plug.status()
 
 
+@app.get("/api/opple", dependencies=[Depends(require_token)])
+async def opple_status() -> dict[str, Any]:
+    return await opple_light.status()
+
+
+@app.post("/api/opple/command", dependencies=[Depends(require_token)])
+async def opple_command(payload: OppleCommand) -> dict[str, Any]:
+    try:
+        return await opple_light.command(payload)
+    except OppleError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @app.post("/api/plug/command", dependencies=[Depends(require_token)])
 async def plug_command(payload: PlugCommand) -> dict[str, Any]:
     try:
@@ -829,6 +851,40 @@ async def purifier_status() -> dict[str, Any]:
 @app.get("/api/water-heater", dependencies=[Depends(require_token)])
 async def water_heater_status() -> dict[str, Any]:
     return await water_heater.status()
+
+
+@app.get("/api/tmall", dependencies=[Depends(require_token)])
+async def tmall_devices_status() -> dict[str, Any]:
+    return await tmall_status()
+
+
+@app.get("/api/dreame", dependencies=[Depends(require_token)])
+async def dreame_status() -> dict[str, Any]:
+    return await dreame.status()
+
+
+@app.post("/api/dreame/login", dependencies=[Depends(require_token)])
+async def dreame_login(payload: DreameLoginRequest) -> dict[str, Any]:
+    try:
+        return await dreame.login(payload)
+    except DreameError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/dreame/command", dependencies=[Depends(require_token)])
+async def dreame_command(payload: DreameCommand) -> dict[str, Any]:
+    try:
+        return await dreame.command(payload)
+    except DreameError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/dreame/setting", dependencies=[Depends(require_token)])
+async def dreame_setting(payload: DreameSettingRequest) -> dict[str, Any]:
+    try:
+        return await dreame.setting(payload)
+    except DreameError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post("/api/purifier/captcha", dependencies=[Depends(require_token)])

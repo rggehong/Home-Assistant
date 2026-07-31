@@ -312,6 +312,43 @@ button { color: inherit; }
   border-radius: 18px;
   background: linear-gradient(145deg, rgba(47,60,51,.94), rgba(27,36,30,.9));
 }
+.desktop-opple {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(190px, 1fr) minmax(190px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(232, 201, 121, .22);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(61,56,39,.96), rgba(34,33,25,.92));
+}
+.desktop-opple.is-busy { opacity: .68; }
+.opple-mark { color: #2a2416; background: #f0cf75; }
+.desktop-opple-slider { display: grid; gap: 5px; color: var(--muted); font-size: 9px; }
+.desktop-opple-slider span { display: flex; justify-content: space-between; }
+.desktop-opple-slider b { color: #f0cf75; font-size: 10px; }
+.desktop-opple-slider input {
+  width: 100%;
+  accent-color: #e0b84f;
+  cursor: pointer;
+}
+.desktop-opple-power {
+  width: 42px;
+  height: 42px;
+  color: #806d3e;
+  border: 1px solid #655733;
+  border-radius: 13px;
+  background: #302b1f;
+  font-size: 19px;
+  cursor: pointer;
+}
+.desktop-opple-power.is-on {
+  color: #302719;
+  border-color: #f0cf75;
+  background: #f0cf75;
+  box-shadow: 0 6px 20px rgba(240,207,117,.2);
+}
 .desktop-cloud-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -366,6 +403,138 @@ button { color: inherit; }
 .desktop-water-heater-badge.online {
   color: var(--green-bright);
   border-color: rgba(168,213,162,.35);
+}
+.desktop-smart-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.desktop-tmall-row,
+.desktop-dreame-row { grid-template-columns: 1fr; }
+.desktop-smart-card {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255,255,255,.72);
+  box-shadow: 0 12px 28px rgba(25, 56, 39, .08);
+}
+.tmall-mark { color: white; background: #ef6e32; }
+.dreame-mark { color: white; background: #2d7652; }
+.desktop-tmall-list { display: flex; gap: 7px; }
+.desktop-tmall-list span {
+  padding: 7px 10px;
+  color: #7b8780;
+  border-radius: 12px;
+  background: #e8eeea;
+  font-size: 9px;
+}
+.desktop-tmall-list span.online { color: #246c48; background: #d9efdf; }
+.desktop-smart-note { color: var(--muted); font-size: 9px; line-height: 1.4; }
+.desktop-dreame-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.desktop-dreame-metrics span { display: grid; padding: 7px; border-radius: 12px; background: #edf4ef; text-align: center; }
+.desktop-dreame-metrics small { color: var(--muted); font-size: 8px; }
+.desktop-dreame-metrics b { color: #286a49; font-size: 14px; }
+.desktop-dreame-actions { display: grid; grid-template-columns: repeat(2, 50px); gap: 5px; }
+.desktop-dreame-actions button {
+  padding: 6px;
+  color: #285f43;
+  border: 1px solid #cfe0d5;
+  border-radius: 9px;
+  background: #f7faf8;
+  font-size: 9px;
+  font-weight: 700;
+}
+.desktop-dreame-actions button:disabled { opacity: .4; }
+.desktop-dreame-card {
+  grid-template-columns: minmax(180px, .8fr) minmax(260px, 1.1fr) minmax(220px, 1fr);
+  align-items: start;
+}
+.desktop-dreame-card .desktop-aupu-title { grid-column: 1; }
+.desktop-dreame-metrics {
+  grid-column: 1;
+  grid-template-columns: repeat(4, 1fr);
+}
+.desktop-dreame-actions {
+  grid-column: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.desktop-dreame-actions button { min-width: 0; }
+.desktop-dreame-controls {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.desktop-dreame-controls label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.desktop-dreame-controls select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 8px;
+  color: #285f43;
+  border: 1px solid #cfe0d5;
+  border-radius: 10px;
+  background: #f7faf8;
+}
+.desktop-dreame-volume { grid-column: 1 / -1; }
+.desktop-dreame-volume span { display: flex; justify-content: space-between; }
+.desktop-dreame-volume input { width: 100%; accent-color: #2b7651; }
+.desktop-dreame-toggles {
+  display: grid;
+  grid-column: 3;
+  grid-row: 1 / span 3;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.desktop-dreame-toggles label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 8px;
+  color: #315541;
+  border: 1px solid #d9e5dd;
+  border-radius: 10px;
+  background: white;
+  font-size: 9px;
+}
+.desktop-dreame-toggles input { accent-color: #2b7651; }
+.desktop-dreame-footer {
+  display: flex;
+  grid-column: 2 / -1;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.desktop-dreame-footer span {
+  padding: 5px 8px;
+  color: #65766c;
+  border-radius: 999px;
+  background: #edf4ef;
+  font-size: 8px;
+}
+.desktop-dreame-footer b { color: #286a49; }
+.desktop-dreame-card .desktop-aupu-setup { grid-column: 1; }
+.dreame-capability[hidden] { display: none !important; }
+@media (max-width: 900px) {
+  .desktop-smart-row { grid-template-columns: 1fr; }
+  .desktop-smart-card { grid-template-columns: 1fr; }
+  .desktop-dreame-controls,
+  .desktop-dreame-toggles,
+  .desktop-dreame-footer,
+  .desktop-dreame-card .desktop-aupu-setup {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }
 .purifier-mark { color: white; background: #367a59; }
 .purifier-summary { display: flex; align-items: stretch; gap: 7px; }

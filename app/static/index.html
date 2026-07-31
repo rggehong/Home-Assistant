@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=27">
+    <link rel="stylesheet" href="/static/styles.css?v=34">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -111,6 +111,25 @@
         <button class="desktop-aupu-setup" id="desktopPlugSetup" data-xiaomi-setup type="button">扫码连接</button>
       </section>
 
+      <section class="desktop-opple" id="desktopOpple">
+        <div class="desktop-aupu-title">
+          <span class="aupu-mark opple-mark">灯</span>
+          <div>
+            <strong>欧普智能灯</strong>
+            <small id="desktopOppleStatus">正在读取 192.168.0.139</small>
+          </div>
+        </div>
+        <label class="desktop-opple-slider">
+          <span>亮度 <b id="desktopOppleBrightnessValue">—</b>%</span>
+          <input id="desktopOppleBrightness" type="range" min="4" max="100" step="1">
+        </label>
+        <label class="desktop-opple-slider">
+          <span>色温 <b id="desktopOppleColorValue">—</b>K</span>
+          <input id="desktopOppleColor" type="range" min="2700" max="6500" step="100">
+        </label>
+        <button class="desktop-opple-power" id="desktopOpplePower" type="button" aria-label="开关欧普智能灯">⏻</button>
+      </section>
+
       <div class="desktop-cloud-row">
       <section class="desktop-purifier" id="desktopPurifier">
         <div class="desktop-aupu-title">
@@ -144,6 +163,77 @@
         </div>
         <button class="desktop-water-heater-badge" id="desktopWaterHeaterBadge" type="button">配置云授权</button>
       </section>
+      </div>
+
+      <div class="desktop-smart-row desktop-tmall-row">
+        <section class="desktop-smart-card">
+          <div class="desktop-aupu-title">
+            <span class="aupu-mark tmall-mark">猫</span>
+            <div>
+              <strong>天猫精灵</strong>
+              <small id="desktopTmallStatus">正在读取 192.168.0.113 / .135</small>
+            </div>
+          </div>
+          <div class="desktop-tmall-list" id="desktopTmallList"></div>
+          <small class="desktop-smart-note">已接入在线监测；控制功能需要阿里云开发者授权。</small>
+        </section>
+      </div>
+      <div class="desktop-smart-row desktop-dreame-row">
+        <section class="desktop-smart-card desktop-dreame-card">
+          <div class="desktop-aupu-title">
+            <span class="aupu-mark dreame-mark">扫</span>
+            <div>
+              <strong id="desktopDreameName">追觅 X30</strong>
+              <small id="desktopDreameStatus">正在读取 192.168.0.106</small>
+            </div>
+          </div>
+          <div class="desktop-dreame-metrics">
+            <span><small>电量</small><b id="desktopDreameBattery">—</b></span>
+            <span><small>本次面积</small><b id="desktopDreameArea">—</b></span>
+            <span><small>本次时间</small><b id="desktopDreameTime">—</b></span>
+            <span><small>累计清扫</small><b id="desktopDreameCount">—</b></span>
+          </div>
+          <div class="desktop-dreame-actions">
+            <button type="button" data-desktop-dreame="start">开始</button>
+            <button type="button" data-desktop-dreame="pause">暂停</button>
+            <button type="button" data-desktop-dreame="charge">回充</button>
+            <button type="button" data-desktop-dreame="stop">停止</button>
+            <button type="button" data-desktop-dreame="auto_empty">一键集尘</button>
+            <button type="button" data-desktop-dreame="wash_mop">清洗拖布</button>
+            <button type="button" data-desktop-dreame="dry_mop">烘干拖布</button>
+            <button type="button" data-desktop-dreame="locate">寻找设备</button>
+            <button type="button" id="desktopDreameBaseStop" data-desktop-dreame="stop_washing" hidden>停止基站任务</button>
+          </div>
+          <div class="desktop-dreame-controls">
+            <label class="dreame-capability" data-desktop-dreame-capability="cleaning_mode"><span>清洁模式</span><select data-desktop-dreame-setting="cleaning_mode"><option value="0">仅扫地</option><option value="1">仅拖地</option><option value="2">扫拖同步</option><option value="3">先扫后拖</option></select></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="suction_level"><span>吸力</span><select data-desktop-dreame-setting="suction_level"><option value="0">安静</option><option value="1">标准</option><option value="2">强力</option><option value="3">超强</option></select></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="wetness_level"><span>拖布湿度</span><select data-desktop-dreame-setting="wetness_level"><option value="5">偏干</option><option value="16">适中</option><option value="27">湿润</option></select></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="mop_wash_level"><span>拖布清洗</span><select data-desktop-dreame-setting="mop_wash_level"><option value="0">节水</option><option value="1">日常</option><option value="2">深度</option></select></label>
+            <label class="desktop-dreame-volume dreame-capability" data-desktop-dreame-capability="volume"><span>音量 <b id="desktopDreameVolumeValue">—</b>%</span><input data-desktop-dreame-setting="volume" type="range" min="0" max="100" step="5"></label>
+          </div>
+          <div class="desktop-dreame-toggles">
+            <label class="dreame-capability" data-desktop-dreame-capability="resume_cleaning"><span>断点续扫</span><input type="checkbox" data-desktop-dreame-setting="resume_cleaning"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="carpet_boost"><span>地毯增压</span><input type="checkbox" data-desktop-dreame-setting="carpet_boost"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="obstacle_avoidance"><span>智能避障</span><input type="checkbox" data-desktop-dreame-setting="obstacle_avoidance"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="child_lock"><span>童锁</span><input type="checkbox" data-desktop-dreame-setting="child_lock"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="dnd"><span>勿扰模式</span><input type="checkbox" data-desktop-dreame-setting="dnd"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="auto_add_detergent"><span>自动加清洁液</span><input type="checkbox" data-desktop-dreame-setting="auto_add_detergent"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="auto_water_refilling"><span>自动补水</span><input type="checkbox" data-desktop-dreame-setting="auto_water_refilling"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="auto_dust_collecting"><span>自动集尘</span><input type="checkbox" data-desktop-dreame-setting="auto_dust_collecting"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="smart_mop_washing"><span>智能洗拖布</span><input type="checkbox" data-desktop-dreame-setting="smart_mop_washing"></label>
+            <label class="dreame-capability" data-desktop-dreame-capability="silent_drying"><span>静音烘干</span><input type="checkbox" data-desktop-dreame-setting="silent_drying"></label>
+          </div>
+          <div class="desktop-dreame-footer">
+            <span id="desktopDreameBaseStatus">基站状态读取中</span>
+            <span id="desktopDreameTankStatus">水箱状态读取中</span>
+            <span>主刷 <b id="desktopDreameMainBrush">—</b>%</span>
+            <span>边刷 <b id="desktopDreameSideBrush">—</b>%</span>
+            <span>滤网 <b id="desktopDreameFilter">—</b>%</span>
+            <span>传感器 <b id="desktopDreameSensor">—</b>%</span>
+            <span>银离子 <b id="desktopDreameSilverIon">—</b>%</span>
+          </div>
+          <button class="desktop-aupu-setup" id="desktopDreameSetup" type="button">连接 Dreamehome</button>
+        </section>
       </div>
 
       <div class="workspace">
@@ -305,6 +395,27 @@
       </form>
     </dialog>
 
+    <dialog id="desktopDreameSetupDialog">
+      <form id="desktopDreameSetupForm">
+        <button type="button" class="dialog-close" id="closeDesktopDreameSetup" aria-label="关闭">×</button>
+        <span class="eyebrow">DREAMEHOME CLOUD</span>
+        <h3>连接追觅 X30</h3>
+        <p>当前接口仅支持 Dreamehome 邮箱账号。手机号或短信登录用户请先在 App 的“账号与安全”中绑定邮箱并设置登录密码。密码不会保存在服务器。</p>
+        <input id="desktopDreameUsername" type="email" inputmode="email" autocomplete="username" placeholder="Dreamehome 邮箱" required>
+        <input id="desktopDreamePassword" type="password" autocomplete="current-password" placeholder="Dreamehome 密码" required>
+        <select id="desktopDreameCountry">
+          <option value="cn">中国大陆</option>
+          <option value="sg">新加坡 / 亚洲</option>
+          <option value="eu">欧洲</option>
+          <option value="us">美国</option>
+          <option value="ru">俄罗斯</option>
+          <option value="kr">韩国</option>
+        </select>
+        <button class="primary-button" type="submit">授权并接入</button>
+        <p class="error-text" id="desktopDreameError"></p>
+      </form>
+    </dialog>
+
     <dialog id="desktopAupuSetupDialog">
       <form id="desktopAupuSetupForm">
         <button class="dialog-close" type="button" id="closeDesktopAupuSetupDialog" aria-label="关闭">×</button>
@@ -372,6 +483,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=30" defer></script>
+    <script src="/static/app.js?v=34" defer></script>
   </body>
 </html>
