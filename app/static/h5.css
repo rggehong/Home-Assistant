@@ -1419,6 +1419,7 @@ body[data-view="tv"] #tvView { display: block; }
   display: grid;
   gap: 6px;
   align-self: center;
+  transform: translateY(-18px);
 }
 .remote-control-cluster {
   display: grid;
@@ -1496,6 +1497,7 @@ body[data-view="tv"] #tvView { display: block; }
   border-radius: 50%;
   background: radial-gradient(circle at 45% 38%, #303431, #161917 70%);
   box-shadow: 0 5px 8px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.07);
+  transform: translateY(-8px);
 }
 .remote-direction, .remote-ok {
   color: #9fa5a1;
@@ -1615,6 +1617,8 @@ body[data-view="tv"] #tvView { display: block; }
   .remote-key b { font-size: 8px; }
   .remote-dpad { width: min(112px, 21vh); }
   .remote-control-column { gap: 8px; }
+  .remote-lower-controls { transform: translateY(-10px); }
+  .remote-dpad { transform: translateY(-4px); }
   .remote-volume-rocker { grid-template-rows: 34px 10px 34px; width: 46px; }
 }
 

@@ -852,6 +852,7 @@ button { color: inherit; }
   display: grid;
   gap: 4px;
   align-self: center;
+  transform: translateY(-10px);
 }
 .remote-control-cluster {
   display: grid;
@@ -926,6 +927,7 @@ button { color: inherit; }
   border-radius: 50%;
   background: radial-gradient(circle at 45% 38%, #303431, #161917 70%);
   box-shadow: 0 4px 7px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.07);
+  transform: translateY(-4px);
 }
 .remote-direction, .remote-ok {
   color: #9fa5a1;
