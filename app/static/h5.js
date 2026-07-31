@@ -498,10 +498,6 @@ function renderAupu() {
       if (command.mode === 0 && item.label?.includes("浴霸")) {
         const modeMatch = item.label.match(/模式(\d+)/);
         if (modeMatch) model.aupuTimers.set(`mode:${modeMatch[1]}`, item.id);
-      } else if (command.light === false) {
-        model.aupuTimers.set("light", item.id);
-      } else if (command.external_light === false) {
-        model.aupuTimers.set("external_light", item.id);
       }
     });
   el("#aupuStatus").textContent = device.online
@@ -517,6 +513,11 @@ function renderAupu() {
     button.textContent = mode.label;
     button.classList.toggle("active", mode.value === device.mode);
     button.disabled = !device.configured || !device.online;
+    if (Number(mode.value) === 0) {
+      row.classList.add("is-standby");
+      row.append(button);
+      return row;
+    }
     const timer = document.createElement("button");
     timer.type = "button";
     timer.className = "aupu-timer-button";
@@ -529,13 +530,7 @@ function renderAupu() {
     return row;
   }));
   el("#aupuLight").checked = Boolean(device.light);
-  el("#aupuExternalLight").checked = Boolean(device.external_light);
   el("#aupuLight").disabled = !device.configured || !device.online;
-  el("#aupuExternalLight").disabled = !device.configured || !device.online;
-  document.querySelectorAll("[data-aupu-timer]").forEach((button) => {
-    if (button.dataset.aupuTimer === "light") button.disabled = !device.configured || !device.online;
-    if (button.dataset.aupuTimer === "external_light") button.disabled = !device.configured || !device.online;
-  });
   el("#aupuSetupButton").hidden = device.configured;
 }
 
@@ -547,6 +542,14 @@ async function sendAupuCommand(payload) {
       headers: requestHeaders(true),
       body: JSON.stringify(payload),
     });
+    if (payload.mode !== undefined && payload.mode !== null) {
+      model.schedules = model.schedules.filter((item) => !(
+        item.status === "pending"
+        && item.device_id === AUPU_DEVICE_ID
+        && (item.command || {}).mode === 0
+      ));
+      renderSchedules();
+    }
     renderAupu();
     showToast("浴霸设置已生效");
     return model.aupu;
@@ -586,7 +589,7 @@ async function scheduleAupuAutoOff(command, offCommand, timerKey, label) {
     model.schedules = [created, ...model.schedules.filter((item) => item.id !== created.id)];
     renderAupu();
     renderSchedules();
-    showToast(`${label}已开启，30分钟后自动关闭`);
+    showToast(`${label}将在30分钟后自动关闭`);
   } catch (error) {
     renderAupu();
   }
@@ -1167,15 +1170,6 @@ el("#aupuModes").addEventListener("click", (event) => {
 });
 el("#aupuLight").addEventListener("change", (event) => {
   sendAupuCommand({ light: event.target.checked });
-});
-el("#aupuExternalLight").addEventListener("change", (event) => {
-  sendAupuCommand({ external_light: event.target.checked });
-});
-document.querySelectorAll("button[data-aupu-timer='light']").forEach((button) => {
-  button.addEventListener("click", () => scheduleAupuAutoOff({ light: true }, { light: false }, "light", "主照明"));
-});
-document.querySelectorAll("button[data-aupu-timer='external_light']").forEach((button) => {
-  button.addEventListener("click", () => scheduleAupuAutoOff({ external_light: true }, { external_light: false }, "external_light", "外接照明"));
 });
 document.querySelectorAll("[data-xiaomi-setup]").forEach((button) => button.addEventListener("click", () => {
   aupuQrGeneration += 1;

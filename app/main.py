@@ -517,6 +517,19 @@ class ScheduleStore:
         self.save()
         return item
 
+    def cancel_aupu_timers(self) -> list[str]:
+        cancelled_ids = [
+            item_id
+            for item_id, item in self.items.items()
+            if item.get("status") == "pending"
+            and item.get("device_id") == AUPU_DEVICE_ID
+        ]
+        for item_id in cancelled_ids:
+            self.items.pop(item_id, None)
+        if cancelled_ids:
+            self.save()
+        return cancelled_ids
+
     async def run(self) -> None:
         while True:
             now = datetime.now(timezone.utc)
@@ -829,7 +842,10 @@ async def aupu_qr_status(session_id: str) -> dict[str, Any]:
 @app.post("/api/aupu/command", dependencies=[Depends(require_token)])
 async def aupu_command(payload: AupuCommand) -> dict[str, Any]:
     try:
-        return await aupu.command(payload)
+        result = await aupu.command(payload)
+        if payload.mode is not None:
+            schedules.cancel_aupu_timers()
+        return result
     except AupuError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

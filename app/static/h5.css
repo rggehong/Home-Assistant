@@ -1179,6 +1179,7 @@ body[data-view="aupu"] #aupuView { display: grid; }
   box-shadow: 0 5px 16px rgba(45,54,47,.035);
 }
 .aupu-mode-grid > .aupu-mode-action:first-child { grid-column: 1 / -1; }
+.aupu-mode-action.is-standby { grid-template-columns: 1fr; }
 .aupu-mode-action > button:first-child {
   grid-column: auto;
   min-width: 0;
@@ -1211,11 +1212,7 @@ body[data-view="aupu"] #aupuView { display: grid; }
   background: var(--green);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
 }
-.aupu-timer-button.is-scheduled span::after {
-  content: " · 已开启";
-  font-size: 8px;
-}
-.aupu-switches { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.aupu-switches { display: grid; grid-template-columns: 1fr; gap: 9px; }
 .aupu-switch-action {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 62px;
@@ -1228,12 +1225,12 @@ body[data-view="aupu"] #aupuView { display: grid; }
 .aupu-switches .switch-card {
   display: flex;
   min-width: 0;
-  padding: 11px 8px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255,255,255,.74);
 }
-.aupu-switches .switch-card strong { font-size: 10px; }
+.aupu-switches .switch-card strong { font-size: 12px; }
 .aupu-switch-action .aupu-timer-button { min-width: 0; }
 .aupu-setup-button {
   padding: 13px;
