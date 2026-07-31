@@ -7,6 +7,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -52,6 +53,11 @@ from app.dreame import (
 )
 from app.tmall import tmall_status
 from app.aligenie import aligenie_oauth, error_response, response_header
+from app.aligenie_personal import (
+    PersonalCommand,
+    parse_personal_command,
+    personal_response,
+)
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -1283,6 +1289,187 @@ async def aligenie_gateway(request: Request) -> dict[str, Any]:
         device_id,
         "INVALIDATE_CONTROL_ORDER",
         "invalidate control order",
+    )
+
+
+def _personal_webhook_token() -> str:
+    return os.getenv("ALIGENIE_PERSONAL_TOKEN", "").strip()
+
+
+def _personal_webhook_url() -> str:
+    public_base_url = os.getenv(
+        "GREE_PUBLIC_URL",
+        "https://home.gezhixin.cn:4430",
+    ).rstrip("/")
+    return f"{public_base_url}/aligenie/personal/webhook"
+
+
+async def _personal_air_conditioner(
+    command: PersonalCommand,
+) -> tuple[dict[str, Any], str]:
+    devices = await registry.refresh()
+    device = next(
+        (item for item in devices if item.get("room") == command.room),
+        None,
+    )
+    if not device:
+        raise ValueError(f"没有找到{command.room}空调")
+    if command.action == "status":
+        power = "开着" if device.get("power") else "关闭"
+        temperature = device.get("target_temperature") or 26
+        return device, f"{command.room}空调目前{power}，设定温度{temperature}度"
+    payload = Command()
+    if command.action == "power":
+        payload.power = bool(command.value)
+    elif command.action == "temperature":
+        payload.target_temperature = float(command.value)
+    elif command.action == "mode":
+        payload.mode = str(command.value)
+    elif command.action == "turbo":
+        payload.turbo = bool(command.value)
+    elif command.action == "sleep":
+        payload.sleep = bool(command.value)
+    else:
+        raise ValueError("不支持的空调操作")
+    state = await registry.command(str(device["id"]), payload)
+    replies = {
+        "power": f"已{'打开' if command.value else '关闭'}{command.room}空调",
+        "temperature": f"已把{command.room}空调调到{command.value:g}度",
+        "mode": f"已切换{command.room}空调运行模式",
+        "turbo": f"已{'打开' if command.value else '关闭'}{command.room}空调强劲模式",
+        "sleep": f"已{'打开' if command.value else '关闭'}{command.room}空调睡眠模式",
+    }
+    return state, replies[command.action]
+
+
+async def _run_personal_command(command: PersonalCommand) -> str:
+    if command.device == "unknown":
+        return (
+            "我可以控制客厅、主卧和次卧空调，也可以控制照明、插座、"
+            "索尼电视、浴霸和追觅扫地机器人"
+        )
+    if command.device == "ac":
+        _, reply = await _personal_air_conditioner(command)
+        return reply
+    if command.device == "plug":
+        if command.action == "status":
+            state = await plug.status()
+            return f"智能插座目前{'打开' if state.get('on') else '关闭'}"
+        await plug.command(PlugCommand(on=bool(command.value)))
+        return f"已{'打开' if command.value else '关闭'}智能插座"
+    if command.device == "light":
+        if command.action == "status":
+            state = await opple_light.status()
+            return f"照明目前{'打开' if state.get('power') else '关闭'}"
+        if command.action == "brightness":
+            await opple_light.command(OppleCommand(brightness=int(command.value)))
+            return f"已把灯光亮度调到百分之{int(command.value)}"
+        await opple_light.command(OppleCommand(power=bool(command.value)))
+        return f"已{'打开' if command.value else '关闭'}照明"
+    if command.device == "tv":
+        if command.action == "status":
+            state = await sony_tv.status()
+            return f"客厅电视目前{'打开' if state.get('power') else '关闭'}"
+        if command.action == "mute":
+            await sony_tv.command(TVCommand(mute=bool(command.value)))
+            return "已静音" if command.value else "已恢复电视声音"
+        await sony_tv.command(TVCommand(power=bool(command.value)))
+        return f"已{'打开' if command.value else '关闭'}客厅电视"
+    if command.device == "aupu":
+        if command.action == "status":
+            state = await aupu.status()
+            return f"浴霸当前模式是{state.get('mode_label') or state.get('mode') or '待机'}"
+        await aupu.command(AupuCommand(mode=int(command.value)))
+        labels = {
+            0: "关闭",
+            1: "弱暖风",
+            2: "强暖风",
+            3: "吹风",
+            4: "换气",
+            5: "干燥",
+            6: "杀菌除臭",
+        }
+        return f"已将浴霸切换到{labels[int(command.value)]}"
+    if command.device == "dreame":
+        if command.action == "status":
+            state = await dreame.status()
+            return (
+                f"追觅扫地机器人当前"
+                f"{state.get('status_label') or state.get('state_label') or '在线'}"
+            )
+        await dreame.command(DreameCommand(action=command.action))
+        replies = {
+            "start": "追觅扫地机器人已开始全屋清扫",
+            "pause": "已暂停追觅扫地机器人",
+            "stop": "已停止追觅扫地机器人",
+            "charge": "追觅扫地机器人正在返回充电座",
+        }
+        return replies[command.action]
+    raise ValueError("暂不支持这个设备")
+
+
+@app.get(
+    "/api/aligenie/personal/setup",
+    dependencies=[Depends(require_token)],
+)
+async def aligenie_personal_setup() -> dict[str, str | bool]:
+    token = _personal_webhook_token()
+    return {
+        "configured": bool(token),
+        "webhook_url": _personal_webhook_url(),
+        "header_name": "X-Home-Skill-Token",
+        "header_value": token,
+        "skill_id": "119359",
+        "application_id": "2026073128637",
+    }
+
+
+@app.post("/aligenie/personal/webhook")
+async def aligenie_personal_webhook(
+    request: Request,
+    x_home_skill_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    expected = _personal_webhook_token()
+    if not expected or not x_home_skill_token or not _same_secret(
+        x_home_skill_token,
+        expected,
+    ):
+        raise HTTPException(status_code=401, detail="invalid skill token")
+    try:
+        message = await request.json()
+    except Exception:
+        message = {}
+    if str(message.get("skillId") or "") not in {"", "119359"}:
+        raise HTTPException(status_code=403, detail="unexpected skill")
+    utterance = message.get("utterance") or message.get("query")
+    if not utterance:
+        request_data = message.get("requestData")
+        if isinstance(request_data, dict):
+            utterance = request_data.get("utterance") or request_data.get("query")
+    try:
+        reply = await _run_personal_command(parse_personal_command(utterance))
+        return personal_response(reply)
+    except Exception:
+        logging.exception("AliGenie personal skill command failed")
+        return personal_response("设备暂时没有响应，请稍后再试", success=False)
+
+
+@app.get("/aligenie/{verification_file}")
+async def aligenie_verification_file(verification_file: str) -> FileResponse:
+    if not re.fullmatch(r"[0-9a-fA-F]{16,64}\.txt", verification_file):
+        raise HTTPException(status_code=404, detail="not found")
+    path = Path(
+        os.getenv(
+            "GREE_DATA_DIR",
+            str(Path(__file__).resolve().parent.parent / "data"),
+        )
+    ) / "aligenie" / verification_file
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="not found")
+    return FileResponse(
+        path,
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
     )
 
 
