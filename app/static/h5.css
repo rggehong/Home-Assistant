@@ -1262,7 +1262,7 @@ body[data-view="tv"] #tvView { display: block; }
 .remote-stage { display: grid; place-items: center; min-height: 0; }
 .tv-remote {
   display: grid;
-  grid-template-rows: repeat(9, auto);
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
   align-content: space-between;
   gap: 5px;
   width: min(100%, 310px);
@@ -1357,11 +1357,11 @@ body[data-view="tv"] #tvView { display: block; }
 .tv-cleanup-row {
   display: flex;
   justify-content: center;
-  min-height: 22px;
+  min-height: 29px;
 }
 .tv-cleanup-row .tv-cleanup-button {
-  min-width: 78px;
-  padding: 5px 14px;
+  min-width: 112px;
+  padding: 7px 18px;
   color: #d99891;
   border-color: rgba(229, 93, 81, .28);
   background: rgba(139, 45, 38, .12);
@@ -1415,7 +1415,21 @@ body[data-view="tv"] #tvView { display: block; }
 .app-netease i { color: white; background: #d52b2b; }
 .remote-row-three { grid-template-columns: 1fr 1fr 1fr; justify-items: center; }
 .remote-row-sides { grid-template-columns: 1fr 1fr 1fr; justify-items: center; }
-.remote-row-pair { grid-template-columns: repeat(2, 1fr); justify-items: center; }
+.remote-lower-controls {
+  display: grid;
+  gap: 6px;
+  align-self: center;
+}
+.remote-control-cluster {
+  display: grid;
+  grid-template-columns: 1fr 54px 1fr;
+  align-items: center;
+}
+.remote-control-column {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
 .remote-key {
   display: grid;
   place-items: center;
@@ -1506,8 +1520,8 @@ body[data-view="tv"] #tvView { display: block; }
 .remote-volume-rocker {
   justify-self: center;
   display: grid;
-  grid-template-rows: 34px 12px 34px;
-  width: 50px;
+  grid-template-rows: 42px 14px 42px;
+  width: 54px;
   overflow: hidden;
   border: 1px solid #080909;
   border-radius: 25px;
@@ -1600,7 +1614,8 @@ body[data-view="tv"] #tvView { display: block; }
   .remote-key { width: 34px; height: 34px; }
   .remote-key b { font-size: 8px; }
   .remote-dpad { width: min(112px, 21vh); }
-  .remote-volume-rocker { grid-template-rows: 29px 10px 29px; width: 44px; }
+  .remote-control-column { gap: 8px; }
+  .remote-volume-rocker { grid-template-rows: 34px 10px 34px; width: 46px; }
 }
 
 /* Mijia-inspired H5 visual system */

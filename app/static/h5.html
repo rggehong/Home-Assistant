@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=48">
+    <link rel="stylesheet" href="/static/h5.css?v=49">
   </head>
   <body>
     <main class="app-shell">
@@ -433,9 +433,9 @@
             </section>
 
             <div class="remote-row remote-row-sides">
-              <button class="remote-key" data-tv-remote="settings" aria-label="电视设置"><b>设置</b></button>
-              <i class="remote-led" aria-hidden="true"></i>
               <button class="remote-key" data-tv-remote="input"><b>输入</b></button>
+              <i class="remote-led" aria-hidden="true"></i>
+              <button class="remote-key" data-tv-remote="settings" aria-label="电视设置"><b>设置</b></button>
             </div>
 
             <div class="remote-dpad" aria-label="电视方向控制">
@@ -446,25 +446,25 @@
               <button class="remote-direction remote-down" data-tv-remote="down" aria-label="向下">▼</button>
             </div>
 
-            <div class="remote-row remote-row-sides">
-              <button class="remote-key" data-tv-remote="back" aria-label="返回"><b>返回</b></button>
-              <span></span>
-              <button class="remote-key" data-tv-remote="home" aria-label="主页"><b>主页</b></button>
-            </div>
-
-            <div class="remote-row remote-row-pair">
-              <button class="remote-key" data-tv-remote="mute"><b>静音</b></button>
-              <button class="remote-key remote-icon" data-tv-remote="menu" aria-label="菜单">☰</button>
-            </div>
-
-            <div class="remote-volume-rocker" aria-label="电视音量">
-              <button data-tv-remote="volume_up" aria-label="提高电视音量">＋</button>
-              <span>VOL</span>
-              <button data-tv-remote="volume_down" aria-label="降低电视音量">−</button>
-            </div>
-
-            <div class="tv-cleanup-row">
-              <button class="tv-cleanup-button" type="button" data-tv-cleanup>一键清理</button>
+            <div class="remote-lower-controls">
+              <div class="remote-control-cluster">
+                <div class="remote-control-column">
+                  <button class="remote-key" data-tv-remote="back" aria-label="返回"><b>返回</b></button>
+                  <button class="remote-key" data-tv-remote="mute"><b>静音</b></button>
+                </div>
+                <div class="remote-volume-rocker" aria-label="电视音量">
+                  <button data-tv-remote="volume_up" aria-label="提高电视音量">＋</button>
+                  <span>VOL</span>
+                  <button data-tv-remote="volume_down" aria-label="降低电视音量">−</button>
+                </div>
+                <div class="remote-control-column">
+                  <button class="remote-key" data-tv-remote="home" aria-label="主页"><b>主页</b></button>
+                  <button class="remote-key remote-icon" data-tv-remote="menu" aria-label="菜单">☰</button>
+                </div>
+              </div>
+              <div class="tv-cleanup-row">
+                <button class="tv-cleanup-button" type="button" data-tv-cleanup>一键清理</button>
+              </div>
             </div>
 
             <label class="tv-input-field">
