@@ -422,7 +422,7 @@ button { color: inherit; }
   background: rgba(255,255,255,.72);
   box-shadow: 0 12px 28px rgba(25, 56, 39, .08);
 }
-.tmall-mark { color: white; background: #ef6e32; }
+.tmall-mark { color: white; background: #2f6d4b; }
 .dreame-mark { color: white; background: #2d7652; }
 .desktop-tmall-list { display: flex; gap: 7px; }
 .desktop-tmall-list span {
@@ -787,6 +787,19 @@ button { color: inherit; }
   cursor: pointer;
 }
 .tv-cleanup-button:disabled { cursor: not-allowed; opacity: .35; }
+.tv-cleanup-row {
+  display: flex;
+  justify-content: center;
+  min-height: 18px;
+}
+.tv-cleanup-row .tv-cleanup-button {
+  min-width: 68px;
+  padding: 3px 11px;
+  color: #d99891;
+  border-color: rgba(229, 93, 81, .28);
+  background: rgba(139, 45, 38, .12);
+  letter-spacing: .04em;
+}
 .tv-app-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -835,6 +848,7 @@ button { color: inherit; }
 .app-netflix i { color: white; background: #e50914; font-family: Arial, sans-serif; }
 .app-netease i { color: white; background: #d52b2b; }
 .remote-row-three, .remote-row-sides { grid-template-columns: repeat(3, 1fr); justify-items: center; }
+.remote-row-pair { grid-template-columns: repeat(2, 1fr); justify-items: center; }
 .remote-key {
   display: grid;
   place-items: center;
@@ -919,7 +933,6 @@ button { color: inherit; }
   font-size: 8px;
   font-weight: 750;
 }
-.remote-voice { color: #7f8782; }
 .remote-volume-rocker {
   justify-self: center;
   display: grid;
