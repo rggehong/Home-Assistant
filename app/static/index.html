@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=43">
+    <link rel="stylesheet" href="/static/styles.css?v=47">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -239,6 +239,14 @@
           <button class="desktop-aupu-setup" id="desktopDreameSetup" type="button">连接 Dreamehome</button>
         </section>
       </div>
+
+      <section class="desktop-cameras" id="desktopEzviz">
+        <div class="desktop-aupu-title">
+          <span class="aupu-mark ezviz-mark">摄</span>
+          <div><strong>萤石摄像头</strong><small id="desktopEzvizStatus">正在读取本地视频</small></div>
+        </div>
+        <div class="ezviz-grid" id="desktopEzvizGrid"></div>
+      </section>
 
       <div class="workspace">
         <section class="device-grid" id="deviceGrid" aria-live="polite">
@@ -486,6 +494,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=36" defer></script>
+    <script src="/static/app.js?v=44" defer></script>
   </body>
 </html>

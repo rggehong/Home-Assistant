@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=52">
+    <link rel="stylesheet" href="/static/h5.css?v=56">
   </head>
   <body>
     <main class="app-shell">
@@ -347,6 +347,19 @@
         </article>
       </section>
 
+      <section class="ezviz-view" id="ezvizView">
+        <article class="smart-device-card ezviz-mobile-card">
+          <header class="smart-device-header">
+            <div>
+              <span class="micro-label">EZVIZ LOCAL VIDEO</span>
+              <h2>萤石摄像头</h2>
+              <p id="ezvizSummary">正在读取本地视频</p>
+            </div>
+          </header>
+          <div class="ezviz-grid" id="ezvizGrid"></div>
+        </article>
+      </section>
+
       <section class="purifier-view" id="purifierView">
         <article class="purifier-card">
           <header class="purifier-header">
@@ -524,6 +537,7 @@
         <button data-view="plug"><span class="brand-mark" aria-hidden="true">MIJIA</span><span>智能插座</span></button>
         <button data-view="smart-device"><span class="brand-mark" aria-hidden="true">TMALL</span><span>天猫精灵</span></button>
         <button data-view="dreame"><span class="brand-mark brand-dreame" aria-hidden="true">DREAME</span><span>追觅扫地机</span></button>
+        <button data-view="ezviz"><span class="brand-mark brand-ezviz" aria-hidden="true">EZVIZ</span><span>萤石摄像头</span></button>
         <button data-view="purifier"><span class="brand-mark brand-smith" aria-hidden="true">A.O.SMITH</span><span>史密斯净水机</span></button>
         <button data-view="water-heater"><span class="brand-mark brand-smith" aria-hidden="true">A.O.SMITH</span><span>燃气热水器</span></button>
         <button data-view="schedule"><span class="brand-mark brand-symbol" aria-hidden="true">◷</span><span>定时任务</span></button>
@@ -640,6 +654,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=38" defer></script>
+    <script src="/static/h5.js?v=46" defer></script>
   </body>
 </html>

@@ -19,7 +19,13 @@ from urllib.parse import parse_qs, parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import uuid4
 
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -52,6 +58,7 @@ from app.dreame import (
     dreame,
 )
 from app.tmall import tmall_status
+from app.ezviz import ezviz
 from app.aligenie import aligenie_oauth, error_response, response_header
 from app.aligenie_personal import (
     PersonalCommand,
@@ -668,9 +675,11 @@ async def lifespan(_: FastAPI):
         pass
     schedule_task = asyncio.create_task(schedules.run())
     discovery_task = asyncio.create_task(maintain_discovery())
+    await ezviz.start()
     try:
         yield
     finally:
+        await ezviz.stop()
         schedule_task.cancel()
         discovery_task.cancel()
         await asyncio.gather(schedule_task, discovery_task, return_exceptions=True)
@@ -891,6 +900,42 @@ async def tmall_devices_status() -> dict[str, Any]:
     result = await tmall_status()
     result["voice_bridge"] = aligenie_oauth.setup()
     return result
+
+
+@app.get("/api/ezviz", dependencies=[Depends(require_token)])
+async def ezviz_status() -> dict[str, Any]:
+    return await ezviz.status()
+
+
+@app.get("/api/ezviz/{camera_id}/snapshot", dependencies=[Depends(require_token)])
+async def ezviz_snapshot(camera_id: str) -> Response:
+    try:
+        image = await ezviz.snapshot(camera_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="camera not found") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return Response(
+        content=image,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get(
+    "/api/ezviz/{camera_id}/live.mjpeg",
+    dependencies=[Depends(require_token)],
+)
+async def ezviz_live(camera_id: str) -> StreamingResponse:
+    try:
+        ezviz._get_camera(camera_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="camera not found") from exc
+    return StreamingResponse(
+        ezviz.mjpeg_stream(camera_id),
+        media_type="multipart/x-mixed-replace; boundary=camera",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/api/aligenie/setup", dependencies=[Depends(require_token)])

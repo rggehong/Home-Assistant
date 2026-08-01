@@ -11,6 +11,7 @@ const state = {
   waterHeater: null,
   tmall: null,
   dreame: null,
+  ezviz: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -117,6 +118,40 @@ async function apiBlob(path) {
   }
   return response.blob();
 }
+
+function ensureCameraViewer() {
+  let viewer = document.querySelector("#cameraViewer");
+  if (viewer) return viewer;
+  viewer = document.createElement("div");
+  viewer.id = "cameraViewer";
+  viewer.className = "camera-viewer";
+  viewer.hidden = true;
+  viewer.innerHTML = `
+    <section class="camera-viewer-panel" role="dialog" aria-modal="true" aria-label="摄像头直播">
+      <header><div><span>本地直连</span><strong data-camera-title></strong></div><button type="button" data-camera-close aria-label="关闭">×</button></header>
+      <img data-camera-live alt="">
+      <p data-camera-status></p>
+    </section>`;
+  const close = () => {
+    viewer.querySelector("[data-camera-live]").removeAttribute("src");
+    viewer.hidden = true;
+  };
+  viewer.querySelector("[data-camera-close]").addEventListener("click", close);
+  viewer.addEventListener("click", (event) => { if (event.target === viewer) close(); });
+  document.body.append(viewer);
+  return viewer;
+}
+
+function openCameraViewer(camera) {
+  const viewer = ensureCameraViewer();
+  const image = viewer.querySelector("[data-camera-live]");
+  viewer.querySelector("[data-camera-title]").textContent = camera.name;
+  viewer.querySelector("[data-camera-status]").textContent = "146 本地直连实时画面 · 约 5 帧/秒";
+  image.alt = `${camera.name} 实时直播`;
+  image.src = `${camera.live_url}?t=${Date.now()}`;
+  viewer.hidden = false;
+}
+
 
 function requestTencentCaptcha() {
   if (!tencentCaptchaLoader) {
@@ -240,7 +275,69 @@ function loadSecondaryData() {
       state.dreame = value;
       renderSmartDevices();
     }),
+    loadSecondary("ezviz", "/api/ezviz", (value) => {
+      state.ezviz = value;
+      renderEzviz();
+    }),
   ]);
+}
+
+function renderEzviz() {
+  const section = document.querySelector("#desktopEzviz");
+  const grid = document.querySelector("#desktopEzvizGrid");
+  if (!section || !grid || !state.ezviz) return;
+  section.hidden = !state.ezviz.cameras?.length;
+  const cameras = state.ezviz.cameras || [];
+  const online = cameras.filter((camera) => camera.online).length;
+  document.querySelector("#desktopEzvizStatus").textContent =
+    `${online}/${cameras.length} 路摄像头在线`;
+  grid.replaceChildren(...cameras.map((camera) => {
+    const card = document.createElement("article");
+    card.className = "ezviz-card";
+    const header = document.createElement("div");
+    header.className = "ezviz-card-header";
+    header.innerHTML = `<strong></strong><span></span>`;
+    header.querySelector("strong").textContent = camera.name;
+    const services = (camera.services || []).map((item) => `${item.name} ${item.port}`).join(" · ");
+    header.querySelector("span").textContent =
+      `${camera.ip}:${camera.port} · ${camera.online ? "在线" : "离线"}${services ? ` · ${services}` : ""}`;
+    let media;
+    if (camera.online) {
+      media = document.createElement("img");
+      media.alt = `${camera.name} 实时画面`;
+      media.loading = "lazy";
+      media.src = `${camera.snapshot_url}?t=${Date.now()}`;
+      media.onerror = () => {
+        media.replaceWith(Object.assign(document.createElement("div"), {
+          className: "ezviz-placeholder",
+          textContent: "视频接口可达，暂未取得画面",
+        }));
+      };
+    } else {
+      media = Object.assign(document.createElement("div"), {
+        className: "ezviz-placeholder",
+        textContent: `${camera.protocol} 设备当前离线`,
+      });
+    }
+    const actions = document.createElement("div");
+    actions.className = "ezviz-actions";
+    const live = Object.assign(document.createElement("button"), {
+      type: "button", textContent: "实时观看", disabled: !camera.online,
+    });
+    live.addEventListener("click", () => openCameraViewer(camera));
+    actions.append(live);
+    card.append(header, media);
+    if (actions.childElementCount) card.append(actions);
+    return card;
+  }));
+  if (!window.ezvizSnapshotTimer) {
+    window.ezvizSnapshotTimer = window.setInterval(() => {
+      document.querySelectorAll(".ezviz-card img").forEach((image) => {
+        const base = image.src.split("?")[0];
+        image.src = `${base}?t=${Date.now()}`;
+      });
+    }, 15000);
+  }
 }
 
 function setConnection(text, className) {

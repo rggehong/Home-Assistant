@@ -1,6 +1,7 @@
 .env
 .venv/
 data/
+secrets/
 __pycache__/
 .pytest_cache/
 *.pyc

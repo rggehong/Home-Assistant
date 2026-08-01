@@ -598,6 +598,11 @@ html, body { height: 100%; overflow: hidden; }
   min-height: 0;
   overflow: auto;
 }
+.ezviz-view {
+  display: none;
+  min-height: 0;
+  overflow: auto;
+}
 body[data-view="smart-device"] #controlView { display: none; }
 body[data-view="smart-device"] .room-tabs { display: none; }
 body[data-view="smart-device"] .status-line { display: none; }
@@ -606,6 +611,52 @@ body[data-view="dreame"] #controlView { display: none; }
 body[data-view="dreame"] .room-tabs { display: none; }
 body[data-view="dreame"] .status-line { display: none; }
 body[data-view="dreame"] #dreameDeviceView { display: block; }
+body[data-view="ezviz"] #controlView { display: none; }
+body[data-view="ezviz"] .room-tabs { display: none; }
+body[data-view="ezviz"] .status-line { display: none; }
+body[data-view="ezviz"] #ezvizView { display: block; }
+.ezviz-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.ezviz-card {
+  overflow: hidden;
+  border: 1px solid rgba(52, 93, 70, .12);
+  border-radius: 18px;
+  background: rgba(255,255,255,.72);
+}
+.ezviz-card-header { display: grid; gap: 3px; padding: 12px 14px; }
+.ezviz-card-header strong { font-size: 15px; }
+.ezviz-card-header span { color: var(--muted); font-size: 11px; }
+.ezviz-card img, .ezviz-placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #17221d;
+}
+.ezviz-placeholder { display: grid; place-items: center; color: #b7c7bd; font-size: 12px; }
+.ezviz-actions { display: grid; grid-template-columns: 1fr; gap: 9px; padding: 11px 12px 13px; }
+.ezviz-actions button { display: grid; min-height: 38px; place-items: center; border: 1px solid rgba(7, 193, 96, .22); border-radius: 13px; color: var(--green); background: rgba(7, 193, 96, .08); font-size: 13px; font-weight: 750; }
+.ezviz-actions button:first-child { color: white; background: var(--green); box-shadow: 0 8px 18px rgba(7, 193, 96, .16); }
+.ezviz-actions button:disabled { opacity: .45; }
+
+.camera-viewer[hidden] { display: none; }
+.camera-viewer { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 18px; background: rgba(8, 18, 13, .72); backdrop-filter: blur(8px); }
+.camera-viewer-panel { width: min(760px, 100%); max-height: min(88vh, 760px); overflow: auto; border: 1px solid rgba(255,255,255,.18); border-radius: 24px; background: #f8fbf9; box-shadow: 0 28px 80px rgba(0,0,0,.35); }
+.camera-viewer-panel header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 17px; }
+.camera-viewer-panel header div { display: grid; gap: 2px; }
+.camera-viewer-panel header span { color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.camera-viewer-panel header strong { color: var(--ink); font-size: 18px; }
+.camera-viewer-panel header button { width: 38px; height: 38px; border: 0; border-radius: 50%; color: var(--ink); background: rgba(36, 62, 47, .08); font-size: 25px; line-height: 1; }
+.camera-viewer-panel > img { display: block; width: 100%; min-height: 220px; max-height: 58vh; aspect-ratio: 16 / 9; background: #07110c; object-fit: contain; }
+.camera-viewer-panel > p { margin: 0; padding: 12px 17px; color: var(--muted); font-size: 13px; }
+@media (max-width: 640px) {
+  .camera-viewer { padding: 10px; }
+  .camera-viewer-panel { border-radius: 20px; }
+  .camera-viewer-panel > img { min-height: 190px; }
+}
 .smart-device-card {
   display: grid;
   align-content: start;
