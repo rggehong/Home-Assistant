@@ -2,6 +2,14 @@
 .venv/
 data/
 secrets/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+keystore.properties
+*.jks
 __pycache__/
 .pytest_cache/
 *.pyc

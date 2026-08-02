@@ -1698,6 +1698,9 @@ body {
 
 .app-shell {
   width: min(100%, 520px);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
   padding: max(14px, env(safe-area-inset-top)) 14px 0;
 }
 
@@ -1973,8 +1976,9 @@ input[type="datetime-local"] {
 
 .view-nav {
   display: flex;
+  flex: 0 0 auto;
   gap: 0;
-  margin: 8px -14px 0;
+  margin: auto -14px 0;
   padding: 7px 7px max(7px, env(safe-area-inset-bottom));
   overflow-x: auto;
   border-top: 1px solid #ededed;
