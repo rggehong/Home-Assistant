@@ -6,6 +6,10 @@ android/.gradle/
 android/build/
 android/app/build/
 android/local.properties
+android-tv-adb-agent/.gradle/
+android-tv-adb-agent/build/
+android-tv-adb-agent/app/build/
+android-tv-adb-agent/local.properties
 *.apk
 *.aab
 keystore.properties

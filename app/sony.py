@@ -305,11 +305,39 @@ class SonyTV:
     async def foreground_app(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._foreground_app_sync)
 
-    def _launch_app_sync(self, app_id: str) -> dict[str, str]:
+    async def _wait_for_adb_ready(self, timeout: float) -> str:
+        deadline = asyncio.get_running_loop().time() + timeout
+        last_error: Exception | None = None
+        while asyncio.get_running_loop().time() < deadline:
+            try:
+                endpoint = await asyncio.to_thread(self._adb_endpoint_sync)
+                probe = await asyncio.to_thread(
+                    self._adb_run,
+                    "-s",
+                    endpoint,
+                    "shell",
+                    "getprop",
+                    "sys.boot_completed",
+                    timeout=6,
+                )
+                if probe.returncode == 0:
+                    return endpoint
+            except SonyError as exc:
+                last_error = exc
+            await asyncio.sleep(2)
+        if last_error is not None:
+            raise SonyError(f"电视已开机，但无线调试尚未就绪：{last_error}")
+        raise SonyError("电视已开机，但无线调试尚未就绪，请稍后重试")
+
+    def _launch_app_sync(
+        self,
+        app_id: str,
+        endpoint: str | None = None,
+    ) -> dict[str, str]:
         app = TV_APP_PACKAGES.get(app_id)
         if app is None:
             raise SonyError("不支持的电视应用快捷键")
-        endpoint = self._adb_endpoint_sync()
+        endpoint = endpoint or self._adb_endpoint_sync()
         launched = self._adb_run(
             "-s",
             endpoint,
@@ -332,10 +360,21 @@ class SonyTV:
         }
 
     async def launch_app(self, app_id: str) -> dict[str, Any]:
-        app = await asyncio.to_thread(self._launch_app_sync, app_id)
-        await asyncio.sleep(1)
-        foreground = await self.foreground_app()
-        return {**app, "foreground": foreground}
+        state = await self.status()
+        powered_on = not bool(state.get("power"))
+        if powered_on:
+            await self.set_power_verified(True, attempts=5)
+
+        endpoint = await self._wait_for_adb_ready(60 if powered_on else 15)
+        app = await asyncio.to_thread(self._launch_app_sync, app_id, endpoint)
+
+        foreground: dict[str, Any] = {}
+        for _ in range(6):
+            await asyncio.sleep(1)
+            foreground = await self.foreground_app()
+            if foreground.get("package") == app["package"]:
+                break
+        return {**app, "foreground": foreground, "powered_on": powered_on}
 
     def _cleanup_apps_sync(self) -> dict[str, Any]:
         endpoint = self._adb_endpoint_sync()

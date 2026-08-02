@@ -836,18 +836,23 @@ async function cleanupTVApps() {
 async function launchTVApp(button) {
   const appId = button.dataset.tvApp;
   const label = button.querySelector("b")?.textContent || "应用";
+  const wasStandby = !model.tv?.power;
   document.querySelectorAll("[data-tv-app]").forEach((item) => {
     item.disabled = true;
   });
-  showToast(`正在打开 ${label}`);
+  showToast(wasStandby ? `正在启动电视并打开 ${label}` : `正在打开 ${label}`);
   try {
     const result = await api(`/api/tv/apps/${appId}`, {
       method: "POST",
       headers: requestHeaders(),
     });
+    if (result.powered_on && model.tv) {
+      model.tv.power = true;
+      model.tv.online = true;
+    }
     model.tvForeground = result.foreground || null;
     renderTVApps();
-    showToast(`已打开 ${label}`);
+    showToast(result.powered_on ? `电视已启动并打开 ${label}` : `已打开 ${label}`);
   } catch (error) {
     renderTVApps();
     showToast(error.message);
