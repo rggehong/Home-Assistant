@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=57">
+    <link rel="stylesheet" href="/static/h5.css?v=58">
   </head>
   <body>
     <main class="app-shell">
@@ -256,6 +256,42 @@
             <span></span>
             局域网直连 · 无需云端账号
           </div>
+        </article>
+      </section>
+
+      <section class="xiaomi-scale-view" id="xiaomiScaleView">
+        <article class="xiaomi-scale-card">
+          <header class="xiaomi-scale-header">
+            <div>
+              <span class="micro-label">XIAOMI BLUETOOTH</span>
+              <h2>小米电子秤</h2>
+              <p id="xiaomiScaleStatus">正在读取 BLE 广播</p>
+            </div>
+            <div class="xiaomi-scale-icon" aria-hidden="true">⚖</div>
+          </header>
+
+          <div class="xiaomi-scale-weight">
+            <span>当前体重</span>
+            <strong id="xiaomiScaleWeight">—</strong>
+            <small id="xiaomiScaleReading">等待称重</small>
+          </div>
+
+          <div class="xiaomi-scale-info">
+            <div><span>稳定状态</span><strong id="xiaomiScaleStability">—</strong></div>
+            <div><span>最近测量</span><strong id="xiaomiScaleMeasuredAt">—</strong></div>
+            <div><span>蓝牙地址</span><strong id="xiaomiScaleMac">C8:0F:10:A8:EC:79</strong></div>
+          </div>
+
+          <div class="xiaomi-scale-history">
+            <div class="xiaomi-scale-history-heading"><strong>称重记录</strong><span id="xiaomiScaleHistorySummary">暂无记录</span></div>
+            <div class="xiaomi-scale-history-list" id="xiaomiScaleHistoryList"></div>
+          </div>
+
+          <div class="xiaomi-scale-actions">
+            <button class="primary-button" id="xiaomiScaleRefresh" type="button">扫描并刷新</button>
+            <span id="xiaomiScaleRaw">未收到广播数据</span>
+          </div>
+          <p class="xiaomi-scale-note">电子秤通过 BLE 广播上报读数。本项目只读取广播，不发送控制或配对命令。</p>
         </article>
       </section>
 
@@ -535,6 +571,7 @@
         <button data-view="aupu"><span class="brand-mark" aria-hidden="true">AUPU</span><span>奥普浴霸</span></button>
         <button data-view="opple"><span class="brand-mark" aria-hidden="true">OPPLE</span><span>欧普照明</span></button>
         <button data-view="plug"><span class="brand-mark" aria-hidden="true">MIJIA</span><span>智能插座</span></button>
+        <button data-view="xiaomi-scale"><span class="brand-mark brand-scale" aria-hidden="true">MI</span><span>小米电子秤</span></button>
         <button data-view="smart-device"><span class="brand-mark" aria-hidden="true">TMALL</span><span>天猫精灵</span></button>
         <button data-view="dreame"><span class="brand-mark brand-dreame" aria-hidden="true">DREAME</span><span>追觅扫地机</span></button>
         <button data-view="ezviz"><span class="brand-mark brand-ezviz" aria-hidden="true">EZVIZ</span><span>萤石摄像头</span></button>
@@ -654,6 +691,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=47" defer></script>
+    <script src="/static/h5.js?v=48" defer></script>
   </body>
 </html>

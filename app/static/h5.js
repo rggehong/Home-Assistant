@@ -9,6 +9,8 @@ const model = {
   opple: null,
   purifier: null,
   waterHeater: null,
+  xiaomiScale: null,
+  xiaomiScaleHistory: [],
   tmall: null,
   dreame: null,
   ezviz: null,
@@ -258,6 +260,12 @@ async function loadViewData(view, force = false) {
       } else if (view === "plug") {
         model.plug = await api("/api/plug", { headers: requestHeaders() });
         renderPlug();
+      } else if (view === "xiaomi-scale") {
+        [model.xiaomiScale, model.xiaomiScaleHistory] = await Promise.all([
+          api("/api/xiaomi-scale", { headers: requestHeaders() }),
+          api("/api/xiaomi-scale/history", { headers: requestHeaders() }).catch(() => []),
+        ]);
+        renderXiaomiScale();
       } else if (view === "smart-device") {
         model.tmall = await api("/api/tmall", { headers: requestHeaders() });
         renderSmartDevices();
@@ -304,6 +312,7 @@ function render() {
   renderAupu();
   renderPlug();
   renderOpple();
+  renderXiaomiScale();
   renderPurifier();
   renderWaterHeater();
   renderSmartDevices();
@@ -585,6 +594,67 @@ function renderOpple() {
   if (Number.isFinite(device.brightness)) {
     el("#oppleGlow").style.setProperty("--light-opacity", String(Math.max(.18, device.brightness / 100)));
   }
+}
+
+function formatBeijingTime(value) {
+  if (!value) return "—";
+  const text = String(value);
+  const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/.test(text) ? text : `${text}+08:00`;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return text.replace("T", " ");
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(date).replaceAll("/", "-");
+}
+
+function renderXiaomiScale() {
+  const device = model.xiaomiScale;
+  if (!device) return;
+  const advertisement = device.advertisement || {};
+  const unitLabels = { kg: "千克", jin: "斤", lb: "磅" };
+  const hasWeight = Boolean(advertisement.has_weight)
+    && Number.isFinite(Number(advertisement.weight));
+  const unit = unitLabels[advertisement.unit] || advertisement.unit || "";
+  const weight = hasWeight ? `${Number(advertisement.weight).toFixed(2)} ${unit}`.trim() : "—";
+
+  el("#xiaomiScaleStatus").textContent = device.online
+    ? `${device.name || "MI_SCALE"} · 蓝牙广播在线`
+    : `${device.name || "MI_SCALE"} · 未发现广播`;
+  el("#xiaomiScaleWeight").textContent = weight;
+  el("#xiaomiScaleReading").textContent = hasWeight
+    ? (advertisement.stable ? "已稳定" : "测量中")
+    : "等待称重";
+  el("#xiaomiScaleStability").textContent = hasWeight
+    ? (advertisement.stable ? "已稳定" : "测量中")
+    : "—";
+  el("#xiaomiScaleMeasuredAt").textContent = formatBeijingTime(advertisement.measured_at);
+  el("#xiaomiScaleMac").textContent = device.mac || "—";
+  el("#xiaomiScaleRaw").textContent = advertisement.raw
+    ? `广播：${advertisement.raw}`
+    : "未收到广播数据";
+
+  const history = Array.isArray(model.xiaomiScaleHistory) ? model.xiaomiScaleHistory : [];
+  el("#xiaomiScaleHistorySummary").textContent = history.length ? `${history.length} 条` : "暂无记录";
+  el("#xiaomiScaleHistoryList").replaceChildren(...history.map((record) => {
+    const row = document.createElement("div");
+    row.className = "xiaomi-scale-history-row";
+    const weightText = Number.isFinite(Number(record.weight))
+      ? `${Number(record.weight).toFixed(2)} ${unitLabels[record.unit] || record.unit || ""}`.trim()
+      : "—";
+    const weight = document.createElement("strong");
+    weight.textContent = weightText;
+    const time = document.createElement("span");
+    time.textContent = formatBeijingTime(record.measured_at || record.recorded_at);
+    row.append(weight, time);
+    return row;
+  }));
 }
 
 async function sendOppleCommand(payload) {
@@ -1579,6 +1649,15 @@ async function removeSchedule(id) {
     showToast(error.message);
   }
 }
+
+el("#xiaomiScaleRefresh").addEventListener("click", async () => {
+  const button = el("#xiaomiScaleRefresh");
+  button.disabled = true;
+  button.textContent = "扫描中…";
+  await loadViewData("xiaomi-scale", true);
+  button.disabled = false;
+  button.textContent = "扫描并刷新";
+});
 
 el("#syncButton").addEventListener("click", async () => {
   await loadAll(true);

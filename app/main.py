@@ -58,6 +58,8 @@ from app.dreame import (
     dreame,
 )
 from app.tmall import tmall_status
+from app.ais_light import AisLightCommand, AisLightError, ais_light
+from app.xiaomi_scale import xiaomi_scale
 from app.ezviz import ezviz
 from app.aligenie import aligenie_oauth, error_response, response_header
 from app.aligenie_personal import (
@@ -900,6 +902,37 @@ async def tmall_devices_status() -> dict[str, Any]:
     result = await tmall_status()
     result["voice_bridge"] = aligenie_oauth.setup()
     return result
+
+
+@app.get("/api/ais-light", dependencies=[Depends(require_token)])
+async def ais_light_status() -> dict[str, Any]:
+    return await ais_light.status()
+
+
+@app.post("/api/ais-light/command", dependencies=[Depends(require_token)])
+async def ais_light_command(payload: AisLightCommand) -> dict[str, Any]:
+    try:
+        return await ais_light.command(payload)
+    except AisLightError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/ais-light/bind", dependencies=[Depends(require_token)])
+async def ais_light_bind() -> dict[str, Any]:
+    try:
+        return await ais_light.bind()
+    except AisLightError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/xiaomi-scale", dependencies=[Depends(require_token)])
+async def xiaomi_scale_status() -> dict[str, Any]:
+    return await xiaomi_scale.status()
+
+
+@app.get("/api/xiaomi-scale/history", dependencies=[Depends(require_token)])
+async def xiaomi_scale_history() -> list[dict[str, Any]]:
+    return xiaomi_scale.history(20)
 
 
 @app.get("/api/ezviz", dependencies=[Depends(require_token)])
