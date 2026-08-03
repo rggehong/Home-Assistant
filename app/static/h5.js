@@ -11,6 +11,9 @@ const model = {
   waterHeater: null,
   xiaomiScale: null,
   xiaomiScaleHistory: [],
+  xiaomiScaleSummary: null,
+  xiaomiScalePreferences: { display_unit: "jin", target_weight_kg: null, target_enabled: false },
+  xiaomiScaleDays: 30,
   tmall: null,
   dreame: null,
   ezviz: null,
@@ -261,9 +264,11 @@ async function loadViewData(view, force = false) {
         model.plug = await api("/api/plug", { headers: requestHeaders() });
         renderPlug();
       } else if (view === "xiaomi-scale") {
-        [model.xiaomiScale, model.xiaomiScaleHistory] = await Promise.all([
+        [model.xiaomiScale, model.xiaomiScaleHistory, model.xiaomiScaleSummary, model.xiaomiScalePreferences] = await Promise.all([
           api("/api/xiaomi-scale", { headers: requestHeaders() }),
-          api("/api/xiaomi-scale/history", { headers: requestHeaders() }).catch(() => []),
+          api("/api/xiaomi-scale/history?limit=100", { headers: requestHeaders() }).catch(() => []),
+          api(`/api/xiaomi-scale/summary?days=${model.xiaomiScaleDays}`, { headers: requestHeaders() }).catch(() => null),
+          api("/api/xiaomi-scale/preferences", { headers: requestHeaders() }).catch(() => model.xiaomiScalePreferences),
         ]);
         renderXiaomiScale();
       } else if (view === "smart-device") {
@@ -614,47 +619,239 @@ function formatBeijingTime(value) {
   }).format(date).replaceAll("/", "-");
 }
 
+const scaleUnitLabels = { kg: "千克", jin: "斤", lb: "磅" };
+const scaleUnitToKg = { kg: 1, jin: 0.5, lb: 0.45359237 };
+
+function scaleWeightToKg(value, unit) {
+  const number = Number(value);
+  const factor = scaleUnitToKg[String(unit || "").toLowerCase()];
+  return Number.isFinite(number) && factor ? number * factor : null;
+}
+
+function scaleWeightFromKg(value, unit) {
+  const factor = scaleUnitToKg[unit] || 1;
+  return Number(value) / factor;
+}
+
+function formatScaleWeight(value, sourceUnit, displayUnit) {
+  const kg = scaleWeightToKg(value, sourceUnit);
+  if (!Number.isFinite(kg)) return "—";
+  return `${scaleWeightFromKg(kg, displayUnit).toFixed(2)} ${scaleUnitLabels[displayUnit] || displayUnit}`;
+}
+
+function formatScaleKg(value, displayUnit, signed = false) {
+  if (!Number.isFinite(Number(value))) return "—";
+  const number = scaleWeightFromKg(Number(value), displayUnit);
+  const prefix = signed && number > 0 ? "+" : "";
+  return `${prefix}${number.toFixed(2)} ${scaleUnitLabels[displayUnit] || displayUnit}`;
+}
+
+function formatScaleShortTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const today = new Date();
+  const isToday = date.getFullYear() === today.getFullYear()
+    && date.getMonth() === today.getMonth()
+    && date.getDate() === today.getDate();
+  return new Intl.DateTimeFormat("zh-CN", isToday
+    ? { hour: "2-digit", minute: "2-digit", hour12: false }
+    : { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .format(date).replaceAll("/", "-");
+}
+
+function renderXiaomiScaleTrend(points, displayUnit) {
+  const host = el("#xiaomiScaleTrend");
+  if (!host) return;
+  host.replaceChildren();
+  if (!Array.isArray(points) || points.length < 2) {
+    const empty = document.createElement("span");
+    empty.textContent = "至少需要两次稳定称重才显示趋势";
+    host.append(empty);
+    return;
+  }
+  const values = points.map((point) => scaleWeightFromKg(Number(point.weight_kg), displayUnit));
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 0.1);
+  const width = 360;
+  const height = 130;
+  const padding = 18;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "体重趋势图");
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+  gradient.setAttribute("id", "xiaomiScaleTrendGradient");
+  gradient.setAttribute("x1", "0");
+  gradient.setAttribute("y1", "0");
+  gradient.setAttribute("x2", "0");
+  gradient.setAttribute("y2", "1");
+  [["0%", ".24"], ["100%", "0"]].forEach(([offset, opacity]) => {
+    const stop = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+    stop.setAttribute("offset", offset);
+    stop.setAttribute("stop-color", "#07c160");
+    stop.setAttribute("stop-opacity", opacity);
+    gradient.append(stop);
+  });
+  defs.append(gradient);
+  svg.append(defs);
+  const area = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  const coordinates = values.map((value, index) => {
+    const x = padding + (width - padding * 2) * (index / Math.max(1, values.length - 1));
+    const y = height - padding - ((value - min) / range) * (height - padding * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  path.setAttribute("points", coordinates.join(" "));
+  path.setAttribute("fill", "none");
+  path.setAttribute("class", "xiaomi-scale-trend-line");
+  area.setAttribute("points", `${padding},${height - padding} ${coordinates.join(" ")} ${width - padding},${height - padding}`);
+  area.setAttribute("class", "xiaomi-scale-trend-area");
+  svg.append(area, path);
+  coordinates.forEach((coordinate) => {
+    const [x, y] = coordinate.split(",");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", "3.5");
+    circle.setAttribute("class", "xiaomi-scale-trend-dot");
+    svg.append(circle);
+  });
+  const label = document.createElement("span");
+  label.textContent = `${formatScaleKg(min, displayUnit)} — ${formatScaleKg(max, displayUnit)}`;
+  host.append(svg, label);
+}
+
+function renderXiaomiScaleInsights() {
+  const summary = model.xiaomiScaleSummary || {};
+  const preferences = model.xiaomiScalePreferences || {};
+  const displayUnit = scaleUnitToKg[preferences.display_unit] ? preferences.display_unit : "jin";
+  const average = el("#xiaomiScaleAverage");
+  const change = el("#xiaomiScaleChange");
+  const range = el("#xiaomiScaleRange");
+  const period = el("#xiaomiScaleSummaryPeriod");
+  if (average) average.textContent = formatScaleKg(summary.average_kg, displayUnit);
+  if (change) change.textContent = formatScaleKg(summary.change_kg, displayUnit, true);
+  if (range) {
+    range.textContent = Number.isFinite(Number(summary.min_kg)) && Number.isFinite(Number(summary.max_kg))
+      ? `${formatScaleKg(summary.min_kg, displayUnit)} — ${formatScaleKg(summary.max_kg, displayUnit)}`
+      : "—";
+  }
+  if (period) period.textContent = `近 ${summary.days || model.xiaomiScaleDays} 天 · ${summary.count || 0} 条`;
+  document.querySelectorAll("[data-scale-days]").forEach((button) => {
+    button.classList.toggle("active", Number(button.dataset.scaleDays) === Number(model.xiaomiScaleDays));
+  });
+  renderXiaomiScaleTrend(summary.points || [], displayUnit);
+}
+
 function renderXiaomiScale() {
   const device = model.xiaomiScale;
   if (!device) return;
   const advertisement = device.advertisement || {};
-  const unitLabels = { kg: "千克", jin: "斤", lb: "磅" };
   const hasWeight = Boolean(advertisement.has_weight)
     && Number.isFinite(Number(advertisement.weight));
-  const unit = unitLabels[advertisement.unit] || advertisement.unit || "";
-  const weight = hasWeight ? `${Number(advertisement.weight).toFixed(2)} ${unit}`.trim() : "—";
+  const preferences = model.xiaomiScalePreferences || {};
+  const displayUnit = scaleUnitToKg[preferences.display_unit] ? preferences.display_unit : "jin";
+  const history = Array.isArray(model.xiaomiScaleHistory) ? model.xiaomiScaleHistory : [];
+  const latestRecord = history[0] || null;
+  const weight = hasWeight
+    ? formatScaleWeight(advertisement.weight, advertisement.unit, displayUnit)
+    : (latestRecord ? formatScaleWeight(latestRecord.weight, latestRecord.unit, displayUnit) : "—");
+  const latestRecordKg = history[0] ? scaleWeightToKg(history[0].weight, history[0].unit) : null;
+  const previousRecordKg = history[1] ? scaleWeightToKg(history[1].weight, history[1].unit) : null;
 
   el("#xiaomiScaleStatus").textContent = device.online
-    ? `${device.name || "MI_SCALE"} · 蓝牙广播在线`
-    : `${device.name || "MI_SCALE"} · 未发现广播`;
+    ? "蓝牙连接正常，读数会自动保存"
+    : "暂未发现电子秤，请站上秤面唤醒";
   el("#xiaomiScaleWeight").textContent = weight;
+  el("#xiaomiScaleWeightLabel").textContent = hasWeight ? "本次体重" : (latestRecord ? "最近体重" : "本次体重");
   el("#xiaomiScaleReading").textContent = hasWeight
-    ? (advertisement.stable ? "已稳定" : "测量中")
-    : "等待称重";
+    ? (advertisement.stable ? "读数已稳定并保存" : "正在测量，请保持身体稳定")
+    : (latestRecord ? `记录于 ${formatBeijingTime(latestRecord.measured_at || latestRecord.recorded_at)}` : "站上秤面，保持身体稳定");
+  const live = el("#xiaomiScaleLive");
+  if (live) {
+    live.classList.toggle("is-online", Boolean(device.online));
+    live.classList.toggle("is-measuring", Boolean(hasWeight && !advertisement.stable));
+    live.querySelector("span").textContent = hasWeight
+      ? (advertisement.stable ? "已记录" : "测量中")
+      : (device.online ? "已连接" : "等待称重");
+  }
   el("#xiaomiScaleStability").textContent = hasWeight
     ? (advertisement.stable ? "已稳定" : "测量中")
     : "—";
-  el("#xiaomiScaleMeasuredAt").textContent = formatBeijingTime(advertisement.measured_at);
+  const latestStableAt = hasWeight && advertisement.measured_at
+    ? advertisement.measured_at
+    : history[0]?.measured_at || advertisement.measured_at;
+  el("#xiaomiScaleMeasuredAt").textContent = formatBeijingTime(latestStableAt);
+  const measuredAt = el("#xiaomiScaleMeasuredAt");
+  if (measuredAt) measuredAt.textContent = formatScaleShortTime(latestStableAt);
   el("#xiaomiScaleMac").textContent = device.mac || "—";
   el("#xiaomiScaleRaw").textContent = advertisement.raw
     ? `广播：${advertisement.raw}`
     : "未收到广播数据";
 
-  const history = Array.isArray(model.xiaomiScaleHistory) ? model.xiaomiScaleHistory : [];
   el("#xiaomiScaleHistorySummary").textContent = history.length ? `${history.length} 条` : "暂无记录";
-  el("#xiaomiScaleHistoryList").replaceChildren(...history.map((record) => {
+  const previousChange = el("#xiaomiScalePreviousChange");
+  if (previousChange) {
+    const delta = Number.isFinite(latestRecordKg) && Number.isFinite(previousRecordKg)
+      ? latestRecordKg - previousRecordKg
+      : null;
+    previousChange.textContent = Number.isFinite(delta) ? formatScaleKg(delta, displayUnit, true) : "首次记录";
+    previousChange.classList.toggle("is-good", Number.isFinite(delta) && delta <= 0);
+    previousChange.classList.toggle("is-warning", Number.isFinite(delta) && delta > 0);
+  }
+  const targetProgress = el("#xiaomiScaleTargetProgress");
+  if (targetProgress) {
+    const targetKg = Number(preferences.target_weight_kg);
+    const currentKg = Number.isFinite(latestRecordKg) ? latestRecordKg : scaleWeightToKg(advertisement.weight, advertisement.unit);
+    if (preferences.target_enabled && Number.isFinite(targetKg) && Number.isFinite(currentKg)) {
+      const delta = currentKg - targetKg;
+      targetProgress.textContent = delta <= 0 ? "已达成" : `还差 ${formatScaleKg(delta, displayUnit)}`;
+      targetProgress.classList.toggle("is-good", delta <= 0);
+    } else {
+      targetProgress.textContent = "未设置";
+      targetProgress.classList.remove("is-good");
+    }
+  }
+
+  el("#xiaomiScaleHistoryList").replaceChildren(...history.slice(0, 12).map((record, index) => {
     const row = document.createElement("div");
     row.className = "xiaomi-scale-history-row";
     const weightText = Number.isFinite(Number(record.weight))
-      ? `${Number(record.weight).toFixed(2)} ${unitLabels[record.unit] || record.unit || ""}`.trim()
+      ? formatScaleWeight(record.weight, record.unit, displayUnit)
       : "—";
+    const body = document.createElement("div");
     const weight = document.createElement("strong");
     weight.textContent = weightText;
-    const time = document.createElement("span");
+    const time = document.createElement("small");
     time.textContent = formatBeijingTime(record.measured_at || record.recorded_at);
-    row.append(weight, time);
+    body.append(weight, time);
+    const nextRecord = history[index + 1];
+    const recordKg = scaleWeightToKg(record.weight, record.unit);
+    const nextKg = nextRecord ? scaleWeightToKg(nextRecord.weight, nextRecord.unit) : null;
+    const delta = Number.isFinite(recordKg) && Number.isFinite(nextKg) ? recordKg - nextKg : null;
+    const change = document.createElement("span");
+    change.textContent = Number.isFinite(delta) ? `较上次 ${formatScaleKg(delta, displayUnit, true)}` : "首次记录";
+    change.classList.toggle("is-up", Number.isFinite(delta) && delta > 0);
+    change.classList.toggle("is-down", Number.isFinite(delta) && delta < 0);
+    row.append(body, change);
     return row;
   }));
+  const collector = el("#xiaomiScaleCollector");
+  if (collector) {
+    const scanText = device.last_scan_at ? `最近扫描：${formatBeijingTime(device.last_scan_at)}` : "尚未扫描";
+    const intervalText = device.collector_enabled ? `自动采集：每 ${Math.round((device.poll_seconds || 0) / 60)} 分钟` : "自动采集已关闭";
+    collector.textContent = `${intervalText} · ${scanText}${device.last_scan_error ? ` · ${device.last_scan_error}` : ""}`;
+  }
+  const unitSelect = el("#xiaomiScaleUnit");
+  const target = el("#xiaomiScaleTarget");
+  const targetEnabled = el("#xiaomiScaleTargetEnabled");
+  if (unitSelect) unitSelect.value = displayUnit;
+  if (target) target.value = Number.isFinite(Number(preferences.target_weight_kg)) ? preferences.target_weight_kg : "";
+  if (targetEnabled) targetEnabled.checked = Boolean(preferences.target_enabled);
+  renderXiaomiScaleInsights();
 }
 
 async function sendOppleCommand(payload) {
@@ -1650,13 +1847,82 @@ async function removeSchedule(id) {
   }
 }
 
+async function saveXiaomiScalePreferences() {
+  const button = el("#xiaomiScaleSavePreferences");
+  const targetValue = el("#xiaomiScaleTarget").value.trim();
+  button.disabled = true;
+  try {
+    model.xiaomiScalePreferences = await api("/api/xiaomi-scale/preferences", {
+      method: "PUT",
+      headers: requestHeaders(true),
+      body: JSON.stringify({
+        display_unit: el("#xiaomiScaleUnit").value,
+        target_weight_kg: targetValue ? Number(targetValue) : null,
+        target_enabled: el("#xiaomiScaleTargetEnabled").checked,
+      }),
+    });
+    renderXiaomiScale();
+    showToast("电子秤设置已保存");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function downloadXiaomiScaleExport(format) {
+  try {
+    const response = await fetch(`/api/xiaomi-scale/export?format=${encodeURIComponent(format)}`, {
+      headers: requestHeaders(),
+    });
+    if (!response.ok) throw new Error(`导出失败（${response.status}）`);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `xiaomi-scale-history.${format}`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    showToast(`已导出 ${format.toUpperCase()} 历史记录`);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+el("#xiaomiScaleUnit").addEventListener("change", (event) => {
+  model.xiaomiScalePreferences = {
+    ...model.xiaomiScalePreferences,
+    display_unit: event.target.value,
+  };
+  renderXiaomiScale();
+});
+el("#xiaomiScaleSavePreferences").addEventListener("click", saveXiaomiScalePreferences);
+el("#xiaomiScaleExportCsv").addEventListener("click", () => downloadXiaomiScaleExport("csv"));
+el("#xiaomiScaleExportJson").addEventListener("click", () => downloadXiaomiScaleExport("json"));
+document.querySelectorAll("[data-scale-days]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const days = Number(button.dataset.scaleDays);
+    if (!Number.isFinite(days) || days === model.xiaomiScaleDays) return;
+    model.xiaomiScaleDays = days;
+    document.querySelectorAll("[data-scale-days]").forEach((item) => item.classList.toggle("active", item === button));
+    try {
+      model.xiaomiScaleSummary = await api(`/api/xiaomi-scale/summary?days=${days}`, { headers: requestHeaders() });
+      renderXiaomiScaleInsights();
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+});
+
 el("#xiaomiScaleRefresh").addEventListener("click", async () => {
   const button = el("#xiaomiScaleRefresh");
   button.disabled = true;
-  button.textContent = "扫描中…";
+  button.textContent = "正在寻找电子秤…";
   await loadViewData("xiaomi-scale", true);
   button.disabled = false;
-  button.textContent = "扫描并刷新";
+  button.textContent = "开始称重";
 });
 
 el("#syncButton").addEventListener("click", async () => {

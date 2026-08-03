@@ -1170,15 +1170,15 @@ body[data-view="xiaomi-scale"] #xiaomiScaleView { display: grid; }
 }
 .xiaomi-scale-card {
   display: grid;
-  align-content: space-between;
-  gap: 17px;
+  align-content: start;
+  gap: 14px;
   min-height: 0;
-  padding: 23px;
+  padding: 22px;
   border: 1px solid rgba(255,255,255,.84);
   border-radius: 30px;
   background:
-    radial-gradient(circle at 92% 8%, rgba(255, 177, 77, .42), transparent 190px),
-    linear-gradient(145deg, rgba(255,255,255,.95), rgba(255,247,236,.88));
+    radial-gradient(circle at 94% 4%, rgba(7,193,96,.18), transparent 180px),
+    linear-gradient(145deg, rgba(255,255,255,.96), rgba(244,250,246,.9));
   box-shadow: var(--shadow);
 }
 .xiaomi-scale-header {
@@ -1189,32 +1189,49 @@ body[data-view="xiaomi-scale"] #xiaomiScaleView { display: grid; }
 }
 .xiaomi-scale-header h2 { margin: 5px 0 3px; font-size: 27px; }
 .xiaomi-scale-header p { margin: 0; color: var(--muted); font-size: 11px; }
-.xiaomi-scale-icon {
-  display: grid;
+.xiaomi-scale-live {
+  display: flex;
+  align-items: center;
   flex: none;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  color: #7b4b1d;
-  border: 1px solid #f1c58f;
-  border-radius: 19px;
-  background: #fff2dc;
-  font-size: 28px;
+  gap: 6px;
+  padding: 8px 10px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+  font-size: 9px;
+  white-space: nowrap;
 }
+.xiaomi-scale-live i { width: 7px; height: 7px; border-radius: 50%; background: #aeb8b0; }
+.xiaomi-scale-live.is-online { color: #087b40; border-color: rgba(7,193,96,.2); background: var(--green-soft); }
+.xiaomi-scale-live.is-online i { background: var(--green); box-shadow: 0 0 0 4px rgba(7,193,96,.1); }
+.xiaomi-scale-live.is-measuring i { animation: xiaomi-scale-pulse 1.2s ease-in-out infinite; }
+@keyframes xiaomi-scale-pulse { 50% { opacity: .34; transform: scale(.72); } }
 .xiaomi-scale-weight {
   display: grid;
+  position: relative;
   place-items: center;
-  gap: 7px;
-  padding: 26px 18px;
-  border: 1px solid #f1dfc8;
-  border-radius: 23px;
-  background: rgba(255,255,255,.72);
+  gap: 5px;
+  min-height: 185px;
+  padding: 28px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(7,193,96,.16);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 110%, rgba(7,193,96,.15), transparent 60%),
+    rgba(255,255,255,.8);
 }
 .xiaomi-scale-weight span,
 .xiaomi-scale-weight small,
 .xiaomi-scale-info span { color: var(--muted); font-size: 10px; }
-.xiaomi-scale-weight strong { color: #b76c23; font-size: 42px; letter-spacing: -.03em; }
-.xiaomi-scale-weight small { font-size: 11px; }
+.xiaomi-scale-weight strong { color: var(--ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(46px, 13vw, 68px); font-weight: 500; letter-spacing: -.045em; line-height: 1; }
+.xiaomi-scale-weight small { font-size: 11px; text-align: center; }
+.xiaomi-scale-glance { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.xiaomi-scale-glance div { display: grid; gap: 5px; min-width: 0; padding: 11px 9px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.66); }
+.xiaomi-scale-glance span { color: var(--muted); font-size: 9px; }
+.xiaomi-scale-glance strong { overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.xiaomi-scale-glance strong.is-good { color: var(--green); }
+.xiaomi-scale-glance strong.is-warning { color: #d26f32; }
 .xiaomi-scale-info { display: grid; gap: 9px; }
 .xiaomi-scale-info div {
   display: flex;
@@ -1222,31 +1239,96 @@ body[data-view="xiaomi-scale"] #xiaomiScaleView { display: grid; }
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border: 1px solid #f1dfc8;
+  border: 1px solid var(--line);
   border-radius: 15px;
   background: rgba(255,255,255,.62);
 }
-.xiaomi-scale-info strong { max-width: 68%; overflow: hidden; color: #704b2b; font-size: 12px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.xiaomi-scale-info strong { max-width: 68%; overflow: hidden; color: var(--ink); font-size: 12px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .xiaomi-scale-history {
   display: grid;
   gap: 8px;
   padding: 12px 14px;
-  border: 1px solid #f1dfc8;
+  border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255,255,255,.58);
+  background: rgba(255,255,255,.66);
 }
 .xiaomi-scale-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.xiaomi-scale-history-heading strong { color: #704b2b; font-size: 12px; }
+.xiaomi-scale-history-heading strong { color: var(--ink); font-size: 12px; }
 .xiaomi-scale-history-heading span { color: var(--muted); font-size: 10px; }
-.xiaomi-scale-history-list { display: grid; gap: 6px; max-height: 168px; overflow: auto; }
-.xiaomi-scale-history-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(241,223,200,.72); }
+.xiaomi-scale-history-list { display: grid; gap: 0; max-height: 230px; overflow: auto; }
+.xiaomi-scale-history-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
 .xiaomi-scale-history-row:first-child { border-top: 0; }
-.xiaomi-scale-history-row strong { color: #b76c23; font-size: 13px; }
-.xiaomi-scale-history-row span { color: var(--muted); font-size: 10px; text-align: right; }
+.xiaomi-scale-history-row div { display: grid; gap: 2px; }
+.xiaomi-scale-history-row strong { color: var(--ink); font-size: 14px; }
+.xiaomi-scale-history-row small, .xiaomi-scale-history-row span { color: var(--muted); font-size: 9px; }
+.xiaomi-scale-history-row span { min-width: 68px; text-align: right; }
+.xiaomi-scale-history-row span.is-up { color: #d26f32; }
+.xiaomi-scale-history-row span.is-down { color: var(--green); }
+.xiaomi-scale-collector {
+  padding: 9px 12px;
+  color: var(--muted);
+  border: 1px dashed #cbd8ce;
+  border-radius: 12px;
+  background: rgba(246,250,247,.8);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.xiaomi-scale-insights {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.66);
+}
+.xiaomi-scale-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.xiaomi-scale-section-heading > div:first-child { display: grid; gap: 2px; }
+.xiaomi-scale-section-heading strong { font-size: 12px; }
+.xiaomi-scale-section-heading span { color: var(--muted); font-size: 9px; }
+.xiaomi-scale-periods { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: #edf3ee; }
+.xiaomi-scale-periods button { min-width: 38px; padding: 5px 6px; color: var(--muted); border: 0; border-radius: 8px; background: transparent; font-size: 9px; }
+.xiaomi-scale-periods button.active { color: #fff; background: var(--green); box-shadow: 0 4px 12px rgba(7,193,96,.18); }
+.xiaomi-scale-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.xiaomi-scale-metrics div { display: grid; gap: 4px; padding: 9px 8px; border-radius: 12px; background: var(--green-soft); }
+.xiaomi-scale-metrics span { color: var(--muted); font-size: 9px; }
+.xiaomi-scale-metrics strong { overflow: hidden; color: #126a3c; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.xiaomi-scale-trend { display: grid; min-height: 62px; place-items: center; gap: 5px; color: var(--muted); font-size: 9px; }
+.xiaomi-scale-trend svg { width: 100%; height: 112px; overflow: visible; }
+.xiaomi-scale-trend-area { fill: url(#xiaomiScaleTrendGradient); }
+.xiaomi-scale-trend-line { stroke: var(--green); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.xiaomi-scale-trend-dot { fill: #fff; stroke: var(--green); stroke-width: 2; }
+.xiaomi-scale-fold { border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.64); }
+.xiaomi-scale-fold summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; cursor: pointer; list-style: none; }
+.xiaomi-scale-fold summary::-webkit-details-marker { display: none; }
+.xiaomi-scale-fold summary > span { display: grid; gap: 3px; }
+.xiaomi-scale-fold summary strong { font-size: 12px; }
+.xiaomi-scale-fold summary small { color: var(--muted); font-size: 9px; }
+.xiaomi-scale-fold summary i { color: var(--muted); font-size: 20px; font-style: normal; transition: transform .18s ease; }
+.xiaomi-scale-fold[open] summary i { transform: rotate(90deg); }
+.xiaomi-scale-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 14px 14px; }
+.xiaomi-scale-settings label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }
+.xiaomi-scale-settings select,
+.xiaomi-scale-settings input[type="number"] { width: 100%; min-height: 38px; padding: 0 9px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.9); }
+.xiaomi-scale-target-toggle { grid-template-columns: 1fr auto !important; align-items: center; }
+.xiaomi-scale-target-toggle input { width: 18px; height: 18px; accent-color: var(--green); }
+.xiaomi-scale-settings button { width: 100%; }
+.xiaomi-scale-save { margin-top: 0 !important; }
 .xiaomi-scale-actions { display: grid; gap: 9px; }
 .xiaomi-scale-actions button { width: 100%; }
-.xiaomi-scale-actions span { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; text-align: center; word-break: break-all; }
-.xiaomi-scale-note { margin: 0; color: #806c5a; font-size: 10px; line-height: 1.6; text-align: center; }
+.xiaomi-scale-actions span { color: var(--muted); font-size: 9px; text-align: center; }
+.xiaomi-scale-diagnostics > :not(summary) { margin-right: 14px; margin-left: 14px; }
+.xiaomi-scale-diagnostics[open] { padding-bottom: 14px; }
+.xiaomi-scale-export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.xiaomi-scale-export-actions button { margin-top: 0; }
+.xiaomi-scale-raw { display: block; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; line-height: 1.45; text-align: center; word-break: break-all; }
+.xiaomi-scale-note { margin-top: 10px !important; margin-bottom: 0; color: var(--muted); font-size: 9px; line-height: 1.5; text-align: center; }
+@media (max-width: 390px) {
+  .xiaomi-scale-card { padding: 18px; }
+  .xiaomi-scale-live span { display: none; }
+  .xiaomi-scale-live { width: 29px; height: 29px; justify-content: center; padding: 0; }
+  .xiaomi-scale-metrics strong { font-size: 10px; }
+  .xiaomi-scale-periods button { min-width: 33px; }
+}
 body[data-view="aupu"] #controlView { display: none; }
 body[data-view="aupu"] .room-tabs { display: none; }
 body[data-view="aupu"] .status-line { display: none; }

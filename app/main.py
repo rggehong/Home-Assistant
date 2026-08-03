@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import csv
 import html
 import hashlib
 import hmac
+import io
 import json
 import logging
 import os
@@ -677,6 +679,7 @@ async def lifespan(_: FastAPI):
         pass
     schedule_task = asyncio.create_task(schedules.run())
     discovery_task = asyncio.create_task(maintain_discovery())
+    xiaomi_scale_task = asyncio.create_task(xiaomi_scale.run_collector())
     await ezviz.start()
     try:
         yield
@@ -684,7 +687,8 @@ async def lifespan(_: FastAPI):
         await ezviz.stop()
         schedule_task.cancel()
         discovery_task.cancel()
-        await asyncio.gather(schedule_task, discovery_task, return_exceptions=True)
+        xiaomi_scale_task.cancel()
+        await asyncio.gather(schedule_task, discovery_task, xiaomi_scale_task, return_exceptions=True)
 
 
 async def maintain_discovery() -> None:
@@ -931,8 +935,48 @@ async def xiaomi_scale_status() -> dict[str, Any]:
 
 
 @app.get("/api/xiaomi-scale/history", dependencies=[Depends(require_token)])
-async def xiaomi_scale_history() -> list[dict[str, Any]]:
-    return xiaomi_scale.history(20)
+async def xiaomi_scale_history(limit: int = 50) -> list[dict[str, Any]]:
+    return xiaomi_scale.history(limit)
+
+
+@app.get("/api/xiaomi-scale/summary", dependencies=[Depends(require_token)])
+async def xiaomi_scale_summary(days: int = 90) -> dict[str, Any]:
+    return xiaomi_scale.summary(days)
+
+
+@app.get("/api/xiaomi-scale/preferences", dependencies=[Depends(require_token)])
+async def xiaomi_scale_preferences() -> dict[str, Any]:
+    return xiaomi_scale.preferences()
+
+
+@app.put("/api/xiaomi-scale/preferences", dependencies=[Depends(require_token)])
+async def update_xiaomi_scale_preferences(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return xiaomi_scale.update_preferences(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/xiaomi-scale/export", dependencies=[Depends(require_token)])
+async def xiaomi_scale_export(format: str = "csv", days: int = 3650) -> Response:
+    rows = xiaomi_scale.export_rows(days)
+    if format.lower() == "json":
+        return JSONResponse(rows, headers={"Content-Disposition": "attachment; filename=xiaomi-scale-history.json"})
+    if format.lower() != "csv":
+        raise HTTPException(status_code=422, detail="format must be csv or json")
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=["measured_at", "recorded_at", "weight", "unit", "weight_kg", "rssi", "mac", "raw"],
+        extrasaction="ignore",
+    )
+    writer.writeheader()
+    writer.writerows(rows)
+    return Response(
+        content="\ufeff" + output.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=xiaomi-scale-history.csv"},
+    )
 
 
 @app.get("/api/ezviz", dependencies=[Depends(require_token)])

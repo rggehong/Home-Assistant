@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=58">
+    <link rel="stylesheet" href="/static/h5.css?v=60">
   </head>
   <body>
     <main class="app-shell">
@@ -263,35 +263,76 @@
         <article class="xiaomi-scale-card">
           <header class="xiaomi-scale-header">
             <div>
-              <span class="micro-label">XIAOMI BLUETOOTH</span>
+              <span class="micro-label">MI BODY SCALE</span>
               <h2>小米电子秤</h2>
               <p id="xiaomiScaleStatus">正在读取 BLE 广播</p>
             </div>
-            <div class="xiaomi-scale-icon" aria-hidden="true">⚖</div>
+            <div class="xiaomi-scale-live" id="xiaomiScaleLive"><i></i><span>等待称重</span></div>
           </header>
 
           <div class="xiaomi-scale-weight">
-            <span>当前体重</span>
+            <span id="xiaomiScaleWeightLabel">本次体重</span>
             <strong id="xiaomiScaleWeight">—</strong>
-            <small id="xiaomiScaleReading">等待称重</small>
+            <small id="xiaomiScaleReading">站上秤面，保持身体稳定</small>
           </div>
 
-          <div class="xiaomi-scale-info">
-            <div><span>稳定状态</span><strong id="xiaomiScaleStability">—</strong></div>
-            <div><span>最近测量</span><strong id="xiaomiScaleMeasuredAt">—</strong></div>
-            <div><span>蓝牙地址</span><strong id="xiaomiScaleMac">C8:0F:10:A8:EC:79</strong></div>
-          </div>
-
-          <div class="xiaomi-scale-history">
-            <div class="xiaomi-scale-history-heading"><strong>称重记录</strong><span id="xiaomiScaleHistorySummary">暂无记录</span></div>
-            <div class="xiaomi-scale-history-list" id="xiaomiScaleHistoryList"></div>
+          <div class="xiaomi-scale-glance" aria-label="本次称重摘要">
+            <div><span>相比上次</span><strong id="xiaomiScalePreviousChange">—</strong></div>
+            <div><span>目标进度</span><strong id="xiaomiScaleTargetProgress">未设置</strong></div>
+            <div><span>测量时间</span><strong id="xiaomiScaleMeasuredAt">—</strong></div>
           </div>
 
           <div class="xiaomi-scale-actions">
-            <button class="primary-button" id="xiaomiScaleRefresh" type="button">扫描并刷新</button>
-            <span id="xiaomiScaleRaw">未收到广播数据</span>
+            <button class="primary-button" id="xiaomiScaleRefresh" type="button">开始称重</button>
+            <span>站稳后读数会自动保存，不需要手动确认</span>
           </div>
-          <p class="xiaomi-scale-note">电子秤通过 BLE 广播上报读数。本项目只读取广播，不发送控制或配对命令。</p>
+
+          <section class="xiaomi-scale-insights" aria-label="称重趋势与目标">
+            <div class="xiaomi-scale-section-heading">
+              <div><strong>体重趋势</strong><span id="xiaomiScaleSummaryPeriod">近 30 天</span></div>
+              <div class="xiaomi-scale-periods" role="group" aria-label="趋势时间范围">
+                <button type="button" data-scale-days="7">7天</button>
+                <button type="button" data-scale-days="30" class="active">30天</button>
+                <button type="button" data-scale-days="90">90天</button>
+              </div>
+            </div>
+            <div class="xiaomi-scale-metrics">
+              <div><span>平均</span><strong id="xiaomiScaleAverage">—</strong></div>
+              <div><span>阶段变化</span><strong id="xiaomiScaleChange">—</strong></div>
+              <div><span>最低 / 最高</span><strong id="xiaomiScaleRange">—</strong></div>
+            </div>
+            <div class="xiaomi-scale-trend" id="xiaomiScaleTrend" aria-label="体重趋势图"></div>
+          </section>
+
+          <section class="xiaomi-scale-history">
+            <div class="xiaomi-scale-history-heading"><strong>最近记录</strong><span id="xiaomiScaleHistorySummary">暂无记录</span></div>
+            <div class="xiaomi-scale-history-list" id="xiaomiScaleHistoryList"></div>
+          </section>
+
+          <details class="xiaomi-scale-fold">
+            <summary><span><strong>目标与单位</strong><small>设置目标体重和显示单位</small></span><i aria-hidden="true">›</i></summary>
+            <section class="xiaomi-scale-settings" aria-label="电子秤设置">
+              <label><span>显示单位</span><select id="xiaomiScaleUnit"><option value="jin">斤</option><option value="kg">千克</option><option value="lb">磅</option></select></label>
+              <label><span>目标体重（kg）</span><input id="xiaomiScaleTarget" type="number" min="1" max="500" step="0.1" placeholder="可选"></label>
+              <label class="xiaomi-scale-target-toggle"><span>显示目标进度</span><input id="xiaomiScaleTargetEnabled" type="checkbox"></label>
+              <button class="secondary-button xiaomi-scale-save" id="xiaomiScaleSavePreferences" type="button">保存设置</button>
+            </section>
+          </details>
+
+          <details class="xiaomi-scale-fold xiaomi-scale-diagnostics">
+            <summary><span><strong>数据与设备</strong><small>导出记录或查看蓝牙状态</small></span><i aria-hidden="true">›</i></summary>
+            <div class="xiaomi-scale-collector" id="xiaomiScaleCollector"></div>
+            <div class="xiaomi-scale-info">
+              <div><span>稳定状态</span><strong id="xiaomiScaleStability">—</strong></div>
+              <div><span>蓝牙地址</span><strong id="xiaomiScaleMac">—</strong></div>
+            </div>
+            <div class="xiaomi-scale-export-actions">
+              <button class="secondary-button" id="xiaomiScaleExportCsv" type="button">导出 CSV</button>
+              <button class="secondary-button" id="xiaomiScaleExportJson" type="button">导出 JSON</button>
+            </div>
+            <span class="xiaomi-scale-raw" id="xiaomiScaleRaw">未收到广播数据</span>
+            <p class="xiaomi-scale-note">通过 BLE 广播读取数据，不发送配对或控制命令。</p>
+          </details>
         </article>
       </section>
 
@@ -691,6 +732,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=48" defer></script>
+    <script src="/static/h5.js?v=50" defer></script>
   </body>
 </html>
