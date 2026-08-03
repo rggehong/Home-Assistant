@@ -42,6 +42,23 @@ let aupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
 let oppleCommandTimer = null;
 let opplePendingCommand = {};
+let climateStatusLoad = null;
+let realtimeRefreshTimer = null;
+
+const realtimeRefreshIntervals = {
+  control: 5_000,
+  tv: 5_000,
+  aupu: 5_000,
+  plug: 5_000,
+  opple: 8_000,
+  "xiaomi-scale": 12_000,
+  schedule: 5_000,
+  ezviz: 10_000,
+  "smart-device": 10_000,
+  dreame: 10_000,
+  purifier: 10_000,
+  "water-heater": 10_000,
+};
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
 const MIN_TEMPERATURE = 16;
@@ -197,53 +214,68 @@ function selectedDevice() {
   return model.devices.find((device) => device.id === model.selectedId);
 }
 
-function ensureDraft(device) {
-  if (!model.drafts.has(device.id)) {
-    model.drafts.set(device.id, {
-      temperature: device.target_temperature || 26,
-      mode: modeToApi[device.mode] || "cool",
-      fan: fanToApi[device.fan_speed] || "auto",
-      vertical: verticalToApi[device.vertical_swing] || "middle",
-      horizontal: horizontalToApi[device.horizontal_swing] || "center",
-      sleep: Boolean(device.sleep),
-      light: Boolean(device.light),
-      quiet: Boolean(device.quiet),
-      lowerOutlet: Boolean(device.lower_outlet),
-      antiDirect: Boolean(device.anti_direct),
-      turbo: Boolean(device.turbo),
-      health: Boolean(device.health),
-      auxiliaryHeat: Boolean(device.auxiliary_heat),
-    });
+function draftFromDevice(device) {
+  return {
+    temperature: device.target_temperature || 26,
+    mode: modeToApi[device.mode] || "cool",
+    fan: fanToApi[device.fan_speed] || "auto",
+    vertical: verticalToApi[device.vertical_swing] || "middle",
+    horizontal: horizontalToApi[device.horizontal_swing] || "center",
+    sleep: Boolean(device.sleep),
+    light: Boolean(device.light),
+    quiet: Boolean(device.quiet),
+    lowerOutlet: Boolean(device.lower_outlet),
+    antiDirect: Boolean(device.anti_direct),
+    turbo: Boolean(device.turbo),
+    health: Boolean(device.health),
+    auxiliaryHeat: Boolean(device.auxiliary_heat),
+  };
+}
+
+function ensureDraft(device, sync = false) {
+  const selectedEditing = device.id === model.selectedId
+    && (el("#climateCard")?.classList.contains("is-busy")
+      || el("#temperatureRing")?.classList.contains("is-dragging")
+      || el("#climateCard")?.contains(document.activeElement)
+        && document.activeElement.matches("input, select, textarea"));
+  if (!model.drafts.has(device.id) || sync && !model.commandTimers.has(device.id) && !selectedEditing) {
+    model.drafts.set(device.id, draftFromDevice(device));
   }
   return model.drafts.get(device.id);
 }
 
-async function loadAll(refresh = true) {
-  setStatus("正在同步空调状态", "");
-  try {
+async function loadAll(refresh = true, { silent = false } = {}) {
+  if (climateStatusLoad) return climateStatusLoad;
+  if (!silent) setStatus("正在同步空调状态", "");
+  climateStatusLoad = (async () => {
+    try {
     const devices = await api(`/api/devices?refresh=${refresh}`, { headers: requestHeaders() });
     model.authenticated = true;
     updateAuthControls();
     model.devices = devices;
-    devices.forEach(ensureDraft);
+    devices.forEach((device) => ensureDraft(device, true));
     if (!devices.some((device) => device.id === model.selectedId)) {
       model.selectedId = devices[0]?.id || null;
     }
     render();
-    setStatus(`${devices.length} 台空调本地在线`, "online");
-  } catch (error) {
-    if (!error.isAuthError) {
+    if (!silent) setStatus(`${devices.length} 台空调本地在线`, "online");
+    } catch (error) {
+      if (!error.isAuthError && !silent) {
       setStatus("连接失败", "error");
       showToast(error.message);
+      }
+    } finally {
+      climateStatusLoad = null;
     }
-  }
+  })();
+  return climateStatusLoad;
 }
 
 const viewLoads = new Map();
 
-async function loadViewData(view, force = false) {
+async function loadViewData(view, force = false, { silent = false, realtime = false } = {}) {
   if (!view || view === "control") return;
-  if (!force && viewLoads.has(view)) return viewLoads.get(view);
+  if (viewLoads.has(view)) return viewLoads.get(view);
 
   const request = (async () => {
     try {
@@ -264,8 +296,9 @@ async function loadViewData(view, force = false) {
         model.plug = await api("/api/plug", { headers: requestHeaders() });
         renderPlug();
       } else if (view === "xiaomi-scale") {
+        const statusPath = realtime ? "/api/xiaomi-scale?scan_seconds=4" : "/api/xiaomi-scale";
         [model.xiaomiScale, model.xiaomiScaleHistory, model.xiaomiScaleSummary, model.xiaomiScalePreferences] = await Promise.all([
-          api("/api/xiaomi-scale", { headers: requestHeaders() }),
+          api(statusPath, { headers: requestHeaders() }),
           api("/api/xiaomi-scale/history?limit=100", { headers: requestHeaders() }).catch(() => []),
           api(`/api/xiaomi-scale/summary?days=${model.xiaomiScaleDays}`, { headers: requestHeaders() }).catch(() => null),
           api("/api/xiaomi-scale/preferences", { headers: requestHeaders() }).catch(() => model.xiaomiScalePreferences),
@@ -291,7 +324,7 @@ async function loadViewData(view, force = false) {
         renderSchedules();
       }
     } catch (error) {
-      if (!error.isAuthError) showToast(error.message);
+      if (!error.isAuthError && !silent) showToast(error.message);
     }
   })();
 
@@ -300,6 +333,30 @@ async function loadViewData(view, force = false) {
     await request;
   } finally {
     if (viewLoads.get(view) === request) viewLoads.delete(view);
+  }
+}
+
+function realtimeRefreshPaused() {
+  if (!model.authenticated || document.hidden) return true;
+  if (document.querySelector("dialog[open], .is-busy, .is-dragging")) return true;
+  return document.activeElement?.matches("input, select, textarea") || false;
+}
+
+function scheduleRealtimeRefresh(delay) {
+  clearTimeout(realtimeRefreshTimer);
+  const view = document.body.dataset.view || "control";
+  realtimeRefreshTimer = setTimeout(runRealtimeRefresh, delay ?? realtimeRefreshIntervals[view] ?? 10_000);
+}
+
+async function runRealtimeRefresh() {
+  const view = document.body.dataset.view || "control";
+  try {
+    if (!realtimeRefreshPaused()) {
+      if (view === "control") await loadAll(true, { silent: true });
+      else await loadViewData(view, true, { silent: true, realtime: true });
+    }
+  } finally {
+    scheduleRealtimeRefresh();
   }
 }
 
@@ -1800,6 +1857,7 @@ document.querySelectorAll(".view-nav button").forEach((button) => {
       item.classList.toggle("active", item === button);
     });
     loadViewData(view);
+    scheduleRealtimeRefresh(realtimeRefreshIntervals[view] ?? 10_000);
   });
 });
 
@@ -1928,6 +1986,7 @@ el("#xiaomiScaleRefresh").addEventListener("click", async () => {
 el("#syncButton").addEventListener("click", async () => {
   await loadAll(true);
   await loadViewData(document.body.dataset.view || "control", true);
+  scheduleRealtimeRefresh();
 });
 el("#authButton").addEventListener("click", openAuthDialog);
 el("#closeDialog").addEventListener("click", () => authDialog.close());
@@ -1977,6 +2036,8 @@ async function bootstrap() {
     }
   }
   await loadAll(true);
+  await loadViewData(document.body.dataset.view || "control");
+  scheduleRealtimeRefresh();
 }
 
 function showToast(message) {
@@ -2047,6 +2108,10 @@ el("#today").textContent = new Date().toLocaleDateString("zh-CN", {
 });
 initializeScheduleTime();
 bootstrap();
-setInterval(() => {
-  if (model.authenticated && !document.hidden) loadAll(true);
-}, 60_000);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    clearTimeout(realtimeRefreshTimer);
+  } else {
+    scheduleRealtimeRefresh(0);
+  }
+});

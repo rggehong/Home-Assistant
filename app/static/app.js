@@ -37,6 +37,15 @@ let tencentCaptchaLoader = null;
 let oppleCommandTimer = null;
 let opplePendingCommand = {};
 const secondaryLoads = new Map();
+const desktopRefreshTimers = new Map();
+let desktopClimateLoad = null;
+
+const desktopRefreshGroups = {
+  climate: { interval: 5_000 },
+  schedules: { interval: 5_000, keys: ["schedules"] },
+  local: { interval: 8_000, keys: ["tv", "aupu", "plug", "opple", "ezviz"] },
+  cloud: { interval: 15_000, keys: ["purifier", "water-heater", "tmall", "dreame"] },
+};
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
 const modeValues = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -197,29 +206,33 @@ function makeDraft(device) {
   };
 }
 
-async function loadAll(refresh = true) {
-  setConnection("正在同步", "");
-  try {
+async function loadAll(refresh = true, { silent = false, secondary = true } = {}) {
+  if (desktopClimateLoad) return desktopClimateLoad;
+  if (!silent) setConnection("正在同步", "");
+  desktopClimateLoad = (async () => {
+    try {
     const devices = await api(`/api/devices?refresh=${refresh}`, { headers: headers() });
     state.authenticated = true;
     updateAuthControls();
     state.devices = devices;
-    devices.forEach((device) => {
-      if (!state.drafts.has(device.id)) state.drafts.set(device.id, makeDraft(device));
-    });
+    devices.forEach((device) => state.drafts.set(device.id, makeDraft(device)));
     render();
-    setConnection("本地在线", "online");
+    if (!silent) setConnection("本地在线", "online");
     document.querySelector("#lastUpdated").textContent =
       `更新于 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
-    loadSecondaryData();
-  } catch (error) {
-    if (error.isAuthError) {
+    if (secondary) loadSecondaryData();
+    } catch (error) {
+      if (error.isAuthError && !silent) {
       renderEmpty("请先登录", "输入一次家庭访问密码，此设备将保持登录 30 天。");
-    } else {
+      } else if (!silent) {
       setConnection("连接失败", "error");
       showToast(error.message);
+      }
+    } finally {
+      desktopClimateLoad = null;
     }
-  }
+  })();
+  return desktopClimateLoad;
 }
 
 function loadSecondary(key, path, apply) {
@@ -235,51 +248,81 @@ function loadSecondary(key, path, apply) {
   return request;
 }
 
-function loadSecondaryData() {
+function loadSecondaryData(keys = null) {
+  const selected = keys ? new Set(keys) : null;
+  const include = (key, loader) => selected && !selected.has(key) ? Promise.resolve() : loader();
   return Promise.allSettled([
-    loadSecondary("schedules", "/api/schedules", (value) => {
+    include("schedules", () => loadSecondary("schedules", "/api/schedules", (value) => {
       state.schedules = value;
       renderSchedules();
       renderAupu();
-    }),
-    loadSecondary("tv", "/api/tv", (value) => {
+    })),
+    include("tv", () => loadSecondary("tv", "/api/tv", (value) => {
       state.tv = value;
       renderTV();
       loadTVForeground();
-    }),
-    loadSecondary("aupu", "/api/aupu", (value) => {
+    })),
+    include("aupu", () => loadSecondary("aupu", "/api/aupu", (value) => {
       state.aupu = value;
       renderAupu();
-    }),
-    loadSecondary("plug", "/api/plug", (value) => {
+    })),
+    include("plug", () => loadSecondary("plug", "/api/plug", (value) => {
       state.plug = value;
       renderPlug();
-    }),
-    loadSecondary("opple", "/api/opple", (value) => {
+    })),
+    include("opple", () => loadSecondary("opple", "/api/opple", (value) => {
       state.opple = value;
       renderOpple();
-    }),
-    loadSecondary("purifier", "/api/purifier", (value) => {
+    })),
+    include("purifier", () => loadSecondary("purifier", "/api/purifier", (value) => {
       state.purifier = value;
       renderPurifier();
-    }),
-    loadSecondary("water-heater", "/api/water-heater", (value) => {
+    })),
+    include("water-heater", () => loadSecondary("water-heater", "/api/water-heater", (value) => {
       state.waterHeater = value;
       renderWaterHeater();
-    }),
-    loadSecondary("tmall", "/api/tmall", (value) => {
+    })),
+    include("tmall", () => loadSecondary("tmall", "/api/tmall", (value) => {
       state.tmall = value;
       renderSmartDevices();
-    }),
-    loadSecondary("dreame", "/api/dreame", (value) => {
+    })),
+    include("dreame", () => loadSecondary("dreame", "/api/dreame", (value) => {
       state.dreame = value;
       renderSmartDevices();
-    }),
-    loadSecondary("ezviz", "/api/ezviz", (value) => {
+    })),
+    include("ezviz", () => loadSecondary("ezviz", "/api/ezviz", (value) => {
       state.ezviz = value;
       renderEzviz();
-    }),
+    })),
   ]);
+}
+
+function desktopRealtimeRefreshPaused() {
+  if (!state.authenticated || document.hidden) return true;
+  if (document.querySelector("dialog[open], .is-busy, .is-dragging")) return true;
+  return document.activeElement?.matches("input, select, textarea") || false;
+}
+
+function scheduleDesktopRefresh(group, delay) {
+  clearTimeout(desktopRefreshTimers.get(group));
+  const config = desktopRefreshGroups[group];
+  desktopRefreshTimers.set(group, setTimeout(() => runDesktopRefresh(group), delay ?? config.interval));
+}
+
+async function runDesktopRefresh(group) {
+  const config = desktopRefreshGroups[group];
+  try {
+    if (!desktopRealtimeRefreshPaused()) {
+      if (group === "climate") await loadAll(true, { silent: true, secondary: false });
+      else await loadSecondaryData(config.keys);
+    }
+  } finally {
+    scheduleDesktopRefresh(group, config.interval);
+  }
+}
+
+function startDesktopRealtimeRefresh(delay = undefined) {
+  Object.keys(desktopRefreshGroups).forEach((group) => scheduleDesktopRefresh(group, delay));
 }
 
 function renderEzviz() {
@@ -1325,7 +1368,10 @@ document.querySelectorAll("[data-desktop-dreame-setting]").forEach((control) => 
   });
 });
 
-document.querySelector("#refreshButton").addEventListener("click", () => loadAll(true));
+document.querySelector("#refreshButton").addEventListener("click", async () => {
+  await loadAll(true);
+  startDesktopRealtimeRefresh();
+});
 document.querySelector("#authButton").addEventListener("click", openAuthDialog);
 document.querySelector("#closeAuthDialog").addEventListener("click", () => authDialog.close());
 document.querySelector("#authForm").addEventListener("submit", async (event) => {
@@ -1373,6 +1419,7 @@ async function bootstrap() {
     }
   }
   await loadAll(true);
+  startDesktopRealtimeRefresh();
 }
 
 function showToast(message) {
@@ -1440,6 +1487,11 @@ document.querySelectorAll("[data-schedule-delay]").forEach((button) => {
 
 initializeScheduleTime();
 bootstrap();
-setInterval(() => {
-  if (state.authenticated && !document.hidden) loadAll(true);
-}, 60_000);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    desktopRefreshTimers.forEach((timer) => clearTimeout(timer));
+    desktopRefreshTimers.clear();
+  } else {
+    startDesktopRealtimeRefresh(0);
+  }
+});

@@ -930,8 +930,8 @@ async def ais_light_bind() -> dict[str, Any]:
 
 
 @app.get("/api/xiaomi-scale", dependencies=[Depends(require_token)])
-async def xiaomi_scale_status() -> dict[str, Any]:
-    return await xiaomi_scale.status()
+async def xiaomi_scale_status(scan_seconds: int = 10) -> dict[str, Any]:
+    return await xiaomi_scale.status(scan_seconds=scan_seconds)
 
 
 @app.get("/api/xiaomi-scale/history", dependencies=[Depends(require_token)])
