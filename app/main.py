@@ -112,6 +112,7 @@ HORIZONTAL_SWING_NAMES = {
 
 class ExtraProps(str, Enum):
     LOWER_OUTLET = "UDFanPort"
+    ANTI_DIRECT = "AntiDirectBlow"
 
 
 ROOMS = {
@@ -264,7 +265,7 @@ def _serialize(device: Device) -> dict[str, Any]:
         "health": device.anion,
         "auxiliary_heat": device.steady_heat,
         "anti_direct": (
-            device.vertical_swing == VerticalSwing.FixedUpper
+            bool(device.raw_properties.get(ExtraProps.ANTI_DIRECT.value, 0))
             if room.get("anti_direct", False)
             else None
         ),
@@ -368,6 +369,7 @@ class Registry:
             if not device:
                 raise KeyError(device_id)
             await _update_device_state(device)
+            room = ROOMS.get(device.device_info.ip, {})
             if command.power is not None:
                 device.power = command.power
             if command.mode is not None:
@@ -392,6 +394,12 @@ class Registry:
                 device.vertical_swing = _lookup(
                     VERTICAL_SWING_NAMES, command.vertical_swing, "vertical_swing"
                 )
+                # Anti-direct blow is an independent model-specific switch. It
+                # must be cleared when the user explicitly selects a vertical
+                # swing mode, otherwise supported bedroom units can keep their
+                # anti-direct deflector behavior while reporting SwUpDn=1.
+                if room.get("anti_direct", False) and command.anti_direct is None:
+                    device.set_property(ExtraProps.ANTI_DIRECT, 0)
             if command.horizontal_swing is not None:
                 allowed = ROOMS.get(device.device_info.ip, {}).get(
                     "horizontal_swing", list(HORIZONTAL_SWING_NAMES)
@@ -415,7 +423,6 @@ class Registry:
                             detail="turbo is not supported by this room",
                         )
                     setattr(device, attr, value)
-            room = ROOMS.get(device.device_info.ip, {})
             if command.health is not None:
                 if not room.get("health", False):
                     raise HTTPException(
@@ -436,10 +443,9 @@ class Registry:
                         status_code=422,
                         detail="anti_direct is not supported by this room",
                     )
-                device.vertical_swing = (
-                    VerticalSwing.FixedUpper
-                    if command.anti_direct
-                    else VerticalSwing.FixedMiddle
+                device.set_property(
+                    ExtraProps.ANTI_DIRECT,
+                    int(command.anti_direct),
                 )
             if command.lower_outlet is not None:
                 if not ROOMS.get(device.device_info.ip, {}).get("lower_outlet", False):
