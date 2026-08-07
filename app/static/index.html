@@ -7,7 +7,7 @@
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
     <meta name="description" content="格力空调局域网控制台">
-    <link rel="stylesheet" href="/static/styles.css?v=47">
+    <link rel="stylesheet" href="/static/styles.css?v=48">
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -64,6 +64,25 @@
           <span>外接照明</span><input type="checkbox" id="desktopAupuExternalLight"><i></i>
         </label>
         <button class="desktop-aupu-setup" id="desktopAupuSetup" data-xiaomi-setup type="button">连接米家</button>
+      </section>
+
+      <section class="desktop-hotata" id="desktopHotata">
+        <div class="desktop-aupu-title">
+          <div><strong>好太太晾衣机</strong><small id="desktopHotataStatus">正在读取 192.168.0.107</small></div>
+        </div>
+        <div class="desktop-hotata-state"><span>当前状态</span><strong id="desktopHotataMotor">等待连接</strong><b id="desktopHotataPosition">—</b></div>
+        <div class="desktop-hotata-motor">
+          <button type="button" data-desktop-hotata="up">↑ 上升</button>
+          <button type="button" class="is-stop" data-desktop-hotata="stop">■ 暂停</button>
+          <button type="button" data-desktop-hotata="down">↓ 下降</button>
+        </div>
+        <button class="desktop-hotata-best" id="desktopHotataBest" type="button" data-desktop-hotata="best_position">到最佳收衣点 <b id="desktopHotataBestLabel">50%</b></button>
+        <label class="mini-toggle desktop-aupu-toggle"><span>照明</span><input type="checkbox" id="desktopHotataLight"><i></i></label>
+        <label class="mini-toggle desktop-aupu-toggle"><span>除菌</span><input type="checkbox" id="desktopHotataDisinfection"><i></i></label>
+        <label class="desktop-hotata-setting"><span>最佳收衣点 <b id="desktopHotataBestValue">50%</b></span><input id="desktopHotataBestPosition" type="range" min="0" max="95" step="5" value="50"></label>
+        <label class="desktop-hotata-setting desktop-hotata-time"><span>完整升降耗时</span><input id="desktopHotataTravel" type="number" min="0" max="180" value="0"><em>秒</em></label>
+        <button class="desktop-hotata-save" id="desktopHotataSave" type="button">保存收衣点</button>
+        <button class="desktop-aupu-setup" id="desktopHotataSetup" type="button">连接好太太账号</button>
       </section>
 
       <section class="desktop-plug" id="desktopPlug">
@@ -493,7 +512,20 @@
       </div>
     </dialog>
 
+    <dialog id="desktopHotataSetupDialog">
+      <form id="desktopHotataSetupForm">
+        <button class="dialog-close" type="button" id="closeDesktopHotataSetupDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">HOTATA CLOUD</p>
+        <h3>连接好太太晾衣机</h3>
+        <p>请输入好太太 App 注册手机号和密码。密码只用于本次登录，不会保存到服务器或 GitHub。</p>
+        <input id="desktopHotataUsername" type="tel" inputmode="numeric" autocomplete="username" maxlength="11" placeholder="好太太注册手机号" required>
+        <input id="desktopHotataPassword" type="password" autocomplete="current-password" placeholder="好太太账号密码" required>
+        <div class="dialog-actions"><button class="primary" type="submit">授权并接入</button></div>
+        <p class="dialog-error" id="desktopHotataError"></p>
+      </form>
+    </dialog>
+
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/app.js?v=46" defer></script>
+    <script src="/static/app.js?v=47" defer></script>
   </body>
 </html>

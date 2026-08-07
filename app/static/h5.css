@@ -869,6 +869,115 @@ body[data-view="ezviz"] #ezvizView { display: block; }
   flex: 1 1 auto;
   min-height: 0;
 }
+
+.hotata-view { display: none; min-height: 0; overflow: auto; }
+body[data-view="hotata"] #controlView,
+body[data-view="hotata"] .room-tabs,
+body[data-view="hotata"] .status-line { display: none; }
+body[data-view="hotata"] #hotataView { display: grid; }
+.hotata-card {
+  display: grid;
+  gap: 14px;
+  min-height: 100%;
+  padding: 22px;
+  border: 1px solid rgba(28, 35, 31, .06);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(42, 51, 46, .08);
+}
+.hotata-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.hotata-header h2 { margin: 4px 0; color: var(--ink); font-size: 25px; }
+.hotata-header p { margin: 0; color: var(--muted); font-size: 11px; }
+.hotata-position {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  aspect-ratio: 1;
+  border-radius: 22px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, white);
+}
+.hotata-position b { font-size: 18px; }
+.hotata-position small { color: var(--muted); font-size: 8px; }
+.hotata-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 15px;
+  border-radius: 17px;
+  color: var(--muted);
+  background: #f5f7f5;
+  font-size: 11px;
+}
+.hotata-state strong { color: var(--green); font-size: 15px; }
+.hotata-motor { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.hotata-motor button {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-height: 82px;
+  border: 1px solid #e5e9e6;
+  border-radius: 21px;
+  color: var(--ink);
+  background: #fff;
+}
+.hotata-motor button b { color: var(--green); font-size: 27px; line-height: 1; }
+.hotata-motor button span { font-size: 12px; font-weight: 700; }
+.hotata-motor .hotata-stop { color: white; border-color: var(--green); background: var(--green); }
+.hotata-motor .hotata-stop b { color: white; font-size: 17px; }
+.hotata-best {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 17px;
+  color: white;
+  background: var(--green);
+  font-weight: 700;
+}
+.hotata-best b { padding: 5px 9px; border-radius: 9px; background: rgba(255,255,255,.18); }
+.hotata-switches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hotata-switches .switch-card { min-width: 0; }
+.hotata-calibration {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 19px;
+  background: #f5f7f5;
+}
+.hotata-calibration label { display: grid; gap: 7px; color: var(--muted); font-size: 10px; }
+.hotata-calibration label > span { display: flex; justify-content: space-between; }
+.hotata-calibration input[type="range"] { width: 100%; accent-color: var(--green); }
+.hotata-calibration label > div { display: flex; align-items: center; gap: 8px; }
+.hotata-calibration input[type="number"] {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dfe5e1;
+  border-radius: 13px;
+  background: white;
+}
+.hotata-calibration em { color: var(--muted); font-style: normal; }
+.hotata-calibration button {
+  height: 40px;
+  border: 0;
+  border-radius: 13px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 11%, white);
+  font-weight: 700;
+}
+.hotata-note { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.5; text-align: center; }
+.hotata-view.is-busy { opacity: .68; pointer-events: none; }
+.view-nav .brand-hotata { font-size: 6px; letter-spacing: -.03em; }
+#hotataSetupDialog input { width: 100%; margin-bottom: 10px; }
+
+@media (max-height: 760px) {
+  .hotata-card { gap: 9px; padding: 16px; }
+  .hotata-motor button { min-height: 64px; }
+  .hotata-note { display: none; }
+}
 body[data-view="water-heater"] #controlView { display: none; }
 body[data-view="water-heater"] .room-tabs { display: none; }
 body[data-view="water-heater"] .status-line { display: none; }

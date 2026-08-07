@@ -63,6 +63,13 @@ from app.tmall import tmall_status
 from app.ais_light import AisLightCommand, AisLightError, ais_light
 from app.xiaomi_scale import xiaomi_scale
 from app.ezviz import ezviz
+from app.hotata import (
+    HotataCommand,
+    HotataError,
+    HotataLoginRequest,
+    HotataSettings,
+    hotata,
+)
 from app.aligenie import aligenie_oauth, error_response, response_header
 from app.aligenie_personal import (
     PersonalCommand,
@@ -842,6 +849,35 @@ async def tv_status() -> dict[str, Any]:
 @app.get("/api/aupu", dependencies=[Depends(require_token)])
 async def aupu_status() -> dict[str, Any]:
     return await aupu.status()
+
+
+@app.get("/api/hotata", dependencies=[Depends(require_token)])
+async def hotata_status() -> dict[str, Any]:
+    return await hotata.status()
+
+
+@app.post("/api/hotata/login", dependencies=[Depends(require_token)])
+async def hotata_login(payload: HotataLoginRequest) -> dict[str, Any]:
+    try:
+        return await hotata.login(payload)
+    except HotataError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/hotata/command", dependencies=[Depends(require_token)])
+async def hotata_command(payload: HotataCommand) -> dict[str, Any]:
+    try:
+        return await hotata.command(payload)
+    except HotataError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.put("/api/hotata/settings", dependencies=[Depends(require_token)])
+async def hotata_settings(payload: HotataSettings) -> dict[str, Any]:
+    try:
+        return await hotata.update_settings(payload)
+    except HotataError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post("/api/aupu/qr/start", dependencies=[Depends(require_token)])

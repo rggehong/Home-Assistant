@@ -17,6 +17,7 @@ const model = {
   tmall: null,
   dreame: null,
   ezviz: null,
+  hotata: null,
   tvForeground: null,
   aupuTimers: new Map(),
   selectedId: null,
@@ -37,6 +38,7 @@ const aupuSetupDialog = el("#aupuSetupDialog");
 const purifierSetupDialog = el("#purifierSetupDialog");
 const waterHeaterAuthDialog = el("#waterHeaterAuthDialog");
 const dreameSetupDialog = el("#dreameSetupDialog");
+const hotataSetupDialog = el("#hotataSetupDialog");
 let aupuQrPollTimer = null;
 let aupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
@@ -58,6 +60,7 @@ const realtimeRefreshIntervals = {
   dreame: 10_000,
   purifier: 10_000,
   "water-heater": 10_000,
+  hotata: 5_000,
 };
 
 const modeToApi = { Auto: "auto", Cool: "cool", Dry: "dry", Fan: "fan", Heat: "heat" };
@@ -319,6 +322,9 @@ async function loadViewData(view, force = false, { silent = false, realtime = fa
       } else if (view === "water-heater") {
         model.waterHeater = await api("/api/water-heater", { headers: requestHeaders() });
         renderWaterHeater();
+      } else if (view === "hotata") {
+        model.hotata = await api("/api/hotata", { headers: requestHeaders() });
+        renderHotata();
       } else if (view === "schedule") {
         model.schedules = await api("/api/schedules", { headers: requestHeaders() });
         renderSchedules();
@@ -551,6 +557,69 @@ function renderWaterHeater() {
   el("#waterHeaterNotice").textContent = device.notice;
   el("#waterHeaterAuthButton").textContent =
     device.control_ready ? "查看云授权" : "配置云授权";
+}
+
+function renderHotata() {
+  const device = model.hotata;
+  if (!device) return;
+  el("#hotataStatus").textContent = device.configured
+    ? `${device.ip} · ${device.online ? "云端在线" : (device.error || "云端离线")}`
+    : `${device.ip} · 等待好太太账号授权`;
+  el("#hotataMotorText").textContent = device.motor_text || "状态未知";
+  el("#hotataPosition").textContent = `${device.simulated_position ?? 100}%`;
+  el("#hotataBestLabel").textContent = `${device.best_position ?? 50}%`;
+  el("#hotataBestValue").textContent = `${device.best_position ?? 50}%`;
+  el("#hotataBestPosition").value = String(device.best_position ?? 50);
+  el("#hotataTravelSeconds").value = String(device.full_travel_seconds ?? 0);
+  el("#hotataLight").checked = Boolean(device.light);
+  el("#hotataDisinfection").checked = Boolean(device.disinfection);
+  const ready = Boolean(device.configured && device.online);
+  document.querySelectorAll("[data-hotata-action], #hotataLight, #hotataDisinfection")
+    .forEach((control) => { control.disabled = !ready; });
+  el("#hotataBestButton").disabled = !ready || !(device.full_travel_seconds > 0);
+  el("#hotataSetupButton").textContent = device.configured
+    ? "重新连接好太太账号"
+    : "连接好太太账号";
+}
+
+async function sendHotataCommand(action, enabled = null) {
+  const view = el("#hotataView");
+  view.classList.add("is-busy");
+  try {
+    model.hotata = await api("/api/hotata/command", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({ action, enabled }),
+    });
+    renderHotata();
+    showToast(action === "stop" ? "晾衣机已暂停" : "晾衣机指令已发送");
+  } catch (error) {
+    renderHotata();
+    showToast(error.message);
+  } finally {
+    view.classList.remove("is-busy");
+  }
+}
+
+async function saveHotataSettings() {
+  const button = el("#hotataSaveSettings");
+  button.disabled = true;
+  try {
+    model.hotata = await api("/api/hotata/settings", {
+      method: "PUT",
+      headers: requestHeaders(true),
+      body: JSON.stringify({
+        best_position: Number(el("#hotataBestPosition").value),
+        full_travel_seconds: Number(el("#hotataTravelSeconds").value),
+      }),
+    });
+    renderHotata();
+    showToast("最佳收衣点已保存");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function renderPurifier() {
@@ -1848,6 +1917,51 @@ el("#purifierSetupForm").addEventListener("submit", async (event) => {
     submit.disabled = false;
   }
 });
+
+el("#hotataSetupButton").addEventListener("click", () => {
+  el("#hotataSetupError").textContent = "";
+  el("#hotataPassword").value = "";
+  if (!hotataSetupDialog.open) hotataSetupDialog.showModal();
+});
+el("#closeHotataSetupDialog").addEventListener("click", () => hotataSetupDialog.close());
+el("#hotataSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  const error = el("#hotataSetupError");
+  error.textContent = "";
+  submit.disabled = true;
+  try {
+    model.hotata = await api("/api/hotata/login", {
+      method: "POST",
+      headers: requestHeaders(true),
+      body: JSON.stringify({
+        username: el("#hotataUsername").value.trim(),
+        password: el("#hotataPassword").value,
+      }),
+    });
+    el("#hotataPassword").value = "";
+    hotataSetupDialog.close();
+    renderHotata();
+    showToast("好太太晾衣机已接入");
+  } catch (requestError) {
+    error.textContent = requestError.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+document.querySelectorAll("[data-hotata-action]").forEach((button) => {
+  button.addEventListener("click", () => sendHotataCommand(button.dataset.hotataAction));
+});
+el("#hotataLight").addEventListener("change", (event) => {
+  sendHotataCommand("light", event.target.checked);
+});
+el("#hotataDisinfection").addEventListener("change", (event) => {
+  sendHotataCommand("disinfection", event.target.checked);
+});
+el("#hotataBestPosition").addEventListener("input", (event) => {
+  el("#hotataBestValue").textContent = `${event.target.value}%`;
+});
+el("#hotataSaveSettings").addEventListener("click", saveHotataSettings);
 
 document.querySelectorAll(".view-nav button").forEach((button) => {
   button.addEventListener("click", () => {

@@ -1273,6 +1273,51 @@ dialog input:focus { border-color: var(--green); }
 }
 .tv-screen-note { margin-bottom: 0 !important; font-size: 10px !important; }
 
+.desktop-hotata {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.35fr) repeat(2, minmax(120px, .7fr)) minmax(130px, .8fr);
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .78);
+  box-shadow: var(--shadow-soft);
+}
+.desktop-hotata-state { display: grid; gap: 3px; color: var(--muted); font-size: 10px; }
+.desktop-hotata-state strong { color: var(--green-bright); font-size: 15px; }
+.desktop-hotata-state b { color: var(--muted); font-size: 10px; }
+.desktop-hotata-motor { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; grid-column: span 2; }
+.desktop-hotata-motor button,
+.desktop-hotata-best,
+.desktop-hotata-save {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--ink);
+  background: white;
+  font-weight: 700;
+}
+.desktop-hotata-motor .is-stop,
+.desktop-hotata-best { color: white; border-color: var(--green-bright); background: var(--green-bright); }
+.desktop-hotata-best { display: flex; align-items: center; justify-content: space-between; padding: 0 13px; }
+.desktop-hotata-best b { padding: 4px 7px; border-radius: 7px; background: rgba(255,255,255,.16); }
+.desktop-hotata-setting { display: grid; gap: 5px; color: var(--muted); font-size: 9px; }
+.desktop-hotata-setting > span { display: flex; justify-content: space-between; }
+.desktop-hotata-setting input[type="range"] { width: 100%; accent-color: var(--green-bright); }
+.desktop-hotata-time { grid-template-columns: 1fr 70px 18px; align-items: center; }
+.desktop-hotata-time input { width: 70px; height: 36px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
+.desktop-hotata-time em { color: var(--muted); font-style: normal; }
+.desktop-hotata-save { color: var(--green-bright); background: rgba(7, 193, 96, .08); }
+.desktop-hotata.is-busy { opacity: .65; pointer-events: none; }
+#desktopHotataSetupDialog input { width: 100%; margin-bottom: 10px; }
+
+@media (max-width: 1000px) {
+  .desktop-hotata { grid-template-columns: 1fr 1fr; }
+  .desktop-hotata-motor { grid-column: 1 / -1; }
+}
+
 .toast {
   position: fixed;
   left: 50%;

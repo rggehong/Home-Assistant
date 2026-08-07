@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>智能家居</title>
     <link rel="icon" href="/favicon.ico?v=1" sizes="any">
-    <link rel="stylesheet" href="/static/h5.css?v=60">
+    <link rel="stylesheet" href="/static/h5.css?v=61">
   </head>
   <body>
     <main class="app-shell">
@@ -484,6 +484,42 @@
         </article>
       </section>
 
+      <section class="hotata-view" id="hotataView">
+        <article class="hotata-card">
+          <header class="hotata-header">
+            <div>
+              <span class="micro-label">HOTATA SMART AIRER</span>
+              <h2>好太太晾衣机</h2>
+              <p id="hotataStatus">正在读取 192.168.0.107</p>
+            </div>
+            <span class="hotata-position"><b id="hotataPosition">—</b><small>估算高度</small></span>
+          </header>
+          <div class="hotata-state">
+            <span>当前状态</span>
+            <strong id="hotataMotorText">等待连接</strong>
+          </div>
+          <div class="hotata-motor" aria-label="晾衣机升降控制">
+            <button type="button" data-hotata-action="up"><b>↑</b><span>上升</span></button>
+            <button type="button" class="hotata-stop" data-hotata-action="stop"><b>■</b><span>暂停</span></button>
+            <button type="button" data-hotata-action="down"><b>↓</b><span>下降</span></button>
+          </div>
+          <button class="hotata-best" id="hotataBestButton" type="button" data-hotata-action="best_position">
+            <span>到最佳收衣点</span><b id="hotataBestLabel">50%</b>
+          </button>
+          <div class="hotata-switches">
+            <label class="switch-card"><span><strong>照明</strong><small>晾衣机主照明</small></span><input id="hotataLight" type="checkbox"><i></i></label>
+            <label class="switch-card"><span><strong>除菌</strong><small>衣物除菌功能</small></span><input id="hotataDisinfection" type="checkbox"><i></i></label>
+          </div>
+          <div class="hotata-calibration">
+            <label><span>最佳收衣点 <b id="hotataBestValue">50%</b></span><input id="hotataBestPosition" type="range" min="0" max="95" step="5" value="50"></label>
+            <label><span>完整升降耗时</span><div><input id="hotataTravelSeconds" type="number" min="0" max="180" step="1" value="0" inputmode="numeric"><em>秒</em></div></label>
+            <button id="hotataSaveSettings" type="button">保存收衣点</button>
+          </div>
+          <p class="hotata-note">首次使用请实测从顶部到底部的完整耗时；填 0 时禁用自动收衣点，避免误动作。</p>
+          <button class="aupu-setup-button" id="hotataSetupButton" type="button">连接好太太账号</button>
+        </article>
+      </section>
+
       <section class="tv-view" id="tvView">
         <article class="tv-card remote-stage">
           <div class="tv-remote">
@@ -618,6 +654,7 @@
         <button data-view="ezviz"><span class="brand-mark brand-ezviz" aria-hidden="true">EZVIZ</span><span>萤石摄像头</span></button>
         <button data-view="purifier"><span class="brand-mark brand-smith" aria-hidden="true">A.O.SMITH</span><span>史密斯净水机</span></button>
         <button data-view="water-heater"><span class="brand-mark brand-smith" aria-hidden="true">A.O.SMITH</span><span>燃气热水器</span></button>
+        <button data-view="hotata"><span class="brand-mark brand-hotata" aria-hidden="true">HOTATA</span><span>好太太晾衣机</span></button>
         <button data-view="schedule"><span class="brand-mark brand-symbol" aria-hidden="true">◷</span><span>定时任务</span></button>
       </nav>
     </main>
@@ -718,6 +755,19 @@
       </div>
     </dialog>
 
+    <dialog id="hotataSetupDialog">
+      <form id="hotataSetupForm">
+        <button type="button" class="dialog-close" id="closeHotataSetupDialog" aria-label="关闭">×</button>
+        <span class="micro-label">HOTATA CLOUD</span>
+        <h3>连接好太太晾衣机</h3>
+        <p>请输入好太太 App 注册手机号和密码。密码只用于本次登录，不会保存到服务器或 GitHub。</p>
+        <input id="hotataUsername" type="tel" inputmode="numeric" autocomplete="username" maxlength="11" placeholder="好太太注册手机号" required>
+        <input id="hotataPassword" type="password" autocomplete="current-password" placeholder="好太太账号密码" required>
+        <button class="primary-button" type="submit">授权并接入</button>
+        <p class="error-text" id="hotataSetupError"></p>
+      </form>
+    </dialog>
+
     <dialog id="authDialog">
       <form id="authForm">
         <button type="button" class="dialog-close" id="closeDialog">×</button>
@@ -732,6 +782,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/static/h5.js?v=51" defer></script>
+    <script src="/static/h5.js?v=52" defer></script>
   </body>
 </html>

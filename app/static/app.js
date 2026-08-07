@@ -12,6 +12,7 @@ const state = {
   tmall: null,
   dreame: null,
   ezviz: null,
+  hotata: null,
   tvForeground: null,
   drafts: new Map(),
   commandTimers: new Map(),
@@ -31,6 +32,7 @@ const aupuSetupDialog = document.querySelector("#desktopAupuSetupDialog");
 const purifierSetupDialog = document.querySelector("#desktopPurifierSetupDialog");
 const waterHeaterAuthDialog = document.querySelector("#desktopWaterHeaterAuthDialog");
 const desktopDreameSetupDialog = document.querySelector("#desktopDreameSetupDialog");
+const desktopHotataSetupDialog = document.querySelector("#desktopHotataSetupDialog");
 let desktopAupuQrPollTimer = null;
 let desktopAupuQrGeneration = 0;
 let tencentCaptchaLoader = null;
@@ -45,6 +47,7 @@ const desktopRefreshGroups = {
   schedules: { interval: 5_000, keys: ["schedules"] },
   local: { interval: 8_000, keys: ["tv", "aupu", "plug", "opple", "ezviz"] },
   cloud: { interval: 15_000, keys: ["purifier", "water-heater", "tmall", "dreame"] },
+  hotata: { interval: 5_000, keys: ["hotata"] },
 };
 
 const modeLabels = { Auto: "自动", Cool: "制冷", Dry: "除湿", Fan: "送风", Heat: "制热" };
@@ -282,6 +285,10 @@ function loadSecondaryData(keys = null) {
       state.waterHeater = value;
       renderWaterHeater();
     })),
+    include("hotata", () => loadSecondary("hotata", "/api/hotata", (value) => {
+      state.hotata = value;
+      renderHotata();
+    })),
     include("tmall", () => loadSecondary("tmall", "/api/tmall", (value) => {
       state.tmall = value;
       renderSmartDevices();
@@ -409,8 +416,9 @@ function render() {
   renderPlug();
   renderOpple();
   renderPurifier();
-    renderWaterHeater();
-    renderSmartDevices();
+  renderWaterHeater();
+  renderHotata();
+  renderSmartDevices();
 }
 
 function renderWaterHeater() {
@@ -424,6 +432,69 @@ function renderWaterHeater() {
   badge.textContent = device.control_ready ? "查看云授权" : "配置云授权";
   badge.title = device.reachable ? "设备局域网在线" : "设备当前离线";
   badge.classList.toggle("online", Boolean(device.reachable));
+}
+
+function renderHotata() {
+  const device = state.hotata;
+  if (!device) return;
+  document.querySelector("#desktopHotataStatus").textContent = device.configured
+    ? `${device.ip} · ${device.online ? "云端在线" : (device.error || "云端离线")}`
+    : `${device.ip} · 等待好太太账号授权`;
+  document.querySelector("#desktopHotataMotor").textContent = device.motor_text || "状态未知";
+  document.querySelector("#desktopHotataPosition").textContent = `估算高度 ${device.simulated_position ?? 100}%`;
+  document.querySelector("#desktopHotataBestLabel").textContent = `${device.best_position ?? 50}%`;
+  document.querySelector("#desktopHotataBestValue").textContent = `${device.best_position ?? 50}%`;
+  document.querySelector("#desktopHotataBestPosition").value = String(device.best_position ?? 50);
+  document.querySelector("#desktopHotataTravel").value = String(device.full_travel_seconds ?? 0);
+  document.querySelector("#desktopHotataLight").checked = Boolean(device.light);
+  document.querySelector("#desktopHotataDisinfection").checked = Boolean(device.disinfection);
+  const ready = Boolean(device.configured && device.online);
+  document.querySelectorAll("[data-desktop-hotata], #desktopHotataLight, #desktopHotataDisinfection")
+    .forEach((control) => { control.disabled = !ready; });
+  document.querySelector("#desktopHotataBest").disabled = !ready || !(device.full_travel_seconds > 0);
+  document.querySelector("#desktopHotataSetup").textContent = device.configured
+    ? "重新连接好太太账号"
+    : "连接好太太账号";
+}
+
+async function sendDesktopHotata(action, enabled = null) {
+  const panel = document.querySelector("#desktopHotata");
+  panel.classList.add("is-busy");
+  try {
+    state.hotata = await api("/api/hotata/command", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({ action, enabled }),
+    });
+    renderHotata();
+    showToast(action === "stop" ? "晾衣机已暂停" : "晾衣机指令已发送");
+  } catch (error) {
+    renderHotata();
+    showToast(error.message);
+  } finally {
+    panel.classList.remove("is-busy");
+  }
+}
+
+async function saveDesktopHotata() {
+  const button = document.querySelector("#desktopHotataSave");
+  button.disabled = true;
+  try {
+    state.hotata = await api("/api/hotata/settings", {
+      method: "PUT",
+      headers: headers(true),
+      body: JSON.stringify({
+        best_position: Number(document.querySelector("#desktopHotataBestPosition").value),
+        full_travel_seconds: Number(document.querySelector("#desktopHotataTravel").value),
+      }),
+    });
+    renderHotata();
+    showToast("最佳收衣点已保存");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function renderSmartDevices() {
@@ -1319,6 +1390,53 @@ document.querySelector("#desktopPurifierSetupForm").addEventListener("submit", a
     submit.disabled = false;
   }
 });
+
+document.querySelector("#desktopHotataSetup").addEventListener("click", () => {
+  document.querySelector("#desktopHotataError").textContent = "";
+  document.querySelector("#desktopHotataPassword").value = "";
+  if (!desktopHotataSetupDialog.open) desktopHotataSetupDialog.showModal();
+});
+document.querySelector("#closeDesktopHotataSetupDialog").addEventListener("click", () => {
+  desktopHotataSetupDialog.close();
+});
+document.querySelector("#desktopHotataSetupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = event.submitter;
+  const error = document.querySelector("#desktopHotataError");
+  error.textContent = "";
+  submit.disabled = true;
+  try {
+    state.hotata = await api("/api/hotata/login", {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify({
+        username: document.querySelector("#desktopHotataUsername").value.trim(),
+        password: document.querySelector("#desktopHotataPassword").value,
+      }),
+    });
+    document.querySelector("#desktopHotataPassword").value = "";
+    desktopHotataSetupDialog.close();
+    renderHotata();
+    showToast("好太太晾衣机已接入");
+  } catch (requestError) {
+    error.textContent = requestError.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+document.querySelectorAll("[data-desktop-hotata]").forEach((button) => {
+  button.addEventListener("click", () => sendDesktopHotata(button.dataset.desktopHotata));
+});
+document.querySelector("#desktopHotataLight").addEventListener("change", (event) => {
+  sendDesktopHotata("light", event.target.checked);
+});
+document.querySelector("#desktopHotataDisinfection").addEventListener("change", (event) => {
+  sendDesktopHotata("disinfection", event.target.checked);
+});
+document.querySelector("#desktopHotataBestPosition").addEventListener("input", (event) => {
+  document.querySelector("#desktopHotataBestValue").textContent = `${event.target.value}%`;
+});
+document.querySelector("#desktopHotataSave").addEventListener("click", saveDesktopHotata);
 
 document.querySelector("#desktopDreameSetup").addEventListener("click", () => {
   document.querySelector("#desktopDreameError").textContent = "";
