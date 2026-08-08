@@ -122,6 +122,26 @@ class ExtraProps(str, Enum):
     ANTI_DIRECT = "AntiDirectBlow"
 
 
+LOWER_OUTLET_OFF = 0
+LOWER_OUTLET_FORCED = 2
+
+
+def _lower_outlet_enabled(value: Any) -> bool:
+    """Return whether the living-room lower outlet is explicitly forced on.
+
+    The KFR-72LW accepts multiple UDFanPort values. Value 1 is acknowledged
+    but does not force the physical lower outlet open; value 2 does.
+    """
+    try:
+        return int(value) == LOWER_OUTLET_FORCED
+    except (TypeError, ValueError):
+        return False
+
+
+def _lower_outlet_command_value(enabled: bool) -> int:
+    return LOWER_OUTLET_FORCED if enabled else LOWER_OUTLET_OFF
+
+
 ROOMS = {
     "192.168.0.124": {
         "room": "客厅",
@@ -279,7 +299,9 @@ def _serialize(device: Device) -> dict[str, Any]:
         "xfan": device.xfan,
         "sleep": device.sleep,
         "lower_outlet": (
-            bool(device.raw_properties.get(ExtraProps.LOWER_OUTLET.value))
+            _lower_outlet_enabled(
+                device.raw_properties.get(ExtraProps.LOWER_OUTLET.value)
+            )
             if room.get("lower_outlet", False)
             and device.raw_properties.get(ExtraProps.LOWER_OUTLET.value) is not None
             else None
@@ -462,7 +484,7 @@ class Registry:
                     )
                 device.set_property(
                     ExtraProps.LOWER_OUTLET,
-                    int(command.lower_outlet),
+                    _lower_outlet_command_value(command.lower_outlet),
                 )
             await device.push_state_update()
             await _update_device_state(device)
