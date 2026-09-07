@@ -382,14 +382,14 @@ class Registry:
                 if not device:
                     raise KeyError(device_id)
                 selected = [device]
-            result = []
-            for device in selected:
+            async def refresh_one(device: Device) -> dict[str, Any]:
                 try:
-                    await _update_device_state(device)
+                    await asyncio.wait_for(_update_device_state(device), timeout=8)
                 except Exception as exc:
-                    result.append({**_serialize(device), "error": str(exc)})
-                else:
-                    result.append(_serialize(device))
+                    return {**_serialize(device), "error": str(exc) or "状态读取超时"}
+                return _serialize(device)
+
+            result = await asyncio.gather(*(refresh_one(device) for device in selected))
             return _sort_devices(result)
 
     async def command(self, device_id: str, command: Command) -> dict[str, Any]:
@@ -581,11 +581,15 @@ class ScheduleStore:
             now = datetime.now(timezone.utc)
             changed = False
             for item in list(self.items.values()):
+                # A previous device command yields; a user may cancel another
+                # due item during that await. Never execute the stale snapshot.
+                if self.items.get(item.get("id")) is not item:
+                    continue
                 if item.get("status") != "pending":
                     continue
-                if datetime.fromisoformat(item["run_at"]) > now:
-                    continue
                 try:
+                    if datetime.fromisoformat(item["run_at"]) > now:
+                        continue
                     if item["device_id"] == SONY_TV_DEVICE_ID:
                         await sony_tv.set_power_verified(item["action"] == "on")
                     elif item["device_id"] == MIJIA_PLUG_DEVICE_ID:

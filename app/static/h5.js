@@ -119,7 +119,7 @@ function openAuthDialog() {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, { credentials: "same-origin", ...options });
+  return homeRequest(path, options, async (response) => {
   if (response.status === 401) {
     const body = await response.json().catch(() => ({}));
     model.authenticated = false;
@@ -134,13 +134,11 @@ async function api(path, options = {}) {
     throw new Error(body.detail || `请求失败 (${response.status})`);
   }
   return response.json();
+  });
 }
 
 async function apiBlob(path) {
-  const response = await fetch(path, {
-    credentials: "same-origin",
-    cache: "no-store",
-  });
+  return homeRequest(path, {}, async (response) => {
   if (response.status === 401) {
     model.authenticated = false;
     openAuthDialog();
@@ -151,6 +149,7 @@ async function apiBlob(path) {
     throw new Error(body.detail || `请求失败 (${response.status})`);
   }
   return response.blob();
+  });
 }
 
 function ensureCameraViewer() {
