@@ -325,7 +325,13 @@ async function loadViewData(view, force = false, { silent = false, realtime = fa
         model.hotata = await api("/api/hotata", { headers: requestHeaders() });
         renderHotata();
       } else if (view === "schedule") {
-        model.schedules = await api("/api/schedules", { headers: requestHeaders() });
+        [model.schedules, model.tv, model.plug, model.aupu] = await Promise.all([
+          api("/api/schedules", { headers: requestHeaders() }),
+          api("/api/tv", { headers: requestHeaders() }).catch(() => model.tv),
+          api("/api/plug", { headers: requestHeaders() }).catch(() => model.plug),
+          api("/api/aupu", { headers: requestHeaders() }).catch(() => model.aupu),
+        ]);
+        renderScheduleTargets();
         renderSchedules();
       }
     } catch (error) {
@@ -681,6 +687,7 @@ function renderPlug() {
     control.disabled = !device.configured || !device.online;
   });
   el("#plugSetupButton").hidden = device.configured;
+  el("#plugScheduleButton").hidden = !device.configured;
 }
 
 async function sendPlugCommand(payload) {
@@ -1962,16 +1969,30 @@ el("#hotataBestPosition").addEventListener("input", (event) => {
 });
 el("#hotataSaveSettings").addEventListener("click", saveHotataSettings);
 
-document.querySelectorAll(".view-nav button").forEach((button) => {
-  button.addEventListener("click", () => {
-    const view = button.dataset.view;
-    document.body.dataset.view = view;
-    document.querySelectorAll(".view-nav button").forEach((item) => {
-      item.classList.toggle("active", item === button);
-    });
-    loadViewData(view);
-    scheduleRealtimeRefresh(realtimeRefreshIntervals[view] ?? 10_000);
+async function switchView(view, targetId = null) {
+  document.body.dataset.view = view;
+  document.querySelectorAll(".view-nav button").forEach((item) => {
+    item.classList.toggle("active", item.dataset.view === view);
   });
+  await loadViewData(view);
+  if (view === "schedule" && targetId) {
+    renderScheduleTargets();
+    const target = el("#scheduleTarget");
+    if ([...target.options].some((option) => option.value === targetId)) {
+      target.value = targetId;
+      el("#scheduleAction").value = model.plug?.on ? "off" : "on";
+      renderSchedules();
+    }
+  }
+  scheduleRealtimeRefresh(realtimeRefreshIntervals[view] ?? 10_000);
+}
+
+document.querySelectorAll(".view-nav button").forEach((button) => {
+  button.addEventListener("click", () => switchView(button.dataset.view));
+});
+
+el("#plugScheduleButton").addEventListener("click", () => {
+  switchView("schedule", MIJIA_PLUG_DEVICE_ID);
 });
 
 el("#scheduleForm").addEventListener("submit", async (event) => {

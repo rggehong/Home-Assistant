@@ -72,3 +72,19 @@ class SchedulerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(store.items["invalid"]["status"], "failed")
         self.assertEqual(store.items["valid"]["status"], "executed")
         command_mock.assert_awaited_once()
+
+    async def test_smart_plug_schedule_executes_requested_power_state(self):
+        for action, expected in (("on", True), ("off", False)):
+            with self.subTest(action=action):
+                store = self.make_store()
+                item = self.item("plug-task")
+                item.update(device_id=main.MIJIA_PLUG_DEVICE_ID, action=action)
+                store.items = {item["id"]: item}
+                command_mock = AsyncMock()
+                with patch.object(main.plug, "command", command_mock), \
+                     patch.object(main.asyncio, "sleep", AsyncMock(side_effect=asyncio.CancelledError)):
+                    with self.assertRaises(asyncio.CancelledError):
+                        await store.run()
+                command_mock.assert_awaited_once()
+                self.assertEqual(command_mock.await_args.args[0].on, expected)
+                self.assertEqual(item["status"], "executed")

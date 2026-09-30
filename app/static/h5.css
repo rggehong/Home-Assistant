@@ -1191,6 +1191,17 @@ body[data-view="plug"] #plugView { display: grid; }
 }
 .plug-switches { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .plug-switches .switch-card { display: flex; }
+.plug-schedule-button {
+  width: 100%;
+  padding: 12px 16px;
+  color: white;
+  border: 0;
+  border-radius: 14px;
+  background: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+}
+.plug-schedule-button:disabled { opacity: .45; }
 body[data-view="opple"] #controlView { display: none; }
 body[data-view="opple"] .room-tabs { display: none; }
 body[data-view="opple"] .status-line { display: none; }

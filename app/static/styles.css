@@ -303,7 +303,7 @@ button { color: inherit; }
 }
 .desktop-plug {
   display: grid;
-  grid-template-columns: auto minmax(200px, 1fr) auto auto auto auto auto auto auto auto;
+  grid-template-columns: auto minmax(200px, 1fr) auto auto auto auto auto auto auto auto auto;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
@@ -654,6 +654,17 @@ button { color: inherit; }
   border-color: var(--green-bright);
   background: var(--green-bright);
 }
+.desktop-plug-schedule {
+  padding: 8px 11px;
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  background: var(--green);
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 700;
+}
+.desktop-plug-schedule:disabled { opacity: .45; }
 .desktop-aupu.is-busy { opacity: .6; pointer-events: none; }
 .desktop-aupu-title { display: flex; align-items: center; gap: 9px; }
 .desktop-aupu-title div { display: grid; gap: 3px; }

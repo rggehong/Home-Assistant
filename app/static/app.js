@@ -674,6 +674,7 @@ function renderPlug() {
     control.disabled = !device.configured || !device.online;
   });
   document.querySelector("#desktopPlugSetup").hidden = device.configured;
+  document.querySelector("#desktopPlugSchedule").hidden = !device.configured;
 }
 
 async function sendPlugCommand(payload) {
@@ -1287,6 +1288,12 @@ document.querySelector("#desktopAupuSetupForm").addEventListener("submit", async
 });
 document.querySelector("#desktopPlugPowerButton").addEventListener("click", () => {
   if (state.plug) sendPlugCommand({ on: !state.plug.on });
+});
+document.querySelector("#desktopPlugSchedule").addEventListener("click", () => {
+  renderScheduleRoomOptions();
+  document.querySelector("#scheduleRoom").value = MIJIA_PLUG_DEVICE_ID;
+  document.querySelector("#scheduleAction").value = state.plug?.on ? "off" : "on";
+  document.querySelector(".desktop-schedules").scrollIntoView({ behavior: "smooth", block: "center" });
 });
 document.querySelector("#desktopPlugDefault").addEventListener("change", (event) => {
   sendPlugCommand({ default_power_state: Number(event.target.value) });
